@@ -1,0 +1,48 @@
+Version 1.15. Date:
+
+Feature changed.
+
+	The history feature did not display a gameboard piece that was captured when a back button was used.
+
+Version 1.14.0. Date: 2021-7-31
+
+Feature changed.
+
+	Fixed some grammar issues and corrected spelling mistakes. 
+
+Version 1.13.2. Date: 2021-7-21
+
+New Features.
+
+	Created more _dataAccount typeDef variables. Those variables are used at the client front door as server data.
+	
+Bugs fixed.
+
+	In a four player game, the forth player would not enter the waiting room. Instead, the forth player would enter the game room.
+	
+	Server would sometimes drop a client after logging in because at the "join" event, _dataMisc was passed to client when that event was using _dataAccount.
+	
+Version 1.12.1. Date: 2021-6-16
+
+Bugs fixed.
+
+	Fixed an issue where an IP address for the logging in user was searched at a none existing MySQL database field.
+			
+Version 1.12.0. Date: 2021-6-12
+
+New Features.
+
+	Chess Tournament: Standard 8. The number 8 in the title means that the tournament will start after the 8th player signs up for tournament play. This tournament is an elimination game. Lose 1 game at anytime and the tournament will end for that user.
+
+	Added chess ELO rating system. K has a 30 value.
+	
+	At console the date and time of user activity are now displayed.
+	
+Bugs fixed.
+
+	Fixed call to a none existing database avatar field.
+	
+	The amount of wins completed in a three in a row quest could go beyond three wins.
+	
+	Daily quests were deleted when the day from the database did not match the day logged in. Players could log in exactly 7 days later to continue the daily quests.
+	
