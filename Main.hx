@@ -1,8 +1,8 @@
 package ;
 
 import Reg;
-import mphx.connection.IConnection;
-import mphx.server.impl.Server;
+import vendor.mphx.connection.IConnection;
+import vendor.mphx.server.impl.Server;
 import sys.FileSystem;
 import sys.net.Host;
 //import sys.ssl.Socket;
@@ -177,26 +177,26 @@ class Main
 	/******************************
 	* This var holds the players data (set) that the server stores for the client to process (get).
 	*/
-	public var allDataGame:Map<mphx.connection.IConnection,DataGame>;
+	public var allDataGame:Map<vendor.mphx.connection.IConnection,DataGame>;
 	// these are needed. they are game id data.
-	public var allDataGame0:Map<mphx.connection.IConnection,DataGame0>;
-	public var allDataGame1:Map<mphx.connection.IConnection,DataGame1>;
-	public var allDataGame2:Map<mphx.connection.IConnection,DataGame2>;
-	public var allDataGame3:Map<mphx.connection.IConnection,DataGame3>;
-	public var allDataGame4:Map<mphx.connection.IConnection,DataGame4>;
+	public var allDataGame0:Map<vendor.mphx.connection.IConnection,DataGame0>;
+	public var allDataGame1:Map<vendor.mphx.connection.IConnection,DataGame1>;
+	public var allDataGame2:Map<vendor.mphx.connection.IConnection,DataGame2>;
+	public var allDataGame3:Map<vendor.mphx.connection.IConnection,DataGame3>;
+	public var allDataGame4:Map<vendor.mphx.connection.IConnection,DataGame4>;
 	
-	public var allDataDailyQuests:Map<mphx.connection.IConnection,DataDailyQuests>;
-	public var allDataQuestions:Map<mphx.connection.IConnection,DataQuestions>;
-	public var allDataOnlinePlayers:Map<mphx.connection.IConnection,DataOnlinePlayers>;
-	public var allDataMisc:Map<mphx.connection.IConnection,DataMisc>;
-	public var allDataPlayers:Map<mphx.connection.IConnection,DataPlayers>;
-	public var allDataTournaments:Map<mphx.connection.IConnection,DataTournaments>;
-	public var allDataAccount:Map<mphx.connection.IConnection,DataAccount>;
-	public var allDataGameMessage:Map<mphx.connection.IConnection,DataGameMessage>;
-	public var allDataMovement:Map<mphx.connection.IConnection,DataMovement>;
-	public var allDataStatistics:Map<mphx.connection.IConnection,DataStatistics>;
-	public var allDataHouse:Map<mphx.connection.IConnection,DataHouse>;
-	public var allDataLeaderboards:Map<mphx.connection.IConnection,Leaderboards>;
+	public var allDataDailyQuests:Map<vendor.mphx.connection.IConnection,DataDailyQuests>;
+	public var allDataQuestions:Map<vendor.mphx.connection.IConnection,DataQuestions>;
+	public var allDataOnlinePlayers:Map<vendor.mphx.connection.IConnection,DataOnlinePlayers>;
+	public var allDataMisc:Map<vendor.mphx.connection.IConnection,DataMisc>;
+	public var allDataPlayers:Map<vendor.mphx.connection.IConnection,DataPlayers>;
+	public var allDataTournaments:Map<vendor.mphx.connection.IConnection,DataTournaments>;
+	public var allDataAccount:Map<vendor.mphx.connection.IConnection,DataAccount>;
+	public var allDataGameMessage:Map<vendor.mphx.connection.IConnection,DataGameMessage>;
+	public var allDataMovement:Map<vendor.mphx.connection.IConnection,DataMovement>;
+	public var allDataStatistics:Map<vendor.mphx.connection.IConnection,DataStatistics>;
+	public var allDataHouse:Map<vendor.mphx.connection.IConnection,DataHouse>;
+	public var allDataLeaderboards:Map<vendor.mphx.connection.IConnection,Leaderboards>;
 	
 	/******************************
 	 * player is the logged in data, such as password or host, that gets and sends to the client. player is used at both client and server while user is server side.
@@ -281,7 +281,7 @@ class Main
 	/******************************
 	 * the _gameState that sent the _data.
 	 */
-	private var _sender:mphx.connection.IConnection;
+	private var _sender:vendor.mphx.connection.IConnection;
 	
 	/******************************
 	* closes the server if true. there will be an error if closing within an event because the event code cannot continue if not connected so this var is called in the event and this var "if true" is needed outside the event to close it.
@@ -289,7 +289,7 @@ class Main
 	private var _closeServer:Bool = false;
 
 	// if here at server, the lobby is room 0. if room[1].broadcast is used then at client, only players with room data of 1 can execute code at that code block. sometimes, at client, there is a check to see is the id passed to client matches the id of that user. if there is a match then player can execute code. , eg, if (_data.id == _miscState._data._id) the _miscState is players data where as the _data.id is passed to client.
-	private var room:Array<mphx.server.room.Room> = [];
+	private var room:Array<vendor.mphx.server.room.Room> = [];
 		/******************************
 	 * mysql class.
 	 */
@@ -385,7 +385,7 @@ class Main
 		
 		// create the server.
 		//_server = new FlashServer(_ip, null); // use this if you use a flash connection (using an policy files servers for flash socket). change null to a port number.
-		_server = new mphx.server.impl.Server(_ip, _port); // need port forward and firewall opened for this port.
+		_server = new vendor.mphx.server.impl.Server(_ip, _port); // need port forward and firewall opened for this port.
 		
 		
 		if (Sys.args()[2] != null) Reg._dbHost = Sys.args()[2];
@@ -411,7 +411,7 @@ class Main
 		// create the rooms.
 		for (i in 0...25) 
 		{
-			room[i] = new mphx.server.room.Room();
+			room[i] = new vendor.mphx.server.room.Room();
 			_server.rooms.push(room[i]);
 		}
 		
@@ -519,9 +519,8 @@ class Main
 				
 		var _row = _mysqlDB.isPaidMemberFromUsers(Reg._username);
 		var _paid = Std.string(_row._isPaidMember[0]);
-		var _set_ip:String = getIP(Reg._username);		
-
-		if (_set_ip != "" && _paid == "true") 
+		
+		if (_paid == "true") 
 		{
 			Sys.println("Welcome " + Reg._username);
 		}
@@ -1249,7 +1248,7 @@ class Main
 	*/
 	private function join(_data, _sender):Void
 	{
-		_server.events.on("Join", function(_data:Dynamic, _sender:mphx.connection.IConnection)
+		_server.events.on("Join", function(_data:Dynamic, _sender:vendor.mphx.connection.IConnection)
 		{
 			try 
 			{
@@ -1307,9 +1306,9 @@ class Main
 					if (host == true) _accountState._alreadyOnlineHost = true;
 					else _accountState._alreadyOnlineHost = false;
 
-					var rset = _mysqlDB.select_ip(_data._username);
-					var _resolve_ip = new Host(Std.string(rset._ip[0]));
-					_accountState._ip = Std.string(_resolve_ip);
+					//var rset = _mysqlDB.select_ip(_data._username);
+					//var _resolve_ip = new Host(Std.string(rset._ip[0]));
+					//_accountState._ip = Std.string(_resolve_ip);
 					
 					// get the current room data for user.
 					/*_miscState._roomState = _roomState;
@@ -1342,7 +1341,7 @@ class Main
 	* EVENT DISCONNECT BY SERVER
 	* then server is full, this event closes the client that tries to connect. this is the same as the disconnect event but it works because it calls a different code at client.
 	*/
-	private function disconnectByServer(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function disconnectByServer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("DisconnectByServer", function (_data, _sender)
 		{
@@ -1357,7 +1356,7 @@ class Main
 	/******************************
 	* EVENT DISCONNECT ALL PLAYERS BY SERVER
 	*/
-	private function disconnectAllByServer(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function disconnectAllByServer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Disconnect All By Server",function (_data, _sender){
 			_closeServer = true;
@@ -1374,14 +1373,13 @@ class Main
 	* EVENT IS LOGGING IN. user is typing a username and password to enter the lobby.
 	* _dataAccount
 	*/
-	private function isLoggingIn(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function isLoggingIn(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Is Logging In", function (_data, _sender)
 		{
 			_accountState = allDataAccount.get(_sender);
-						
-			var _set_ip:String = getIP(_data._username);		
-			var _set_username = getUsername(_set_ip);
+			
+			var _set_username = getUsername(_accountState._ip);
 			
 			// is user at website client?
 			if (_data._guest_account == true)
@@ -1414,7 +1412,7 @@ class Main
 				||  _data._username == "npc zak")
 					_set_username = _data._username;
 			}
-							
+			
 			if (_set_username != "" && _data._username == _set_username) // enter loop if username is logged in.
 			{
 				_mysqlDB.deleteRoomData(_accountState._username);
@@ -1482,7 +1480,7 @@ class Main
 	* EVENT LOAD HOUSE DATA.
 	* players house where they buy items, place items in room and vote for best house for prizes.
 	*/
-	private function houseLoad(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function houseLoad(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("House Load", function (_data, _sender)
 		{
@@ -1519,7 +1517,7 @@ class Main
 	/**************************************************************************
 	* EVENT SAVE HOUSE DATA.
 	*/
-	private function houseSave(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function houseSave(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("House Save", function (_data, _sender)
 		{
@@ -1534,7 +1532,7 @@ class Main
 	* EVENT PLAYER MOVE TIME REMAINING
 	* Gets the current move timer for the player that is moving. the value is sent to the other clients so that they have the update value.
 	*/
-	private function playerMoveTimeRemaining(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function playerMoveTimeRemaining(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Player Move Time Remaining",function (_data, _sender)
 		{			
@@ -1554,7 +1552,7 @@ class Main
 	* EVENT PLAYER MOVE
 	* the client sends a player move event.
 	*/
-	private function playerMoveId0(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function playerMoveId0(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Player Move Id 0",function (_data, _sender)
 		{
@@ -1576,7 +1574,7 @@ class Main
 	* EVENT PLAYER MOVE
 	* the client sends a player move event.
 	*/
-	private function playerMoveId1(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function playerMoveId1(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Player Move Id 1",function (_data, _sender)
 		{
@@ -1598,7 +1596,7 @@ class Main
 	* EVENT PLAYER MOVE
 	* the client sends a player move event.
 	*/
-	private function playerMoveId2(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function playerMoveId2(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Player Move Id 2",function (_data, _sender)
 		{
@@ -1621,7 +1619,7 @@ class Main
 	* the client sends a player move event.
 	* RegTypedef._dataGame3._gameUnitNumberNew
 	*/
-	private function playerMoveId3(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function playerMoveId3(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Player Move Id 3",function (_data, _sender)
 		{
@@ -1643,7 +1641,7 @@ class Main
 	* EVENT PLAYER MOVE
 	* the client sends a player move event.
 	*/
-	private function playerMoveId4(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function playerMoveId4(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Player Move Id 4",function (_data, _sender)
 		{
@@ -1666,7 +1664,7 @@ class Main
 	* complete these daily quests for rewards.
 	* _dailyQuestsState
 	*/
-	private function dailyQuests(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function dailyQuests(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Daily Quests",function (_data, _sender)
 		{
@@ -1768,7 +1766,7 @@ class Main
 	* At the client the daily quest reward was given to player. this event saves the _reward var so that a second reward of the same type will not be given to player.
 	* _dailyQuestsState
 	*/
-	private function dailyQuestsClaim(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function dailyQuestsClaim(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Daily Quests Claim",function (_data, _sender)
 		{
@@ -1783,7 +1781,7 @@ class Main
 	* A daily reward has been claimed. now save the reward(s) to the database.
 	* _dataStatistics
 	*/
-	private function dailyRewardSave(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function dailyRewardSave(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Daily Reward Save",function (_data, _sender)
 		{
@@ -1796,7 +1794,7 @@ class Main
 	/**************************************************************************
 	 * makes all clients move the same piece at the same time. this is not automatic. you need to set the values below at the game code. see SignatureGameClickMe.hx. at client.
 	 */
-	private function Movement(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function Movement(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Movement",function (_data, _sender)
 		{
@@ -1819,7 +1817,7 @@ class Main
 	* Win - Draw - Loss Stats for player(s).
 	* _dataPlayers
 	*/
-	private function getStatisticsWinLossDraw(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function getStatisticsWinLossDraw(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Get Statistics Win Loss Draw", function(_data, _sender)
 		{
@@ -1950,7 +1948,7 @@ class Main
 	* Example, experience points, credits, win - draw - loss, all stats.
 	* _dataStatistics
 	*/
-	private function getStatisticsAll(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function getStatisticsAll(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Get Statistics All", function(_data, _sender)
 		{
@@ -1994,7 +1992,7 @@ class Main
 	* EVENT PLAYER HAS ENTERED THE ROOM, SO CHANGE THE ROOMSTATE VALUE.
 	* _dataMisc
 	*/
-	private function greaterRoomStateValue(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function greaterRoomStateValue(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Greater RoomState Value", function(_data, _sender)
 		{
@@ -2114,7 +2112,7 @@ class Main
 	* EVENT PLAYER HAS LEFT THE ROOM, SO CHANGE THE ROOMSTATE VALUE.
 	* _dataMisc
 	*/
-	public function lesserRoomStateValue(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function lesserRoomStateValue(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Lesser RoomState Value", function(_data, _sender)
 		{
@@ -2250,7 +2248,7 @@ class Main
 
 	}
 
-	private function isRoomLocked(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function isRoomLocked(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Is Room Locked", function(_data, _sender)
 		{
@@ -2280,7 +2278,7 @@ class Main
 	* EVENT WAITING ROOM SETS HOST OF THE ROOM.
 	* _dataMisc
 	*/
-	public function isHost(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function isHost(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Is Host", function (_data, _sender)
 		{
@@ -2303,7 +2301,7 @@ class Main
 	* EVENT SET ROOM DATA. SAVE ROOM DATA TO DATABASE.\
 	* _dataMisc
 	*/
-	private function setRoomData(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function setRoomData(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Set Room Data", function(_data, _sender)
 		{
@@ -2350,7 +2348,7 @@ class Main
 	* USED AT LOBBY TO GET ROOM DATA.
 	* _dataMisc
 	*/
-	private function getRoomData(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function getRoomData(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Get Room Data", function(_data, _sender)
 		{
@@ -2529,7 +2527,7 @@ class Main
 	* USED AT LOBBY TO DELAY THE SECOND PLAYER FROM ENTERING INTO THE ROOM UNTIL THE ROOM LOCK IS REMOVED FROM THAT ROOM. THIS EVENT ONLY SENDS _data TO CLIENT. AT THAT CLIENT A VAR IS TRIGGERED TO UPDATE THE ROOMS TEXT AND THEN CLIENT SENDS TO ROOM LOCK 2 THEN THAT EVENT AT SERVER REMOVES THE LOCK.
 	* _dataMisc
 	*/
-	private function roomLock1(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function roomLock1(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Room Lock 1", function(_data, _sender)
 		{
@@ -2543,7 +2541,7 @@ class Main
 	* THIS EVENT ONLY REMOVES THE ROOM LOCK.
 	* _dataMisc
 	*/
-	private function roomLock2(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function roomLock2(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Room Lock 2", function(_data, _sender)
 		{
@@ -2558,7 +2556,7 @@ class Main
 	/******************************
 	* EVENT GET ROOM PLAYERS
 	*/
-	private function getRoomPlayers(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function getRoomPlayers(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Get Room Players", function(_data, _sender)
 		{	
@@ -2582,7 +2580,7 @@ class Main
 	* chat message of the player.
 	* _dataMisc
 	*/
-	private function chatSend(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function chatSend(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Chat Send", function(_data, _sender)
 		{
@@ -2605,7 +2603,7 @@ class Main
 	* EVENT DRAW OFFER
 	* offer draw so that no one wins and loses a game. its a tie.
 	*/
-	private function drawOffer(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function drawOffer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Draw Offer", function(_data, _sender)
 		{
@@ -2627,7 +2625,7 @@ class Main
 	* EVENT DRAW ANSWERED AS
 	* reply to the offer draw so that no one wins and loses a game. its a tie.
 	*/
-	private function drawAnsweredAs(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function drawAnsweredAs(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Draw Answered As", function(_data, _sender)
 		{
@@ -2650,7 +2648,7 @@ class Main
 	* EVENT RESTART OFFER.
 	* offer to restart and play another game.
 	*/
-	private function restartOffer(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function restartOffer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Restart Offer", function(_data, _sender)
 		{
@@ -2673,7 +2671,7 @@ class Main
 	* EVENT RESTART ANSWERED AS
 	* reply to the restart a chess game offer so that another game can be played.
 	*/
-	private function restartAnsweredAs(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function restartAnsweredAs(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Restart Answered As", function(_data, _sender)
 		{
@@ -2704,7 +2702,7 @@ class Main
 	* EVENT 
 	* currently this event is for the signature game. a player sends a trade unit to another player and this event is for that other player receiving the trade.
 	*/
-	private function tradeProposalOffer(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function tradeProposalOffer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Trade Proposal Offer", function(_data, _sender)
 		{
@@ -2727,7 +2725,7 @@ class Main
 	* EVENT 
 	* currently this event is for the signature game. replied to the trade request.
 	*/
-	private function tradeProposalAnsweredAs(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function tradeProposalAnsweredAs(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Trade Proposal Answered As", function(_data, _sender)
 		{
@@ -2750,7 +2748,7 @@ class Main
 	* EVENT ONLINE PLAYER OFFER INVITE.
 	* offer an invite to a player at the lobby.
 	*/
-	public function OnlinePlayerOfferInvite(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function OnlinePlayerOfferInvite(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Online Player Offer Invite", function(_data, _sender)
 		{
@@ -2763,7 +2761,7 @@ class Main
 	/******************************
 	* EVENT GAME MESSAGE. NOT A MESSAGE BOX.
 	*/
-	private function gameMessageNotSender(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function gameMessageNotSender(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Game Message Not Sender", function(_data, _sender)
 		{
@@ -2785,7 +2783,7 @@ class Main
 	/******************************
 	* A MESSAGE BOX MESSSGE SENT To ALL SPECTATORS WATCHING NOT SPECTATORs PLAYING.
 	*/
-	private function gameMessageBoxForSpectatorWatching(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function gameMessageBoxForSpectatorWatching(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Game Message Box For Spectator Watching", function(_data, _sender)
 		{
@@ -2808,7 +2806,7 @@ class Main
 	* EVENT MESSAGE KICK
 	* kick: player cannot play for a while because admin kicked player.
 	*/
-	private function messageKick(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function messageKick(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Message Kick", function(_data, _sender)
 		{
@@ -2896,7 +2894,7 @@ class Main
 	}
 
 	
-	private function removeKickedFromUser(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function removeKickedFromUser(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Remove Kicked From User", function(_data, _sender)
 		{
@@ -2911,7 +2909,7 @@ class Main
 	* EVENT MESSAGE BAN
 	* ban: admin stopped player from playing forever.
 	*/
-	private function messageBan(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function messageBan(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Message Ban", function(_data, _sender)
 		{
@@ -2955,7 +2953,7 @@ class Main
 	* this event enters the game room.
 	* _dataMisc
 	*/
-	public function enterGameRoom(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function enterGameRoom(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Enter Game Room", function (_data, _sender)
 		{
@@ -2983,7 +2981,7 @@ class Main
 	* this player wins the game.
 	* _dataPlayers
 	*/
-	public function gameWin(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function gameWin(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Game Win", function (_data, _sender)
 		{
@@ -2999,7 +2997,7 @@ class Main
 	* this player loses the game.
 	* _dataPlayers
 	*/
-	public function gameLose(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function gameLose(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		// at server, do not use "_sender.send" because more than one player can lose game.
 		_server.events.on("Game Lose", function (_data, _sender)
@@ -3023,7 +3021,7 @@ class Main
 	* this player wins the game.
 	* _dataPlayers
 	*/
-	public function gameWinThenLoseForOther(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function gameWinThenLoseForOther(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Game Win Then Lose For Other", function (_data, _sender)
 		{
@@ -3046,7 +3044,7 @@ class Main
 	* this player loses the game.
 	* _dataPlayers
 	*/
-	public function gameLoseThenWinForOther(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function gameLoseThenWinForOther(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Game Lose Then Win For Other", function (_data, _sender)
 		{
@@ -3069,7 +3067,7 @@ class Main
 	* this game ends in a tie.
 	* _dataPlayers
 	*/
-	public function gameDraw(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function gameDraw(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		// at server, do not use "_sender.send" because more than one player can be in a draw.
 		_server.events.on("Game Draw", function (_data, _sender)
@@ -3093,7 +3091,7 @@ class Main
 	* save the win stats of the player that was sent here and then return that value to the cilent.
 	* _dataPlayers
 	*/
-	public function saveWinStats(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function saveWinStats(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Save Win Stats", function (_data, _sender)
 		{
@@ -3146,7 +3144,7 @@ class Main
 	* save the lose stats of the player that was sent here and then return that value to the cilent.
 	* _dataPlayers
 	*/
-	public function saveLoseStats(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function saveLoseStats(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Save Lose Stats", function (_data, _sender)
 		{
@@ -3203,7 +3201,7 @@ class Main
 	* only a 2 player game should use this event.
 	* _dataPlayers
 	*/
-	public function saveWinStatsForBoth(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function saveWinStatsForBoth(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Save Win Stats For Both", function (_data, _sender)
 		{
@@ -3284,7 +3282,7 @@ class Main
 	* only a 2 player game should use this event.
 	* playersData.
 	*/
-	public function saveLoseStatsForBoth(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function saveLoseStatsForBoth(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Save Lose Stats For Both", function (_data, _sender)
 		{
@@ -3415,7 +3413,7 @@ class Main
 	* save the draw stats of the player that was sent here and then return that value to the cilent.
 	* _dataPlayers
 	*/
-	public function saveDrawStats(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function saveDrawStats(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Save Draw Stats", function (_data, _sender)
 		{
@@ -3461,7 +3459,7 @@ class Main
 	* gets the selected tournament data.
 	* _dataTournaments
 	*/
-	public function tournamentChessStandard8Get(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function tournamentChessStandard8Get(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Tournament Chess Standard 8 Get", function (_data, _sender)
 		{
@@ -3522,7 +3520,7 @@ class Main
 	* puts the selected tournament data to the mysql database.
 	* _dataTournaments
 	*/
-	public function tournamentChessStandard8Put(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function tournamentChessStandard8Put(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Tournament Chess Standard 8 Put", function (_data, _sender)
 		{
@@ -3549,7 +3547,7 @@ class Main
 	* Trigger an event that the player has left the game and then do stuff such as stop the ability to move piece. Note that the player may still be at the game room, waiting for another game to play.
 	* _dataPlayers
 	*/
-	public function playerLeftGameRoom(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function playerLeftGameRoom(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Player Left Game Room", function (_data, _sender)
 		{
@@ -3619,7 +3617,7 @@ class Main
 	/*************************************************************************
 	 * this event is called when playing a game and player ran out of time or quit game.
 	 */
-	public function playerLeftGame(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function playerLeftGame(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Player Left Game", function (_data, _sender)
 		{
@@ -3673,7 +3671,7 @@ class Main
 	* EVENT LOGGED IN USERS
 	* list of online players with stats. used to invite.
 	*/
-	public function loggedInUsers(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function loggedInUsers(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Logged In Users", function (_data, _sender)
 		{
@@ -3765,7 +3763,7 @@ class Main
 	* this is where player can kick, ban other players.
 	* dataPlayers
 	*/
-	public function actionByPlayer(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function actionByPlayer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Action By Player", function (_data, _sender)
 		{
@@ -3795,7 +3793,7 @@ class Main
 	* EVENT IS ACTION NEEDED FOR PLAYER.
 	* do action for player event to kick, ban other players.
 	*/
-	public function isActionNeededForPlayer(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function isActionNeededForPlayer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Is Action Needed For Player", function (_data, _sender)
 		{
@@ -3881,7 +3879,7 @@ class Main
 	* this var is used to display players who are waiting for a game at the game room and to get the _count of how many players are waiting at game room.
 	* _dataPlayers
 	*/
-	public function gamePlayersValues(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function gamePlayersValues(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Game Players Values", function (_data, _sender)
 		{
@@ -3969,7 +3967,7 @@ class Main
 	* EVENT SAVE A VAR TO MYSQL SO THAT SOMEONE CANNOT INVITE WHEN STILL IN GAME ROOM. ALSO USED TO PASS A VAR TO USER SPECTATOR WATCHING. THAT VAR IS USED TO START A GAME FOR THAT SPECTATOR IF THE _gameIsFinished VALUE IS FALSE.
 	* _dataPlayers
 	*/
-	public function gameIsFinished(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function gameIsFinished(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Game Is Finished", function(_data, _sender)
 		{
@@ -3993,7 +3991,7 @@ class Main
 	* EVENT IS GAME FINISHED. FALSE IF GAME IS STILL BEING PLAYED. DEFAULTS TO TRUE BECAUSE WHEN ENTERING THE GAME ROOM THE GAME FOR THOSE PLAYERS HAS NOT STARTED YET.
 	* _dataPlayers
 	*/
-	public function isGameFinished(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function isGameFinished(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Is Game Finished", function(_data, _sender)
 		{
@@ -4021,7 +4019,7 @@ class Main
 	* EVENT AT LOBBY, SO RETURN ALL VARS TO 0 FOR PLAYER, SO THAT LOBBY DATA CAN BE CALCULATED TO DISPLAY DATA AT LOBBY CORRECTLY.
 	* _dataMisc
 	*/
-	private function returnedToLobby(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function returnedToLobby(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Returned To Lobby", function(_data, _sender)
 		{
@@ -4042,7 +4040,7 @@ class Main
 	* only the game host should send to this event.
 	* _dataQuestions.
 	*/
-	private function spectatorWatching(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function spectatorWatching(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Spectator Watching", function(_data, _sender)
 		{
@@ -4066,7 +4064,7 @@ class Main
 	* send the current move number to the watching spectator so that the timer and white box underneath the P1, P2, P3 or P4 moves, can be updated.
 	* _dataPlayers.
 	*/
-	private function spectatorWatchingGetMoveNumber(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function spectatorWatchingGetMoveNumber(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Spectator Watching Get Move Number", function(_data, _sender)
 		{
@@ -4089,7 +4087,7 @@ class Main
 	* every player that moves a piece will use the host of the room to call this event so to update the move history at mysql. this is needed so that when a spectator watching enters the room, that person can get all the move history for that game.
 	* _dataMovement.
 	*/
-	private function moveHistoryNextEntry(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function moveHistoryNextEntry(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Move History Next Entry", function(_data, _sender)
 		{
@@ -4166,7 +4164,7 @@ class Main
 	* the spectator has just joined the game room because there is currently only one move in that users history, do this event to get all the moves in the move history for this game.
 	* _dataMovement.
 	*/
-	private function moveHistoryAllEntry(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function moveHistoryAllEntry(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Move History All Entry", function(_data, _sender)
 		{
@@ -4217,7 +4215,7 @@ class Main
 	* display a 50 player list of the players with the top experence points.
 	* _dataLeaderboardXP.
 	*/
-	private function leaderboards(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	private function leaderboards(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Leaderboards", function(_data, _sender)
 		{
@@ -4243,7 +4241,7 @@ class Main
 	* save new user account information. when user first enters online game and chess elo equals zero then the user is new. the user will then be redirected to a new account scene where new user configuration will be set, such as chess skill level. when the save button is pressed, this event is called.
 	* _dataStatistics
 	*/
-	public function saveNewAccountConfigurations(_data:Dynamic, _sender:mphx.connection.IConnection):Void
+	public function saveNewAccountConfigurations(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
 	{
 		_server.events.on("Save New Account Configurations", function (_data, _sender)
 		{
@@ -4691,43 +4689,6 @@ class Main
 				Reg._cpu_host_name2 = "";
 			}			
 		}
-	}
-	
-	// gets ip from a website file. if ip is not found then user cannot login. therefore, user must first login to the website before this works.
-	public static function getIP(_username:String):String
-	{
-		_username = "&user=" + _username;
-		_username = StringTools.replace(_username, " ", "%20");
-		
-		var _token = "token=fi37cv%PFq5*ce78";
-		var _str = Reg._websiteHomeUrl + "server/getIP.php?" + _token + _username;		
-		var _http = new haxe.Http(_str);		
-		var _data:String = "";
-				
-		_http.onData = function (data:String) 
-		{
-			if (data.substr(0, 1) == "<") 
-			{
-				// display error message.
-			}
-			
-			else 
-			{
-				// we found the file if we are here.
-				if (data == "")
-				{
-				}
-				
-				else _data = data;
-			}
-		}
-
-		_http.onError = function (_error)
-		{			
-		}
-		
-		_http.request();
-		return _data;
 	}
 	
 	// at client, a request to login was sent to server. before this function is called, the getIP is called,. the ip address, if empty or not, is sent to this function. here we use the ip address to find the username of the user logged into the website. if found, the user will be sent to the lobby.

@@ -1,9 +1,3 @@
-Version 1.15. Date:
-
-Feature changed.
-
-	The history feature did not display a gameboard piece that was captured when a back button was used.
-
 Version 1.14.0. Date: 2021-7-31
 
 Feature changed.
