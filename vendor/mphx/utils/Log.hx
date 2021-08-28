@@ -3,10 +3,10 @@ package vendor.mphx.utils;
 @:enum abstract DebugLevel(Int) from Int to Int
 {
     var None = 0;
-	var Warnings = value(0);  //Large messages, weird behaviour
-	var Errors = value(1);    //Socket drops, corrupt data
-	var Info = value(2);      //Serialization method, start/stop of server...
-	var Networking = value(3);//Every message sent and received.
+	var Warnings = 0;  //Large messages, weird behaviour
+	var Errors = 1;    //Socket drops, corrupt data
+	var Info = 2;      //Serialization method, start/stop of server...
+	var Networking = 3;//Every message sent and received.
 
     static inline function value(index:Int) return 1 << index;
 }

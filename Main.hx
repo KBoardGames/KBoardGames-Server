@@ -4691,7 +4691,7 @@ class Main
 		}
 	}
 	
-	// at client, a request to login was sent to server. before this function is called, the getIP is called,. the ip address, if empty or not, is sent to this function. here we use the ip address to find the username of the user logged into the website. if found, the user will be sent to the lobby.
+	// here we use the ip address to find the username of the user logged into the website. if found, the user will be sent to the lobby.
 	public static function getUsername(_ip:String):String
 	{
 		_ip = "&ip=" + _ip;
