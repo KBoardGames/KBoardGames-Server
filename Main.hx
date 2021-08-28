@@ -1259,7 +1259,7 @@ class Main
 				if (_data._popupMessage.length) return;
 				if (_data._host.length > 80) return;
 				
-				//if (_data._username.length == 0) _data._username = "npc ben"; 
+				//if (_data._username.length == 0) _data._username = "bot ben"; 
 				
 				// _sender is the current player connected to this server. _sender is passed through this event. the _senders _data is set for the client to get.
 				allDataGame.set(_sender, _data);
@@ -1402,14 +1402,14 @@ class Main
 	
 			if (_set_username != "" && _data._username == _set_username)
 				_accountState._username = _set_username.substr(0, 11);
-			// if client is not ready for release, at client title, buttons for npc login are displayed. when clicking those buttons, the _data._username will be set to that button name. the reason for this is because when using fast login without password check, the ip address of the user is checked against the ip in the mysql atabase, however, the npc's all share the same ip. so logging in the second time cannot be achived without those bottons at client. note that the buttons will not be display at release mode.
+			// if client is not ready for release, at client title, buttons for bot login are displayed. when clicking those buttons, the _data._username will be set to that button name. the reason for this is because when using fast login without password check, the ip address of the user is checked against the ip in the mysql atabase, however, the bot's all share the same ip. so logging in the second time cannot be achived without those bottons at client. note that the buttons will not be display at release mode.
 			else
 			{
-				if (_data._username == "npc ben"
-				||  _data._username == "npc tina"
-				||  _data._username == "npc amy"
-				||  _data._username == "npc piper"
-				||  _data._username == "npc zak")
+				if (_data._username == "bot ben"
+				||  _data._username == "bot tina"
+				||  _data._username == "bot amy"
+				||  _data._username == "bot piper"
+				||  _data._username == "bot zak")
 					_set_username = _data._username;
 			}
 			
