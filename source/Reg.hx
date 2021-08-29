@@ -1,6 +1,6 @@
 /*
     Copyright (c) 2021 KBoardGames.com
-    This program is part of KBoardGames-Server.
+    This program is part of KBoardGames server software.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published

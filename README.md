@@ -1,13 +1,13 @@
 # K Board Games Server
-[![Server Status](https://img.shields.io/pingpong/status/sp_7241145592d44ae2bd4c2a9c4558a0ef?label=kboardgames.com&style=for-the-badge)](https://www.kboardgame.com)
-![License (AGPL 3.0)](https://img.shields.io/github/license/kboardgames/kboardgames-server?style=for-the-badge)
-[![Discord](https://img.shields.io/discord/878790325261434923?color=%236b7ff5&label=Discord&style=for-the-badge)](https://discord.gg/HEWAMCXYq7)
+[![Server Status](https://img.shields.io/pingpong/status/sp_7241145592d44ae2bd4c2a9c4558a0ef?label=kboardgames.com&style=for-the-badge)](https://kboardgames.com)
+[![License (AGPL 3.0)](https://img.shields.io/github/license/kboardgames/kboardgames-server?style=for-the-badge)](https://github.com/KBoardGames/KBoardGames-Server/blob/main/LICENSE)
+[![Discord](https://img.shields.io/discord/878790325261434923?color=%236b7ff5&label=Discord&style=for-the-badge)](https://discord.gg/7gF8t3yNDU)
 
 The server for KBoardGames
 
 ## Dependencies
 For compilation you will need:
-- Haxe 4.0.0 or later
+- Haxe 4.0.0-rc.2 or later
 - MySQL
 
 ## Compilation
