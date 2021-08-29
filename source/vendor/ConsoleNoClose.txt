@@ -1,0 +1,71 @@
+
+ConsoleNoClose V0.5
+===================
+
+Freeware (c) 2001-2010 by Uwe Sieber
+
+http://www.uwe-sieber.de
+
+mail@uwe-sieber.de
+
+-----------------------------------------------------------------
+
+
+ConsoleNoClose disables the X button and removes the Close system
+menu item of all console windows when they become active.
+
+It runs invisible in the background.
+
+If it's started when another instance is running, it ends and
+leaves the previous instance untouched.
+
+To remove a previous instance from memory, run it with parameter /R
+or /RH (hidden, no messagebox).
+
+
+To do it for exactely one console window, start it with parameter /1.
+It will then disable the X button of the first console window that
+becomes active. Then it ends.
+
+
+Started with /ALL it deactivates all menus of console windows. They
+cannot be closed, maximized, minimized then. No access to settings
+anymore.
+
+
+With Fast User Switching it works within the same session only.
+
+
+Under Vista and Windows 7 it must run elevated ("As Administrator")
+to do it with evlevated console windows.
+
+
+-----------------------------------------------------------------
+
+Microsoft Visual Basic V6.0 Runtimes required:
+
+They are included with IE5, Win98SE and NT4 SP5, Win2000, Win XP, Vista, Windows 7.
+
+Otherwise you need to download and install them:
+
+ftp://ftp.microsoft.com/Softlib/MSLFILES/vbrun60.exe 
+
+-----------------------------------------------------------------
+
+
+
+
+Licence
+
+
+ConsoleNoClose is Freeware.
+
+Allowed:
+- usage in any environment, including commercial
+- include in software products, including commercial
+- include on CD/DVD of computer magazines
+
+Not allowed:
+- changing any of the files
+- offer for download by means of a 'Downloader' software
+

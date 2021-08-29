@@ -1,0 +1,3 @@
+--class-path source/args
+--neko Main-args.hx.neko.n
+--main Main 

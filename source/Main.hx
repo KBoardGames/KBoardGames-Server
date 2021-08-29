@@ -502,7 +502,7 @@ class Main
 		_mysqlDB.serverResetStatus(_serverId);		
 		
 		// this is needed so that when server disconnects, the server total online can then be minus 1 and the disconnect_# can be set back to 0.
-		var saveFile = sys.io.File.write("sub/serverID.txt");
+		var saveFile = sys.io.File.write("serverID.txt");
 		saveFile.writeString(Std.string(_serverId));
 		saveFile.close();
 		
