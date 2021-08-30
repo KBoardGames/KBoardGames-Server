@@ -29,5 +29,30 @@ haxe Build.hxml
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
 
+## LICENSE SUMMARY
+```
+    1. Anyone can copy, modify and distribute this software.
+    2. You have to include the license and copyright notice with each and 
+    every distribution.
+    3. You can use this software privately.
+    4. You can use this software for commercial purposes.
+    5. If you dare build your business solely from this code, you risk 
+    open-sourcing the whole code base.
+    6. If you modify it, you have to indicate changes made to the code.
+    7. Any modifications of this code base MUST be distributed with the same license.
+    8. This software is provided without warranty.
+    9. The software author or license can not be held liable for any damages 
+    inflicted by the software.
+```
 
+## GPL VS AGPL
+```
+    GPL: if you use any GPL code on your front-end, or any other code that is
+    being “distributed” to users, your entire codebase needs to be open sourced. 
+    You are free to use GPL on the server side without having to open source your code.
+
+    AGPL: AGPL takes the above and applies it to the backend. So if you use any code 
+    licensed under AGPL anywhere in your application, you need to release the source 
+    code for your entire application.
