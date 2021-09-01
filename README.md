@@ -3,19 +3,37 @@
 [![License (AGPL 3.0)](https://img.shields.io/github/license/kboardgames/kboardgames-server?style=for-the-badge)](https://github.com/KBoardGames/KBoardGames-Server/blob/main/LICENSE)
 [![Discord](https://img.shields.io/discord/878790325261434923?color=%236b7ff5&label=Discord&style=for-the-badge)](https://discord.gg/7gF8t3yNDU)
 
-The server for KBoardGames
+The server for KBoardGames. Use this software to host games.
 
 ## Dependencies
 For compilation you will need:
-- Haxe 4.0.0-rc.2 or later
-- MySQL
+
+* Haxe 4.0.0-rc.2
+* Haxeflixel (See haxelib commands below.)
+* MySQL
+
+Here are the libraries needed to build Haxeflixel games. Note that newer versions of these libraries will break the libraries found in the vendor folder.
+
+* haxelib install actuate 1.8.9
+* haxelib install flixel-addons 2.7.5
+* haxelib install flixel-demos 2.7.0
+* haxelib install flixel-templates 2.6.1
+* haxelib install flixel-tools 1.4.4
+* haxelib install flixel-ui 2.3.2
+* haxelib install flixel 4.6.1
+* haxelib install hxcpp 4.0.8
+* haxelib install lime-tools 1.5.7
+* haxelib install lime 7.3.0
+* haxelib install openfl 8.9.0
+* haxelib install msgpack-haxe 1.15.1
+* haxelib run lime setup
 
 ## Compilation
 ```
 haxe Build.hxml
 ```
 
-## License
+## License disclaimer
 ```
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -30,29 +48,3 @@ haxe Build.hxml
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
-
-## LICENSE SUMMARY
-```
-    1. Anyone can copy, modify and distribute this software.
-    2. You have to include the license and copyright notice with each and 
-    every distribution.
-    3. You can use this software privately.
-    4. You can use this software for commercial purposes.
-    5. If you dare build your business solely from this code, you risk 
-    open-sourcing the whole code base.
-    6. If you modify it, you have to indicate changes made to the code.
-    7. Any modifications of this code base MUST be distributed with the same license.
-    8. This software is provided without warranty.
-    9. The software author or license can not be held liable for any damages 
-    inflicted by the software.
-```
-
-## GPL VS AGPL
-```
-    GPL: if you use any GPL code on your front-end, or any other code that is
-    being “distributed” to users, your entire codebase needs to be open sourced. 
-    You are free to use GPL on the server side without having to open source your code.
-
-    AGPL: AGPL takes the above and applies it to the backend. So if you use any code 
-    licensed under AGPL anywhere in your application, you need to release the source 
-    code for your entire application.
