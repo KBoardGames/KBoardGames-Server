@@ -4,6 +4,14 @@
 
 The server for KBoardGames. Use this software to host games.
 
+<p>Play 8x8 board games online with other players using the client software. Main features are <a href="https://kboardgames.com/forum/events">scheduled events</a>, signature game, game statistics, daily quests and a <a href="https://kboardgames.com/forum/viewtopic.php?f=4&t=3">isometric house side game</a>. Currently, the board games that you can play online against other players are <a href="/forum/viewtopic.php?f=10&amp;t=15">chess</a>, <a href="/forum/viewtopic.php?f=10&amp;t=14">checkers</a>, <a href="/forum/viewtopic.php?f=10&amp;t=17">snakes and ladders</a>, <a href="/forum/viewtopic.php?f=10&amp;t=16">reversi</a> and a signature game called <a href="/forum/viewtopic.php?f=10&amp;t=18">wheel estate</a>, game.</p>
+
+## Summary
+* Room lock feature. No back doors.
+* Anti-cheating of player statistics.
+* Player activity <a href="https://kboardgames.com/forum/viewtopic.php?f=4&t=33">server logging.</a>
+* Built-in server anti-hammering feature.
+
 ## Dependencies
 For compilation you will need:
 
