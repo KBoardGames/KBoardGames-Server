@@ -65,8 +65,8 @@ class Main
 	public function new()
 	{	
 		// create a logs folder if logs folder does not exist.
-		if (FileSystem.exists(FileSystem.absolutePath("logs/")) == false)
-			FileSystem.createDirectory(FileSystem.absolutePath("logs/"));
+		if (FileSystem.exists(FileSystem.absolutePath("C:/Users/suppo/Desktop/serverDev/logs/")) == false)
+			FileSystem.createDirectory(FileSystem.absolutePath("C:/Users/suppo/Desktop/serverDev/logs/"));
 			
 		Reg.resetRegVarsOnce();
 		
