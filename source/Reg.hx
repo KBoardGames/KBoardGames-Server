@@ -744,7 +744,7 @@ class Reg
 	 * only change the version number here. this value must be changed every time this complete program with dll's are copied to the localhost/files/windows folder.
 	 * no need to copy this var then paste to the bottom of this class because this value does not change while client is running.
 	 */
-	public static var _version:String = "1.15.0";
+	public static var _version:String = "1.16.1";
 	
 	/******************************
 	 * these are the computer player names for room a and b. those rooms are reserved for playing a game against the computer. these names are displayed at the hub.
