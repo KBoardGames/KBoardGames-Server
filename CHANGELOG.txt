@@ -1,8 +1,12 @@
-Version 1.16.0. Date: 2021-8-28
+Version 1.16.1. Upcoming.
 
 New Features.
 
 	Renamed word npc to bot.
+	
+Bugs fixed.
+
+	server crash on disconnect when user location was at creating room, waiting room or at game room.
 	
 Version 1.15.0. Date: 2021-8-27
 
