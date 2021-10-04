@@ -1,8 +1,12 @@
-Version 1.16.1. Upcoming.
+Version 1.16.2. 2021-10-3.
+
+	Fixed a bug that would stop client from logging in.
+	
+Version 1.16.1. 2021-09-26.
 
 New Features.
 
-	Renamed word npc to bot.
+	Renamed word NPC to BOT.
 	
 Bugs fixed.
 
@@ -55,4 +59,3 @@ Bugs fixed.
 	The amount of wins completed in a three in a row quest could go beyond three wins.
 	
 	Daily quests were deleted when the day from the database did not match the day logged in. Players could log in exactly 7 days later to continue the daily quests.
-	

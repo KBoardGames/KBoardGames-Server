@@ -244,7 +244,7 @@ class Reg
 	 * only change the version number here. this value must be changed everytime this complete program with dlls are copied to the localhost/files/windows folder.
 	 * no need to copy this var then paste to the bottom of this class because this value does not change while client is running.
 	 */
-	public static var _version:String = "1.16.1";
+	public static var _version:String = "1.16.2";
 
 	/********************************************************************************
 	 * when doing a request to see if a file exists at the website, this is the result of tht search.

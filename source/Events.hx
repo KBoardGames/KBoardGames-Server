@@ -756,8 +756,8 @@ class Events
 			_accountState = allDataAccount.get(_sender);
 			
 			var _set_username = Functions.getUsername(_accountState._ip);
-			
-			// is user at website client?
+	
+			// is user at website client. html5?
 			if (_data._guest_account == true)
 			{
 				var _rset = _mysqlDB.select_last_logged_in_guest();
@@ -775,7 +775,18 @@ class Events
 				}
 				
 			}
-	
+			
+			if (_accountState._ip == "127.0.0.1" 
+			&&	_accountState._username != "bot ben"
+			&&	_accountState._username != "bot tina"
+			&&	_accountState._username != "bot piper"
+			&&	_accountState._username != "bot lisa"
+			&&	_accountState._username != "bot zak") 
+			{
+				_data._username = "admin";
+				_set_username = "admin";
+			}
+			
 			if (_set_username != "" && _data._username == _set_username)
 				_accountState._username = _set_username.substr(0, 11);
 			// if client is not ready for release, at client title, buttons for bot login are displayed. when clicking those buttons, the _data._username will be set to that button name. the reason for this is because when using fast login without password check, the ip address of the user is checked against the ip in the mysql atabase, however, the bot's all share the same ip. so logging in the second time cannot be achived without those bottons at client. note that the buttons will not be display at release mode.
@@ -2877,7 +2888,7 @@ class Events
 			
 			var rset2 = _mysqlDB.select_tournament_data();
 			
-			if (rset2._player_maximum[0] != null)
+			//if (rset2._player_maximum[0] != null)
 				_data._player_maximum = rset2._player_maximum[0];
 						
 			// get current count of players in tournament chess standard 8.
@@ -3885,4 +3896,4 @@ class Events
 	}
 	
 	
-}
+}//

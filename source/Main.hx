@@ -22,9 +22,13 @@ import Reg;
 import vendor.mphx.connection.IConnection;
 import vendor.mphx.server.impl.Server;
 import sys.FileSystem;
+
+import sys.net.Socket;
+import vendor.mphx.server.impl.Server; // aliased to avoid conflict with sys.net.Socket
 import sys.net.Host;
-//import sys.ssl.Socket;
-//import sys.net.Host;
+import sys.ssl.Socket;
+import sys.ssl.Certificate;
+import sys.ssl.Key;
 
 /**
  *
@@ -87,6 +91,7 @@ class Main
 		
 		var _ver = Reg._messageFileExists;
 		
+
 		/**********************************************************************
 		 * An Internet Protocol address (IP address) is a numerical label assigned to each device connected to a computer network that uses the Internet Protocol for communication.
 		 */
@@ -97,12 +102,11 @@ class Main
 		var _port:Int = 0;
 		if (Std.parseInt(Sys.args()[1]) != null) _port = Std.parseInt(Sys.args()[1]);
 		
-		// create the server.
-		//_server = new FlashServer(_ip, null); // use this if you use a flash connection (using an policy files servers for flash socket). change null to a port number.
-		_server = new vendor.mphx.server.impl.Server(_ip, _port); // need port forward and firewall opened for this port.
+		//-----------------------------
+	
+		_server =  new Server(_ip, _port);
 		
-		
-		if (Sys.args()[2] != null) Reg._dbHost = Sys.args()[2];
+     	if (Sys.args()[2] != null) Reg._dbHost = Sys.args()[2];
 		if (Std.parseInt(Sys.args()[3]) != null) Reg._dbPort = Std.parseInt(Sys.args()[3]);
 		if (Sys.args()[4] != null) Reg._dbUser = Sys.args()[4];
 		if (Sys.args()[5] != null) Reg._dbPass = Sys.args()[5];
@@ -114,14 +118,13 @@ class Main
 		if (Sys.args()[7] != null) Reg._username = Sys.args()[7];
 		if (Sys.args()[8] != null) Reg._domain = Sys.args()[8];
 		if (Sys.args()[9] != null) Reg._domain_path = Sys.args()[9];
-			
+		
 		Sys.println("Version " + _ver);
 		Sys.println ("Your domain is " + Reg._domain);
 		Sys.println ("");
 		
 		//############################# server events.
 		_events = new Events(_data, _server);
-		
 		_mysqlDB = new MysqlDB(); // no add(_mysqlDB) needed.
 		
 		var _countServersConnected:Int = 0;
@@ -226,8 +229,7 @@ class Main
 				
 		var _row = _mysqlDB.isPaidMemberFromUsers(Reg._username);
 		var _paid = Std.string(_row._isPaidMember[0]);
-		var _set_ip:String = Functions.getIP(Reg._username);		
-		
+		var _set_ip:String = Functions.getIP(Reg._username);			
 		if (_set_ip != "" && _paid == "true") 
 		{
 			Sys.println("Welcome " + Reg._username);
@@ -265,17 +267,15 @@ class Main
 			saveFile.writeString("Delete this file so that the server can go online.");
 			saveFile.close();
 
-		}
-		
-		
+		}		
 		
 		_mysqlDB.clearLoggedInTables(); // delete all logged in users because server is starting. we do this at starting not stopping because server may have crashed.
-				
-		_server.listen();
-
+		
 		Sys.println ("Server started.");
 		Sys.println ("Hold CTLR key then press C key to exit.");
 		Sys.println ("");
+
+		_server.listen();
 		
 		// TODO. anything outside of the event loops can be done here. for example, if a room has not been pinged for awhile then remove all users from that room.
 		while (true)
@@ -723,5 +723,8 @@ class Main
 		Sys.command("start", [ "boardGamesUpdaterServer.bat"]); // lnk is a file shortcut extension.
 		Sys.exit(0);
 	}
-		
+	
+
+
+	
 }// ignore this. its a bug in the ide that adds this junk sometimes to the end of a class. 
