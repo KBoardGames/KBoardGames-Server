@@ -129,7 +129,8 @@ class Functions
 	{
 		_ip = "&ip=" + _ip;
 		
-		var _token = "token=fi37cv%PFq5*ce78";
+		// DO NOT USE SPECIAL CHARACTERS IN THIS TOKEN IT MAY BREAK LOGINS.
+		var _token = "token=fi37cvPFq5ce78";
 		var _str = Reg._websiteHomeUrl + "server/getUsername.php?" + _token + _ip;		
 		var _http = new haxe.Http(_str);		
 		var _data:String = "";

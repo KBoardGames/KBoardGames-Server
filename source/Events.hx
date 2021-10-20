@@ -633,7 +633,7 @@ class Events
 				if (_data.id.length > 80) return;
 				if (_data._username.length > 80) return;
 				if (_data._popupMessage.length) return;
-				if (_data._host.length > 80) return;
+				if (_data._host.length > 200) return;
 				
 				//if (_data._username.length == 0) _data._username = "bot ben"; 
 				
@@ -776,8 +776,7 @@ class Events
 				
 			}
 			
-			if (_accountState._ip == "127.0.0.1" 
-			&&	_accountState._username != "bot ben"
+			if (_accountState._username != "bot ben"
 			&&	_accountState._username != "bot tina"
 			&&	_accountState._username != "bot piper"
 			&&	_accountState._username != "bot lisa"
@@ -800,7 +799,7 @@ class Events
 					_set_username = _data._username;
 			}
 			
-			if (_set_username != "" && _data._username == _set_username) // enter loop if username is logged in.
+			if (_set_username != "" && _data._username == _set_username && _set_username == _accountState._username) // enter loop if username is logged in.
 			{
 				_mysqlDB.deleteRoomData(_accountState._username);
 				_mysqlDB.deleteUserKickedAndBanned(_accountState._username);
