@@ -1,3 +1,15 @@
+Version 1.18.0. 2021-11-03.
+	
+	World flag data added.
+	
+	Avatars variable now does not grab data from website. A player's avatar from the client's configuration scene is now saved to database when logging in to server.
+
+Version 1.17.0. 2021-10-19.
+
+Feature changed.
+
+	minor changes to the "is logging in" event.
+
 Version 1.16.2. 2021-10-3.
 
 	Fixed a bug that would stop client from logging in.

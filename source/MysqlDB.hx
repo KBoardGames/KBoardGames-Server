@@ -162,7 +162,7 @@ typedef MysqlData = {
 	
 	_houseCoins: Array<Int>, 			// at the house event, after a game is played, some coins will be given. Use those coins to buy house furniture. Access your house from the house button at lobby.
 	
-	
+	_worldFlag: Array<Int>, 
 	_checkersWins:Array<Int>,
 	_checkersLosses:Array<Int>,
 	_checkersDraws:Array<Int>,
@@ -449,7 +449,7 @@ class MysqlDB
 			_isLocked: [],
 			_experiencePoints: [],
 			_houseCoins: [],
-			
+			_worldFlag: [],
 			_checkersWins: [],
 			_checkersLosses: [],
 			_checkersDraws: [],
@@ -2471,14 +2471,14 @@ class MysqlDB
 		tryMysqlConnectDatabase();
 				
 		try {
-			var rset = cnx.request("SELECT * FROM statistics ORDER BY experience_points DESC LIMIT 50");
+			var rset = cnx.request("SELECT * FROM statistics WHERE world_flag != 0 ORDER BY experience_points DESC LIMIT 50");
 			
 			for ( row in rset )
 			{			
 				_mysqlData._user.push(row.user);
 				_mysqlData._experiencePoints.push(row.experience_points);
 				_mysqlData._houseCoins.push(row.house_coins);
-				
+				_mysqlData._worldFlag.push(row.world_flag);
 			}
 
 		}
@@ -2664,7 +2664,23 @@ class MysqlDB
 	
 	}
 	
+	public function update_avatar_at_login(_user:String, _avatar:String):Void
+	{
+		tryMysqlConnectDatabase();		
+		_user = _user.toLowerCase();
 		
+		try {
+			var rset = cnx.request("UPDATE xyz_users SET user_avatar = " + cnx.quote(_avatar) + " WHERE username = " + cnx.quote(_user));				
+		}
+		catch (e:Dynamic)
+		{
+			trace("errer at update_avatar_at_login function.");
+		}
+		
+		cnx.close();
+	
+	}
+	
 	public function updateUsersKickedData(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
@@ -3439,6 +3455,7 @@ class MysqlDB
 		_mysqlData._isLocked.splice(0, _mysqlData._isLocked.length);
 		_mysqlData._experiencePoints.splice(0, _mysqlData._experiencePoints.length);
 		_mysqlData._houseCoins.splice(0, _mysqlData._houseCoins.length);
+		_mysqlData._worldFlag.splice(0, _mysqlData._worldFlag.length);
 		
 		_mysqlData._checkersWins.splice(0, _mysqlData._checkersWins.length);
 		_mysqlData._checkersLosses.splice(0, _mysqlData._checkersLosses.length);

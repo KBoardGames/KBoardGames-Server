@@ -419,6 +419,11 @@ typedef DataAccount =
 	 * if true then player is using the html5 client.
 	 */
 	_guest_account: Bool,
+	
+	/******************************
+	 * This is the profile avatar image number used to display the image.
+	 */
+	_avatarNumber:String,
 }
 
 // what sets this typedef apart is the room data. here is room, roomState, _roomPlayerLimit, etc.
@@ -703,12 +708,15 @@ typedef DataHouse =
 	_wall_up_in_front_is_hidden: String,
 }
 
+// string is needed for all fields because at client this data will be .split(",")
 typedef Leaderboards = 
 {
 	id: String,
 	_username: String,					// the username of the player.
 	_usernames: String,					// this holds all players in a top leaderboard list. the usernames in the list is separated with a comma.
 	_experiencePoints: String,			// total XP for all players. each XP is separated by a comma.
+	_houseCoins: String,
+	_worldFlag: String,
 }
 
 class Reg

@@ -825,7 +825,10 @@ class Events
 
 				_accountState._alreadyOnlineHost = false;
 				_accountState._popupMessage = "Login successful."; // if you change the value of this string then you need to change it also at client.
+				
+				_mysqlDB.update_avatar_at_login(_data._username, _data._avatarNumber);
 
+				// TODO add a _data_some_new_var here which cab be used to bypass this code so that the user's avatar at website is used. also, see client PlayState class, the code just above the "is logging in" event.
 				Functions.userLogs("Is Logging In", _data.id, _data._username); // logs.
 				_mysqlDB.insertUserToUsersTable(_data._username, _data._ip);
 				_mysqlDB.insertUserToDailyQuestsTable(_data._username);
@@ -3609,12 +3612,20 @@ class Events
 			
 			var _row = _mysqlDB.getLeaderboards();
 			
+			// clear any old data because data is about to be populated.
+			_data._usernames = "";
+			_data._experiencePoints = "";
+			_data._houseCoins = "";
+			_data._worldFlag = "";
+					
 			for (i in 0...50)
 			{
 				if (_row._user[i] != null)
 				{
 					_data._usernames += Std.string(_row._user[i]) + ",";
 					_data._experiencePoints += Std.string(_row._experiencePoints[i]) + ",";
+					_data._houseCoins += Std.string(_row._houseCoins[i]) + ",";
+					_data._worldFlag += Std.string(_row._worldFlag[i]) + ",";
 				}
 			}
 			
