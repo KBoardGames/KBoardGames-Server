@@ -1,7 +1,19 @@
-Version 1.18.0. 2021-11-03.
+Version 1.18.2. 2021-11-18.
+
+Bugs fixed.
 	
+	Username was always set to the "admin" when a none bot username was selected at client.
+	
+	Lobby room button titled "Creating" instead of "Join" was seen when the second from last player returned to lobby from waiting room.
+
+Version 1.18.1. 2021-11-03.
+	
+Feature changed.
+
 	World flag data added.
-	
+
+New Features.
+
 	Avatars variable now does not grab data from website. A player's avatar from the client's configuration scene is now saved to database when logging in to server.
 
 Version 1.17.0. 2021-10-19.

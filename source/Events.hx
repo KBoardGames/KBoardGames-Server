@@ -781,11 +781,8 @@ class Events
 			&&	_accountState._username != "bot piper"
 			&&	_accountState._username != "bot lisa"
 			&&	_accountState._username != "bot zak") 
-			{
-				_data._username = "admin";
 				_set_username = "admin";
-			}
-			
+						
 			if (_set_username != "" && _data._username == _set_username)
 				_accountState._username = _set_username.substr(0, 11);
 			// if client is not ready for release, at client title, buttons for bot login are displayed. when clicking those buttons, the _data._username will be set to that button name. the reason for this is because when using fast login without password check, the ip address of the user is checked against the ip in the mysql atabase, however, the bot's all share the same ip. so logging in the second time cannot be achived without those bottons at client. note that the buttons will not be display at release mode.
@@ -1506,7 +1503,7 @@ class Events
 		_server.events.on("Lesser RoomState Value", function(_data, _sender)
 		{
 			Functions.userLogs("Lesser RoomState Value", _data.id, _data._username, _data); // logs.
-		
+			
 			var _room = _data._room;
 			
 			var _count = _mysqlDB.usersPlayingGameCount(_room);
@@ -1537,14 +1534,16 @@ class Events
 				// this removes host from room by deleting any user that exists at room at this database table.
 				if (_count <= 2)
 				{
-					_roomHostUsername[_data._room] = _data._roomHostUsername[_data._room] = "";	
-					_gid[_data._room] = _data._gid[_data._room] = "";	
-										
 					// delete host only if game has endded and no one else has created or is creating a room.
 					if (_roomState[_data._room] < 1
 					||  _roomState[_data._room] == 8)
-					_mysqlDB.deleteIsHostRoom(_data._room);
-					
+					{
+						_roomHostUsername[_data._room] = _data._roomHostUsername[_data._room] = "";	
+					_gid[_data._room] = _data._gid[_data._room] = "";
+						
+						_mysqlDB.deleteIsHostRoom(_data._room);
+					}
+										
 					// if player is hosting a room then remove player because the remove deleteIsHostRoom might fail.
 					_mysqlDB.deleteIsHost(_data._username);
 					
@@ -1586,12 +1585,12 @@ class Events
 					if (_data._userLocation == 2)				
 					{
 						//if value after minus 1 is greater than 1 then there were more than 1 user at the room, roomState could be 3,4,5 or 6. in this case, minus 1 from roomState.
-						_data._roomState[_data._room] -= 1; 
+						//_data._roomState[_data._room] -= 1; 
 						_roomPlayerCurrentTotal[_data._room] -= 1;
 						
 						// else if this is true then user has a roomState value of 3, user is the only player in that room. that user roomState will be set to 0 because user is leaving. 
 						if (_data._roomState[_data._room] == 1) 
-						{						
+						{					
 							_data._roomGameIds[_data._room] = -1;
 							_data._roomState[_data._room] = 0;	
 						}
@@ -1600,21 +1599,18 @@ class Events
 						_mysqlDB.saveRoomAtRoomData(_data._roomState[_data._room], _data._room);
 						
 						_data._userLocation = 0;
-						_data._room = 0;	
-						
+												
 						// saves room state to MySQL which is used for online players list.
 						_mysqlDB.saveRoomData(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
+						_data._room = 0;
 					}
 					
 				}
 				
 			}
 			
-			// at client this value will be set to 0. this is needed so that other players at lobby can set the room button back to empty.
-			_data._room = _room;		
-			
 			// now set these values for user because user is returning to lobby.
-			_data._roomState[_data._room] = 0;
+			_data._roomState[_room] = 0;
 			_data._userLocation = 0;
 			_data._room = 0;
 			
@@ -1624,14 +1620,8 @@ class Events
 			_data._roomLockMessage = "";	
 			_mysqlDB.deleteRoomUnlock(_data._username, _room);
 			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					_server.broadcast("Lesser RoomState Value", _data);
-				}
-			}
+			_sender.putInRoom(room[0]);
+			_server.broadcast("Lesser RoomState Value", _data);
 			
 		});
 
@@ -3301,42 +3291,6 @@ class Events
 					else _data._gamePlayersValues[i] = 0;
 				}
 				
-				/*for (i in 0...4)
-				{
-					if (_data._gamePlayersValues.length - 1 < i) _data._gamePlayersValues[i] = 0;
-					
-					if (_data._username == _data._usernamesStatic[i] && _data._usernamesStatic[i] != "")
-					{
-						// entering game room so do not save these values.
-						if (_data._triggerEvent != "foo") 
-							_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
-					}
-					
-					else if (_data._gamePlayersValues[i] == 0)
-					{
-						// load values if player is not entering game room and the array is not null.
-						var rowList = 
-						_mysqlDB.getGamePlayer(_data._usernamesStatic[i]);
-						if (rowList	!= null &&  _data._triggerEvent != "foo")					
-							_data._gamePlayersValues[i] = rowList._gamePlayersValues[0];
-					}								
-					
-				}
-				
-				
-				// save spectator_playing as false if this condition is true because everyone is playing the game at that game room.
-				for (i in 0...4)
-				{
-					if (_data._username == _data._usernamesDynamic[i])
-					{
-						if (_data._gamePlayersValues[i] == 0)
-							_mysqlDB.saveSpectator(_data._username, 0);				
-					}
-					
-					else if (_data._gamePlayersValues[i] == 1)
-						_mysqlDB.saveSpectator(_data._usernamesStatic[i], 1);
-							
-				}*/
 			}
 			
 			player_game_state_value_update(_data);
