@@ -156,12 +156,12 @@ CREATE TABLE `kicked` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `logged_in_hosts`
+-- Table structure for table `logged_in_hostname`
 --
 
-CREATE TABLE `logged_in_hosts` (
+CREATE TABLE `logged_in_hostname` (
   `id` bigint(20) NOT NULL,
-  `host` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL
+  `hostname` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------

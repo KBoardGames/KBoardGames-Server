@@ -21,8 +21,10 @@ import sys.db.Connection;
 import sys.db.Mysql;
 
 typedef MysqlData = {
-	_user: Array<String>, 				// the username of the player. must be converted to lower case.
+	_user: Array<String>, 				// the username of the player.
 	_user2: Array<String>, 				// can be used to get player 2.
+	_password_hash: Array<String>,		// md5 encrypted password.
+	_hostname: Array<String>,			// a hostname is a label that is assigned to a device connected to a computer network 
 	_player_maximum: Array<Int>, 		// total players in tournament.
 	_player_current: Array<Int>,		// current players in tournament.
 	_ip: Array<String>,					// used to return the ip of user.
@@ -319,6 +321,8 @@ class MysqlDB
 			// need to initialize these array before using them. 
 			_user: [], 
 			_user2: [],
+			_password_hash: [],
+			_hostname: [],
 			_player_maximum: [],
 			_player_current: [],
 			_ip: [],
@@ -554,28 +558,28 @@ class MysqlDB
 		}	
 	}
 	
-	// delete all logged in users because server is starting. we do this at starting not stopping because server may have crashed.
-	public function clearLoggedInTables():Void
+	/******************************
+	 * delete all logged in users because server is starting. we do this at starting not stopping because server may have crashed.
+	 */
+	public function delete_logged_in_tables():Void
 	{
 		tryMysqlConnectDatabase();
 		
 		var rset = cnx.request("DELETE FROM logged_in_users"); 
-		var rset = cnx.request("DELETE FROM logged_in_hosts"); 
+		var rset = cnx.request("DELETE FROM logged_in_hostname"); 
 		var rset = cnx.request("DELETE FROM room_data"); 
 		var rset = cnx.request("DELETE FROM user_actions"); 
 		var rset = cnx.request("DELETE FROM who_is_host"); 
 		
-		// delete all guest account at server startup.
-		var rset = cnx.request("DELETE FROM users WHERE user like 'guest%'"); 
-		
 		cnx.close();
 	}
 	
-	
-	public function deleteUserAction(_user:String, _actionWho:String):Void
+	/******************************
+	 * delete user action table for user.
+	 */
+	public function delete_user_action(_user:String, _actionWho:String):Void
 	{			
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("DELETE FROM user_actions WHERE user = " + cnx.quote(_user) + "AND action_who = " + cnx.quote(_actionWho));
@@ -589,32 +593,18 @@ class MysqlDB
 		cnx.close();
 	}
 	
-	// when client is disconnecting, if user is a guest then remove the guest name from database.
-	public function deleteUserGuest(_user:String):Void
-	{			
-		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
-		
-		try {
-			var rset = cnx.request("DELETE FROM users WHERE user = " + cnx.quote(_user));
-			
-		}
-		catch (e:Dynamic)
-		{
-			trace("error at deleteUserGuest mysql table.");
-		}
-		
-		cnx.close();
-	}
 	
-	// at host to logged_in_hosts table.
-	public function addHostToLoggedInTable(_host:String):Bool
+	/******************************
+	 * at hostname to logged_in_hostname table. stores the hostname not the ip address.
+	 */
+	public function insert_hostname_to_logged_in_table(_hostname:String):Bool
 	{
 		tryMysqlConnectDatabase();
 		
-		var rset = cnx.request("SELECT COUNT(*) FROM logged_in_hosts WHERE host = " + cnx.quote(_host));
-				
-		var rset2 = cnx.request("INSERT IGNORE INTO logged_in_hosts (host) VALUES (" + cnx.quote(_host) +")");
+		var rset = cnx.request("SELECT COUNT(*) FROM logged_in_hostname WHERE hostname = " + cnx.quote(_hostname));
+		
+		var rset2 = cnx.request("INSERT IGNORE INTO logged_in_hostname (hostname) VALUES (" + cnx.quote(_hostname) + ")"); 
+		
 		
 		cnx.close();
 	
@@ -622,32 +612,49 @@ class MysqlDB
 		else return true;
 	}
 	
-	// user logged off. delete this table row.
-	public function deleteLoggedInUser(_user:String):Void
+	public function update_hostname_at_users_table(_user:String, _hostname:String):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
+		
+		try
+		{
+			var rset3 = cnx.request("UPDATE users set hostname = " + cnx.quote(_hostname) + " WHERE user = " + cnx.quote(_user) );
+		}
+		catch (e:Dynamic)
+		{
+			trace("error at mysql add_host_to_users_table function.");
+		}
+		
+		cnx.close(); 
+	}
+	
+	/******************************
+	 * user logged off. delete this table row.
+	 */
+	public function delete_user_at_logged_in_user_table(_user:String):Void
+	{
+		tryMysqlConnectDatabase();
 		
 		var rset = cnx.request("DELETE FROM logged_in_users WHERE user = " + cnx.quote(_user));
 		
 		cnx.close();
 	}
 	
-	public function deleteUserKickedAndBanned(_user:String):Void
+	public function delete_user_no_kicked_or_banned(_user:String):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("DELETE FROM user_actions WHERE user = " + cnx.quote(_user) + " AND action_number < 3"); //  action_number 1 and 2 is kicked / banned. 0 = nothing.
 		
 		cnx.close();
 	}
 	
-	// user logged off. delete this table row.
-	public function deleteRoomData(_user:String):Void
+	/******************************
+	 * user logged off. delete this table row.
+	 */
+	public function delete_tables_user_logged_off(_user:String):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("DELETE FROM room_data WHERE user = " + cnx.quote(_user));
 		var rset = cnx.request("DELETE FROM who_is_host WHERE user = " + cnx.quote(_user));
@@ -656,7 +663,8 @@ class MysqlDB
 		cnx.close();
 	}
 	
-	public function deleteRoomDataAll(_room:Int):Void
+	// TODO this table is not used. verify if this table is needed.
+	public function delete_room_from_room_data_table(_room:Int):Void
 	{
 		tryMysqlConnectDatabase();
 		
@@ -665,23 +673,26 @@ class MysqlDB
 		cnx.close();
 	}
 	
-	// user logged off. delete this table row.
-	public function deleteLoggedInHost(_host:String):Void
+	/******************************
+	 * user logged off. delete this table row.
+	 */
+	public function delete_hostname_at_logged_in_hostname(_hostname:String):Void
 	{
 		tryMysqlConnectDatabase();
 		
-		var rset = cnx.request("DELETE FROM logged_in_hosts WHERE host = " + cnx.quote(_host));
+		var rset = cnx.request("DELETE FROM logged_in_hostname WHERE hostname = " + cnx.quote(_hostname));
 		
 		cnx.close();
 	}
 	
-	// when user logs in, temp data is written to mysql database. this table has data such as the ip, host, and roomState of the user.
-	public function insertLoggedInUser(_user:String, _ip:String, _host:String, _roomState:Int):Void
+	/******************************
+	 * when user logs in, temp data is written to mysql database. this table has data such as the ip, host, and roomState of the user.
+	 */
+	public function insert_user_at_logged_in_user_table(_user:String, _ip:String, _hostname:String, _roomState:Int):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 
-		var rset = cnx.request("INSERT IGNORE INTO logged_in_users (user, ip, host, room_state) VALUES (" + cnx.quote(_user) + ", " + cnx.quote(_ip) + ", " + cnx.quote(_host) + ", " + _roomState + ")");
+		var rset = cnx.request("INSERT IGNORE INTO logged_in_users (user, ip, host, room_state) VALUES (" + cnx.quote(_user) + ", " + cnx.quote(_ip) + ", " + cnx.quote(_hostname) + ", " + _roomState + ")");
 		
 		cnx.close();
 	}
@@ -690,7 +701,6 @@ class MysqlDB
 	public function updateLoggedInUser(_user:String, _roomState:Int):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("UPDATE logged_in_users SET 
 		timestamp = UNIX_TIMESTAMP(), 
@@ -705,7 +715,6 @@ class MysqlDB
 	public function updateMoveHistory(_gid:String, _user:String, _point_value:String, _unique_value:String, _pieceLocationOld1:String, _pieceLocationNew1:String, _pieceLocationOld2:String, _pieceLocationNew2:String, _pieceValueOld1:String, _pieceValueNew1:String, _pieceValueOld2:String, _pieceValueNew2:String, _pieceValueOld3:String):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		_pieceLocationOld1 += ",";
 		_pieceLocationNew1 += ",";
@@ -785,7 +794,6 @@ class MysqlDB
 	public function insertRoomData(_user:String, _userId:String):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("INSERT IGNORE INTO room_data (user, user_id) VALUES (" + cnx.quote(_user) + ", " + cnx.quote(_userId) + ")");
 		
@@ -793,15 +801,14 @@ class MysqlDB
 	}
 	
 	// create the user table row for the user that logged in.
-	public function insertUserToUsersTable(_user:String, _ip:String):Void
+	public function insertUserToUsersTable(_user:String, _password_hash:String, _ip:String, _hostname:String):Void
 	{	
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var _timestamp:Int = Std.int(Sys.time());
 		
 		try {
-			var rset = cnx.request("INSERT IGNORE INTO users (user, ip, timestamp) VALUES (" + cnx.quote(_user) + "," + cnx.quote(_ip) + "," + _timestamp + ")");
+			var rset = cnx.request("INSERT IGNORE INTO users (user, password_hash, ip, hostname, timestamp) VALUES (" + cnx.quote(_user) + "," + cnx.quote(_password_hash) + "," + cnx.quote(_ip) + "," + cnx.quote(_hostname) + "," + _timestamp + ")");
 					
 		}
 		catch (e:Dynamic)
@@ -824,7 +831,6 @@ class MysqlDB
 	public function insertUserToDailyQuestsTable(_user:String):Void
 	{	
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var _now = Date.now();
 		var _dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saterday"];
@@ -852,7 +858,6 @@ class MysqlDB
 	public function deleteThenRecreateDailyQuestsTable(_user:String):Void
 	{	
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var _now = Date.now();
 		var _dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saterday"];
@@ -877,7 +882,6 @@ class MysqlDB
 	public function insertUserToStatisticsTable(_user:String):Void
 	{	
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var _timestamp:Int = Std.int(Sys.time());
 		
@@ -897,7 +901,6 @@ class MysqlDB
 	public function insertUserToHouseTable(_user:String):Void
 	{	
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("INSERT IGNORE INTO house (user) VALUES (" + cnx.quote(_user) +")");
@@ -916,7 +919,6 @@ class MysqlDB
 	public function requestLoggedInUsers(_user:String):Bool
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("SELECT COUNT(*) FROM logged_in_users WHERE user = " + cnx.quote(_user));
 				
@@ -930,7 +932,6 @@ class MysqlDB
 	public function doesUserExistAtUsersTable(_user:String):Bool
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("SELECT COUNT(*) FROM users WHERE user = " + cnx.quote(_user));
 		
@@ -943,10 +944,9 @@ class MysqlDB
 	public function selectUserAvatar(_user:String):MysqlData
 	{			
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
-			var rset = cnx.request("SELECT * FROM xyz_users WHERE username = " + cnx.quote(_user));
+			var rset = cnx.request("SELECT * FROM statistics WHERE user = " + cnx.quote(_user));
 			
 			for ( row in rset )
 			{			
@@ -957,7 +957,7 @@ class MysqlDB
 		}
 		catch (e:Dynamic)
 		{
-			trace("avatar error from xyz_users table.");
+			trace("avatar error from statistics table.");
 		}
 		
 		cnx.close();
@@ -969,7 +969,6 @@ class MysqlDB
 	public function isThereUserAction(_user:String, _actionWho:String):MysqlData
 	{			
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("SELECT * FROM user_actions WHERE user = " + cnx.quote(_user) + "AND action_who = " + cnx.quote(_actionWho));
@@ -997,7 +996,6 @@ class MysqlDB
 	public function selectUserEloRating(_user:String):MysqlData
 	{			
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("SELECT * FROM statistics WHERE user = " + cnx.quote(_user));
@@ -1012,6 +1010,31 @@ class MysqlDB
 		catch (e:Dynamic)
 		{
 			trace("chess elo rating error from statistics table.");
+		}
+		
+		cnx.close();
+		
+		return _mysqlData;
+	}
+	
+	public function select_host_at_users_table(_hostname:String):MysqlData
+	{			
+		tryMysqlConnectDatabase();
+		
+		try {
+			var rset = cnx.request("SELECT * FROM users WHERE hostname = " + cnx.quote(_hostname));
+			
+			for ( row in rset )
+			{			
+				_mysqlData._user.push(row.user);
+				_mysqlData._hostname.push(row.hostname);
+				_mysqlData._password_hash.push(row.password_hash);
+			}
+		
+		}
+		catch (e:Dynamic)
+		{
+			trace("error at mysql function select_host_at_users_table.");
 		}
 		
 		cnx.close();
@@ -1458,10 +1481,35 @@ class MysqlDB
 		return _mysqlData;
 	}
 	
+	public function select_guests_from_users_table():MysqlData
+	{			
+		tryMysqlConnectDatabase();
+		
+		try
+		{
+			var rset = cnx.request("SELECT * FROM users WHERE user like 'Guest%' order by user ASC");
+				
+			for ( row in rset )
+			{			
+				_mysqlData._user.push(row.user);
+				_mysqlData._hostname.push(row.hostname);
+			}
+			
+		} 
+		
+		catch (e:Dynamic)
+		{
+			trace("error at _mysql select_all_from_users_table function.");
+		}
+		
+		cnx.close();
+		
+		return _mysqlData;
+	}
+	
 	public function select_ip(_user:String):MysqlData
 	{			
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -1473,11 +1521,38 @@ class MysqlDB
 				_mysqlData._ip.push(row.ip);
 			}
 			
+		} 
+		
+		catch (e:Dynamic)
+		{
+			trace("error at selete_ip function.");
+		}
+
+		cnx.close();
+		
+		return _mysqlData;
+	}
+	
+	public function select_hash(_user:String):MysqlData
+	{			
+		tryMysqlConnectDatabase();
+		
+		try
+		{
+			var rset = cnx.request("SELECT * FROM users WHERE user = " + cnx.quote(_user));
+				
+			for ( row in rset )
+			{			
+				_mysqlData._user.push(row.user);
+				_mysqlData._password_hash.push(row.password_hash);
+				_mysqlData._hostname.push(row.hostname);
+			}
+			
 		}
 		
 		catch (e:Dynamic)
 		{
-			trace("error at _selete_ip function.");
+			trace("error at selete_hash function.");
 		}
 
 		cnx.close();
@@ -1552,7 +1627,6 @@ class MysqlDB
 	public function getEventCreditsFromUsersTable(_user:String):MysqlData
 	{			
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -1582,7 +1656,6 @@ class MysqlDB
 	public function updateChessEloRating(_user:String, _rating:Float):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 
 		try 
 		{
@@ -1605,7 +1678,6 @@ class MysqlDB
 	public function changeEventCreditsMonthAndDay(_user:String, _eventMonth:Int, _eventDay:Int):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("UPDATE statistics SET 
 		event_month = " + _eventMonth + ", 
@@ -1619,7 +1691,6 @@ class MysqlDB
 	public function giveCreditToUser(_user:String):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("UPDATE statistics SET 
 		credits_today = credits_today + 1, 
@@ -1636,7 +1707,6 @@ class MysqlDB
 	public function giveExperiencePointsToUser(_user:String, _exp:Int):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -1659,7 +1729,6 @@ class MysqlDB
 	public function giveHouseCoinsToUser(_user:String, _coins:Int):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -1798,7 +1867,6 @@ class MysqlDB
 	public function selectRoomDataUser(_user:String):MysqlData
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("SELECT * FROM room_data WHERE user = " + cnx.quote(_user));
@@ -2003,7 +2071,6 @@ class MysqlDB
 	public function select_tournament_chess_standard_8(_user:String, _game_id:Int):MysqlData
 	{
 		tryMysqlConnectDatabase();			
-		_user = _user.toLowerCase();
 				
 		try 
 		{
@@ -2041,8 +2108,6 @@ class MysqlDB
 	public function update_tournament_chess_standard_8(_player1:String, _player2:String, _time_remaining_player1:String, _time_remaining_player2:String, _move_number_current):Void
 	{
 		tryMysqlConnectDatabase();		
-		_player1 = _player1.toLowerCase();
-		_player2 = _player2.toLowerCase();
 		
 		try
 		{
@@ -2096,8 +2161,6 @@ class MysqlDB
 	public function update_tournament_chess_standard_8_game_over(_player1:String, _player2:String, _won_game1:Int, _won_game2:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_player1 = _player1.toLowerCase();
-		_player2 = _player2.toLowerCase();
 		
 		try
 		{
@@ -2129,7 +2192,6 @@ class MysqlDB
 	public function saveDailyQuests_3_in_a_row_win(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2149,7 +2211,6 @@ class MysqlDB
 	public function saveDailyQuests_3_in_a_row_lose(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2168,7 +2229,6 @@ class MysqlDB
 	public function saveDailyQuests_chess_5_moves_under(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2187,7 +2247,6 @@ class MysqlDB
 	public function saveDailyQuests_snakes_under_4_moves(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2206,7 +2265,6 @@ class MysqlDB
 	public function saveDailyQuests_win_5_minute_game(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2225,7 +2283,6 @@ class MysqlDB
 	public function saveDailyQuests_buy_four_house_items(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2244,7 +2301,6 @@ class MysqlDB
 	public function saveDailyQuests_finish_signature_game(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2263,7 +2319,6 @@ class MysqlDB
 	public function saveDailyQuests_reversi_occupy_50_units(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2282,7 +2337,6 @@ class MysqlDB
 	public function saveDailyQuests_checkers_get_6_kings(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2301,7 +2355,6 @@ class MysqlDB
 	public function saveDailyQuests_play_all_5_board_games(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2320,7 +2373,6 @@ class MysqlDB
 	public function saveDailyQuests_rewards(_user:String, _rewards:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2339,7 +2391,6 @@ class MysqlDB
 	public function daily_reward_save(_user:String, _experiencePoints:Int, _houseCoins:Int, _creditsTotal:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2362,7 +2413,6 @@ class MysqlDB
 	{
 		tryMysqlConnectDatabase();	
 		_user = Std.string(_user);
-		_user = _user.toLowerCase();
 		
 		try {
 			
@@ -2390,7 +2440,6 @@ class MysqlDB
 	public function getStatsWinLoseDrawFromUsers(_user:String):MysqlData
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("SELECT * FROM statistics WHERE user = " + cnx.quote(_user));
@@ -2419,7 +2468,6 @@ class MysqlDB
 	public function getStatsAllFromUsers(_user:String):MysqlData
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("SELECT * FROM statistics WHERE user = " + cnx.quote(_user));
@@ -2497,7 +2545,6 @@ class MysqlDB
 	public function getAllFromUsers(_user:String):MysqlData
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("SELECT * FROM room_data WHERE user = " + cnx.quote(_user));
@@ -2523,7 +2570,6 @@ class MysqlDB
 	public function getHouseDataForUser(_user:String):MysqlData
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("SELECT * FROM house WHERE user = " + cnx.quote(_user));
@@ -2576,7 +2622,6 @@ class MysqlDB
 	public function isPaidMemberFromUsers(_user:String):MysqlData
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("SELECT * FROM users WHERE user = " + cnx.quote(_user));
@@ -2603,7 +2648,6 @@ class MysqlDB
 	public function saveRoomState(_user:String, _roomState:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		var _var = cnx.request("UPDATE room_data SET timestamp = UNIX_TIMESTAMP(), room_state = " + _roomState + " WHERE user = " + cnx.quote(_user) );
 		
@@ -2630,7 +2674,6 @@ class MysqlDB
 	public function saveUsernameDataToZero(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		var _var = cnx.request("UPDATE room_data SET 
 		room_state = 0,
@@ -2650,7 +2693,6 @@ class MysqlDB
 	public function deleteIsHost(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("DELETE FROM who_is_host WHERE user = " + cnx.quote(_user));		
@@ -2667,10 +2709,9 @@ class MysqlDB
 	public function update_avatar_at_login(_user:String, _avatar:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try {
-			var rset = cnx.request("UPDATE xyz_users SET user_avatar = " + cnx.quote(_avatar) + " WHERE username = " + cnx.quote(_user));				
+			var rset = cnx.request("UPDATE statistics SET user_avatar = " + cnx.quote(_avatar) + " WHERE user = " + cnx.quote(_user));				
 		}
 		catch (e:Dynamic)
 		{
@@ -2684,7 +2725,6 @@ class MysqlDB
 	public function updateUsersKickedData(_user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("UPDATE users SET is_kicked = 0 WHERE user = " + cnx.quote(_user));				
@@ -2692,6 +2732,28 @@ class MysqlDB
 		catch (e:Dynamic)
 		{
 			trace("update user set kicked to zero not updated.");
+		}
+		
+		cnx.close();
+	
+	}
+	
+	// player is no longer using a guest account. change names.
+	public function update_players_name(_user:String, _old_username:String, _password_hash:String, _hostname:String):Void
+	{
+		tryMysqlConnectDatabase();
+		
+		try {
+			var rset = cnx.request("UPDATE users SET user = " + cnx.quote(_user) + ", password_hash = " + cnx.quote(_password_hash) + "  WHERE user like 'Guest%' AND user = " + cnx.quote(_old_username) + " AND hostname = " + cnx.quote(_hostname));
+			
+			var rset2 = cnx.request("UPDATE house SET user = " + cnx.quote(_user) + " WHERE user like 'Guest%' AND user = " + cnx.quote(_old_username));
+			
+			var rset3 = cnx.request("UPDATE statistics SET user = " + cnx.quote(_user) + " WHERE user like 'Guest%' AND user = " + cnx.quote(_old_username));
+		}
+		
+		catch (e:Dynamic)
+		{
+			trace("error at mysql table update_players_name.");
 		}
 		
 		cnx.close();
@@ -2757,7 +2819,6 @@ class MysqlDB
 	public function saveRoomLock(_user:String, _room:Int):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		cnx.request("INSERT IGNORE INTO room_lock set room = " + _room + ", is_locked = 1, user = " + cnx.quote(_user));
 		
@@ -2767,7 +2828,6 @@ class MysqlDB
 	public function deleteRoomUnlock(_user:String, _room:Int):Void
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -2786,7 +2846,6 @@ class MysqlDB
 	public function saveIsHost(_user:String, _gid:String, _room:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try {
 			var rset = cnx.request("DELETE FROM who_is_host WHERE room = " + _room);	
@@ -2890,7 +2949,6 @@ class MysqlDB
 	public function saveIsGameFinishedUser(_user:String, _isGameFinished:Bool, _spectatorWatching:Bool):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try {
 			var _var = cnx.request("UPDATE room_data SET 
@@ -2916,7 +2974,6 @@ class MysqlDB
 	public function saveGamePlayer(_user:String, _gamePlayersValues:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try {
 			var _var = cnx.request("UPDATE room_data SET 
@@ -2935,7 +2992,6 @@ class MysqlDB
 	public function saveSpectator(_user:String, _spectatorPlaying:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try {
 			var _var = cnx.request("UPDATE room_data SET 
@@ -3003,7 +3059,6 @@ class MysqlDB
 	public function saveRoomData(_user:String, _roomState:Int, _userlocation:Int, _room:Int, _roomPlayerLimit:Int, _gameId:Int, _vsComputer:Int, _allowSpectators:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		var _var = cnx.request("UPDATE room_data SET 
 		room_state = " + _roomState + ", 
@@ -3022,7 +3077,6 @@ class MysqlDB
 	public function _spectatorWatching(_user:String, _roomState:Int, _userlocation:Int, _room:Int, _roomPlayerLimit:Int, _gameId:Int, _vsComputer:Int, _allowSpectators:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		var _var = cnx.request("UPDATE room_data SET 
 		room_state = " + _roomState + ", 
@@ -3060,10 +3114,28 @@ class MysqlDB
 	
 	}
 	
+	public function password_hash(_user:String, _password_hash:String):Void
+	{
+		tryMysqlConnectDatabase();		
+		
+		try {
+			var _var = cnx.request("UPDATE users SET 
+			password_hash = " + cnx.quote(_password_hash) + "
+			WHERE user = " + cnx.quote(_user));
+		
+		}
+		catch (e:Dynamic)
+		{
+			trace("password_hash not updated at password_hash function.");
+		}
+		
+		cnx.close();
+	
+	}
+	
 	public function saveHouseDataForUser(_user:String, _sprite_number:String, _sprite_name:String, _items_x:String, _items_y:String, _map_x:String, _map_y:String, _is_item_purchased:String, _item_direction_facing:String, _map_offset_x:String, _map_offset_y:String, _item_is_hidden:String, _item_order:String, _item_behind_walls:String, _floor:String, _wall_left:String, _wall_up_behind:String, _wall_up_in_front:String, _floor_is_hidden:String, _wall_left_is_hidden:String, _wall_up_behind_is_hidden:String, _wall_up_in_front_is_hidden:String):MysqlData
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		try {
 			var _var = cnx.request("UPDATE house SET 
@@ -3104,7 +3176,6 @@ class MysqlDB
 	public function usersSetActionCount(_user:String, _actionWho:String):Bool
 	{
 		tryMysqlConnectDatabase();
-		_user = _user.toLowerCase();
 		
 		var rset = cnx.request("SELECT COUNT(*) FROM user_actions WHERE user = " + cnx.quote(_user) + " AND action_who = " + cnx.quote(_actionWho));
 				
@@ -3141,7 +3212,6 @@ class MysqlDB
 	public function usersSetActionInsert(_user:String, _actionWho:String, _actionNumber:Int):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		//var _timestamp:Int = Std.int(Sys.time());
 		
 		try {
@@ -3163,7 +3233,6 @@ class MysqlDB
 	public function saveWinStats(_gameId:Int, _user:String, _gameTimePlayedInSeconds:Int = 0):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -3219,7 +3288,6 @@ class MysqlDB
 	public function saveLoseStats(_gameId:Int, _user:String, _gameTimePlayedInSeconds:Int = 0):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -3273,7 +3341,6 @@ class MysqlDB
 	public function saveDrawStats(_gameId:Int, _user:String):Void
 	{
 		tryMysqlConnectDatabase();		
-		_user = _user.toLowerCase();
 		
 		try
 		{
@@ -3320,6 +3387,9 @@ class MysqlDB
 	{
 		_mysqlData._user.splice(0, _mysqlData._user.length);
 		_mysqlData._user2.splice(0, _mysqlData._user2.length);
+		_mysqlData._password_hash.splice(0, _mysqlData._password_hash.length);
+		_mysqlData._hostname.splice(0, _mysqlData._hostname.length);
+		
 		_mysqlData._player_maximum.splice(0, _mysqlData._player_maximum.length);
 		_mysqlData._player_current.splice(0, _mysqlData._player_current.length);
 		_mysqlData._userId.splice(0, _mysqlData._userId.length);
@@ -3533,4 +3603,4 @@ class MysqlDB
 		_mysqlData._rounds_total.splice(0, _mysqlData._rounds_total.length);
 		_mysqlData._won_game.splice(0, _mysqlData._won_game.length);
 	}	
-}//
+}//

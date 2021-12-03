@@ -67,7 +67,9 @@ class Functions
 					&&  _event != "Message Kick"
 					&&  _event != "Is Host")
 					{
-						trace(Std.string(_logDate + " " + _logTime) + " " + _user + ": " + _event);
+						if (_user == "null") trace ("User Unknown :" + _event);
+						else
+							trace(Std.string(_logDate + " " + _logTime) + " " + _user + ": " + _event);
 					}
 				}
 			}
@@ -211,17 +213,17 @@ class Functions
 	}
 	
 	/**************************************************************************
-	 * deletes these tables when user first logs in and while user is disconnecting.
+	 * deletes these tables when user first logs in and when user is disconnecting.
 	 * _dataMisc is passed as a paranmeter of _data here.
 	 */
 	public static function deleteRowsFromDatabase(_data:Dynamic):Void
 	{
 		var _mysqlDB = new MysqlDB();
-		_mysqlDB.deleteLoggedInHost(_data._host);
-		_mysqlDB.deleteLoggedInUser(_data._username);
+		_mysqlDB.delete_hostname_at_logged_in_hostname(_data._hostname);
+		_mysqlDB.delete_user_at_logged_in_user_table(_data._username);
 		// also deletes table who_is_host and table room_lock at this line.
-		_mysqlDB.deleteRoomData(_data._username);
-		_mysqlDB.deleteUserKickedAndBanned(_data._username);
+		_mysqlDB.delete_tables_user_logged_off_data._username);
+		_mysqlDB.delete_user_no_kicked_or_banned(_data._username);
 		_mysqlDB.deleteIsHost(_data._username); 
 	}
 	

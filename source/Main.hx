@@ -269,7 +269,7 @@ class Main
 
 		}		
 		
-		_mysqlDB.clearLoggedInTables(); // delete all logged in users because server is starting. we do this at starting not stopping because server may have crashed.
+		_mysqlDB.delete_logged_in_tables(); // delete all logged in users because server is starting. we do this at starting not stopping because server may have crashed.
 		
 		Sys.println ("Server started.");
 		Sys.println ("Hold CTLR key then press C key to exit.");

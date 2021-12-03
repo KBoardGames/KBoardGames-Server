@@ -394,8 +394,9 @@ typedef DataAccount =
 {
 	id: String,
 	_username: String,				// the username of the player.
+	_password_hash: String, 		// password hash encrypted with md5.
 	_popupMessage: String, 		// the current message to be displayed as a dialog or popup box.
-	_host: String,					// used to return the this local hosts name.
+	_hostname: String,					// used to return the this local hosts name.
 	_ip:String,					// IP address of player.
 	_alreadyOnlineHost: Bool,		// is there two computers with the same host name connected to server?
 	_alreadyOnlineUser: Bool,		// is there already a user with that username online?
@@ -752,7 +753,7 @@ class Reg
 	 * only change the version number here. this value must be changed every time this complete program with dll's are copied to the localhost/files/windows folder.
 	 * no need to copy this var then paste to the bottom of this class because this value does not change while client is running.
 	 */
-	public static var _version:String = "1.16.2";
+	public static var _version:String = "1.19.0";
 	
 	/******************************
 	 * these are the computer player names for room a and b. those rooms are reserved for playing a game against the computer. these names are displayed at the hub.

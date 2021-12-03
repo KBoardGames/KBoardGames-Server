@@ -633,7 +633,7 @@ class Events
 				if (_data.id.length > 80) return;
 				if (_data._username.length > 80) return;
 				if (_data._popupMessage.length) return;
-				if (_data._host.length > 200) return;
+				if (_data._hostname.length > 200) return;
 				
 				//if (_data._username.length == 0) _data._username = "bot ben"; 
 				
@@ -676,8 +676,9 @@ class Events
 					Sys.println ("Clients connected: " + _serverConnections);
 
 					_accountState = allDataAccount.get(_sender);
-
-					var host = _mysqlDB.addHostToLoggedInTable(_accountState._host);
+					
+					
+					var host = _mysqlDB.insert_hostname_to_logged_in_table(_accountState._hostname);
 
 					if (host == true) _accountState._alreadyOnlineHost = true;
 					else _accountState._alreadyOnlineHost = false;
@@ -699,6 +700,52 @@ class Events
 					_accountState._server_fast_send = _server.fastSend;
 					_accountState._server_blocking = _server.blocking;			
 					_accountState._clients_connected = _serverConnections;
+					
+					// host not found for username.
+					// check if hostname exists in database.
+					var _row = _mysqlDB.select_host_at_users_table(_data._hostname);
+					
+					if (Std.string(_row._hostname[0]) != _data._hostname) 
+					{
+						var _found:Bool = false;
+						
+						// is this a guest account?
+						
+						var _row2 = _mysqlDB.select_guests_from_users_table();
+						
+						if (_data._username == "Guest1")
+						{
+							for (i in 0... _row2._user.length)
+							{
+								if ( Std.string(_row2._user[i]) != "Guest" + Std.string((i+1)))
+								{
+									_data._username = _accountState._username = "Guest" + Std.string((i+1));
+									_found = true;
+								}
+								
+								if (_found == true) break;
+							}
+						}
+					}
+					
+					else if (_data._username == "Guest1")
+					{
+						var _row3 = _mysqlDB.select_host_at_users_table(_data._hostname);
+						_data._username = _accountState._username = Std.string(_row3._user[0]);
+					}
+					
+					else
+					{
+						var rset = _mysqlDB.select_host_at_users_table(_data._hostname);
+						var _hash = Std.string(rset._password_hash[0]);
+						var _user = Std.string(rset._user[0]);
+						var _hostname = Std.string(rset._hostname[0]);
+				
+						// no longer using a guest account. save players name to the row that has the hostname.
+						if (_user != _data._username
+						&&	_hostname == _data._hostname)
+							_mysqlDB.update_players_name(_data._username, _user, _data._password_hash, _data._hostname);
+					}
 					
 					_server.broadcast("Join", _accountState);
 					
@@ -755,51 +802,33 @@ class Events
 		{
 			_accountState = allDataAccount.get(_sender);
 			
-			var _set_username = Functions.getUsername(_accountState._ip);
-	
-			// is user at website client. html5?
-			if (_data._guest_account == true)
-			{
-				var _rset = _mysqlDB.select_last_logged_in_guest();
-				
-				if (_rset._user[0] == null) 
-					_accountState._username = _data._username = _set_username = "guest1";
-				else
-				{
-					// this looks wrong but its correct. remember substr starts at 0 not 1. therefore the length of "guest" is 4 not 5. it is 4 because langth is always plus 1 from total. this line gets the last guest in the database, finds the number after the guest name, eg, guest1, then increments that value by 1 then sets username to that new guest name, eg, guest2
-					var _temp = Std.string(_rset._user[0]);
-					_temp = _temp.substr(5, _rset._user[0].length - 4);
-					var _num = Std.parseInt(_temp) + 1;
-					
-					_accountState._username = _data._username = _set_username = "guest" + Std.string(_num); 
-				}
-				
-			}
+			var rset = _mysqlDB.select_hash(_data._username);
+			var _hash = Std.string(rset._password_hash[0]);
+			var _user = Std.string(rset._user[0]);
+			var _hostname = Std.string(rset._hostname[0]);
 			
-			if (_accountState._username != "bot ben"
-			&&	_accountState._username != "bot tina"
-			&&	_accountState._username != "bot piper"
-			&&	_accountState._username != "bot lisa"
-			&&	_accountState._username != "bot zak") 
-				_set_username = "admin";
-						
-			if (_set_username != "" && _data._username == _set_username)
-				_accountState._username = _set_username.substr(0, 11);
-			// if client is not ready for release, at client title, buttons for bot login are displayed. when clicking those buttons, the _data._username will be set to that button name. the reason for this is because when using fast login without password check, the ip address of the user is checked against the ip in the mysql atabase, however, the bot's all share the same ip. so logging in the second time cannot be achived without those bottons at client. note that the buttons will not be display at release mode.
-			else
+			// 1: save hash to database if hash was not found in database.
+			if (_hash == "")
 			{
-				if (_data._username == "bot ben"
-				||  _data._username == "bot tina"
-				||  _data._username == "bot amy"
-				||  _data._username == "bot piper"
-				||  _data._username == "bot zak")
-					_set_username = _data._username;
+				// saves either a guest or regular username.
+				_mysqlDB.password_hash(_data._username, _data._password_hash);
+				
+				
+				_hash = _data._password_hash;
 			}
-			
-			if (_set_username != "" && _data._username == _set_username && _set_username == _accountState._username) // enter loop if username is logged in.
+
+			if (_data._username != "" // old account
+			&&	_hash == _data._password_hash
+			||	_user == "null" && _hash != "" /* new account */
+			||	_data._username == "bot ben"
+			||	_data._username == "bot zak"
+			||	_data._username == "bot piper"
+			||	_data._username == "bot lisa"
+			||	_data._username == "bot amy"
+			)
 			{
-				_mysqlDB.deleteRoomData(_accountState._username);
-				_mysqlDB.deleteUserKickedAndBanned(_accountState._username);
+				_mysqlDB.delete_tables_user_logged_off_accountState._username);
+				_mysqlDB.delete_user_no_kicked_or_banned(_accountState._username);
 				_mysqlDB.deleteIsHost(_accountState._username); 
 				
 				// check if user is already online.				
@@ -816,6 +845,9 @@ class Events
 					
 				}
 				
+				if (_data._username.substr(0, 5) == "Guest")	
+					_mysqlDB.update_hostname_at_users_table(_data._username, _data._hostname);
+				
 				// the vars hold the state of a player's game, such as, did the player quit the game, or is the player at the game room but is not playing the game? these vars are at the button of events that use these vars and also at the disconnect event so that the player can send these updated vars to other players in that room. those other players need these vars to that a proper message is displayed to them, such as, the player had left the room message.
 				player_game_state_value_username.push(_data._username);
 				player_game_state_value_data.push([0,0,0,1]);
@@ -827,7 +859,7 @@ class Events
 
 				// TODO add a _data_some_new_var here which cab be used to bypass this code so that the user's avatar at website is used. also, see client PlayState class, the code just above the "is logging in" event.
 				Functions.userLogs("Is Logging In", _data.id, _data._username); // logs.
-				_mysqlDB.insertUserToUsersTable(_data._username, _data._ip);
+				_mysqlDB.insertUserToUsersTable(_data._username, _data._password_hash, _data._ip, _data._hostname);
 				_mysqlDB.insertUserToDailyQuestsTable(_data._username);
 				
 				_sender.putInRoom(room[0]);
@@ -837,7 +869,7 @@ class Events
 			{
 				_accountState._popupMessage = "Login failed."; // if you change the value of this string then you need to change it also at client.
 			}
-
+			
 			_sender.send("Is Logging In", _accountState);
 			
 		});
@@ -1551,7 +1583,7 @@ class Events
 				
 				if (_data._roomState[_data._room] == 8) 
 				{
-					//if (_count == 2) _mysqlDB.deleteRoomDataAll(_data._room);
+					//if (_count == 2) _mysqlDB.delete_room_from_room_data_table_data._room);
 					
 					// when value is true, there are 2 or less players.
 					if (_count <= 2)
@@ -3216,7 +3248,7 @@ class Events
 										
 					if (_currentTimeRemaining < 1 && _data._actionDo != 100)
 					{
-						_mysqlDB.deleteUserAction(_data._usernamesDynamic[0], _data._username);
+						_mysqlDB.delete_user_action(_data._usernamesDynamic[0], _data._username);
 						
 						_data._actionDo = -1;
 						_data._actionNumber = 0;
@@ -3807,11 +3839,8 @@ class Events
 			
 			if (_miscState._username != null && _miscState._alreadyOnlineHost == false)
 			{
+				// deletes these tables when user first logs in and when user is disconnecting.
 				Functions.deleteRowsFromDatabase(_miscState);	 
-				
-				if (_miscState._username.substr(0, 5) == "guest")
-					_mysqlDB.deleteUserGuest(_miscState._username);
-
 			}	
 				
 			allDataGame.remove(_sender);
@@ -3853,11 +3882,11 @@ class Events
 	
 	private function addRowsToDatabase(_data:Dynamic):Void
 	{
-		_mysqlDB.insertLoggedInUser(_data._username, _data._ip, _data._host, 0);
+		_mysqlDB.insert_user_at_logged_in_user_table(_data._username, _data._ip, _data._hostname, 0);
 		_mysqlDB.insertRoomData(_data._username, _data.id);
 		_mysqlDB.insertUserToStatisticsTable(_data._username);
 		_mysqlDB.insertUserToHouseTable(_data._username);
 	}
 	
 	
-}//
+}//

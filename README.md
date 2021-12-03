@@ -2,7 +2,7 @@
 [![Server Status](https://img.shields.io/pingpong/status/sp_7241145592d44ae2bd4c2a9c4558a0ef?label=kboardgames.com&style=for-the-badge)](https://kboardgames.com)
 [![Discord](https://img.shields.io/discord/878790325261434923?color=%236b7ff5&label=Discord&style=for-the-badge)](https://discord.gg/7gF8t3yNDU)
 
-The server for KBoardGames. Use this software to host games.
+The server for K Board Games. Use this software to host games. See also: <a href="https://github.com/KBoardGames/KBoardGames">K Board Games client</a>
 
 <p>Play 8x8 board games online with other players using the client software. Main features are <a href="https://kboardgames.com/en/events">scheduled events</a>, signature game, game statistics, daily quests and a <a href="https://kboardgames.com/en/viewtopic.php?f=4&t=3">isometric house side game</a>. Currently, the board games that you can play online against other players are <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=15">chess</a>, <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=14">checkers</a>, <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=17">snakes and ladders</a>, <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=16">reversi</a> and a signature game called <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=18">wheel estate</a>, game.</p>
 
