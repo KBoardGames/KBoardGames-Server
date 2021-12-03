@@ -4,12 +4,12 @@
 
 The server for K Board Games. Use this software to host games. See also: <a href="https://github.com/KBoardGames/KBoardGames">K Board Games client</a>
 
-<p>Play 8x8 board games online with other players using the client software. Main features are <a href="https://kboardgames.com/en/events">scheduled events</a>, signature game, game statistics, daily quests and a <a href="https://kboardgames.com/en/viewtopic.php?f=4&t=3">isometric house side game</a>. Currently, the board games that you can play online against other players are <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=15">chess</a>, <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=14">checkers</a>, <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=17">snakes and ladders</a>, <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=16">reversi</a> and a signature game called <a href="https://kboardgames.com/en/viewtopic.php?f=10&amp;t=18">wheel estate</a>, game.</p>
+<p>Play 8x8 board games online with other players using the client software. Main features are <a href="https://kboardgames.com/index.php?p=8">scheduled events</a>, signature game, game statistics, daily quests and a <a href="https://kboardgames.com/index.php?p=2#house">isometric house side game</a>. Currently, the board games that you can play online against other players are <a href="https://kboardgames.com/index.php?p=12">chess</a>, <a href="https://kboardgames.com/index.php?p=11">checkers</a>, <a href="https://kboardgames.com/index.php?p=14">snakes and ladders</a>, <a href="https://kboardgames.com/index.php?p=13">reversi</a> and a signature game called <a href="https://kboardgames.com/index.php?p=15">wheel estate</a>.</p>
 
 ## Summary
 * Room lock feature. No back doors.
 * Anti-cheating of player statistics.
-* Player activity <a href="https://kboardgames.com/en/viewtopic.php?f=4&t=33">server logging.</a>
+* Player activity <a href="https://kboardgames.com/index.php?p=21">server logging.</a>
 * Built-in server anti-hammering feature.
 
 ## Dependencies
