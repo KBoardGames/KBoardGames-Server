@@ -827,7 +827,7 @@ class Events
 			||	_data._username == "bot amy"
 			)
 			{
-				_mysqlDB.delete_tables_user_logged_off_accountState._username);
+				_mysqlDB.delete_tables_user_logged_off(_accountState._username);
 				_mysqlDB.delete_user_no_kicked_or_banned(_accountState._username);
 				_mysqlDB.deleteIsHost(_accountState._username); 
 				

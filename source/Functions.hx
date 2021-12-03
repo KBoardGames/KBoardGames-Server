@@ -222,7 +222,7 @@ class Functions
 		_mysqlDB.delete_hostname_at_logged_in_hostname(_data._hostname);
 		_mysqlDB.delete_user_at_logged_in_user_table(_data._username);
 		// also deletes table who_is_host and table room_lock at this line.
-		_mysqlDB.delete_tables_user_logged_off_data._username);
+		_mysqlDB.delete_tables_user_logged_off(_data._username);
 		_mysqlDB.delete_user_no_kicked_or_banned(_data._username);
 		_mysqlDB.deleteIsHost(_data._username); 
 	}
