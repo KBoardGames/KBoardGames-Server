@@ -1,21 +1,3 @@
-/*
-    Copyright (c) 2021 KBoardGames.com
-    This program is part of KBoardGames server software.
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published
-    by the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
-
 <?php
 
 class MysqlDB
@@ -120,11 +102,11 @@ class MysqlDB
 	}
 
 	
-	public function selectUserAvatar($dbh, $username)
+	public function selectUserAvatar($dbh, $user)
 	{			
 		try {
-			$stmt = $dbh->prepare("SELECT * FROM xyz_users WHERE username=:username");
-			$stmt->bindParam(':username', $username);
+			$stmt = $dbh->prepare("SELECT * FROM statistics WHERE user=:user");
+			$stmt->bindParam(':user', $user);
 			$stmt->execute();
 			
 			return $stmt;
@@ -407,11 +389,11 @@ class MysqlDB
 		}
 	}
 
-	public function getUsersAvatar($dbh, $username)
+	public function getUsersAvatar($dbh, $user)
 	{
 		try {
-			$stmt = $dbh->prepare("SELECT user_avatar FROM xyz_users WHERE username=:username");
-			$stmt->bindParam(':username', $username);
+			$stmt = $dbh->prepare("SELECT user_avatar FROM statistics WHERE user=:user");
+			$stmt->bindParam(':user', $user);
 			$stmt->execute();
 
 			return $stmt;
@@ -871,11 +853,11 @@ public function updateTournament8ChessStandardPoints($dbh, $user, $tournament_po
 		}
 	}
 
-	public function getUsernameFromCookie($user_id, $dbh)
+	public function getUsernameFromCookie($id, $dbh)
 	{			
 		try {
-			$stmt = $dbh->prepare("SELECT * FROM xyz_users WHERE user_id=:user_id");
-			$stmt->bindParam(':user_id', $user_id);
+			$stmt = $dbh->prepare("SELECT * FROM users WHERE id=:id");
+			$stmt->bindParam(':id', $id);
 			$stmt->execute();
 			
 			return $stmt;
@@ -890,19 +872,6 @@ public function updateTournament8ChessStandardPoints($dbh, $user, $tournament_po
 		try {
 			$stmt = $dbh->prepare("SELECT * FROM xyz_sessions WHERE session_user_id=:session_user_id");
 			$stmt->bindParam(':session_user_id', $session_user_id);
-			$stmt->execute();
-			
-			return $stmt;
-		} catch (PDOException $e) {
-			echo $e->getMessage().' in '.$e->getFile().' on line '.$e->getLine();
-			exit;
-		}
-	}
-
-	public function getConf($dbh)
-	{			
-		try {
-			$stmt = $dbh->prepare("SELECT config_value FROM xyz_config WHERE config_name='smtp_password'");
 			$stmt->execute();
 			
 			return $stmt;

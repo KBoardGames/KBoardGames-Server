@@ -207,24 +207,25 @@ class Functions
 		}
 
 		// save new chess elo rating.
-		var _mysqlDB = new MysqlDB();
-		_mysqlDB.updateChessEloRating(_user1, _chess_elo_rating1);
-		_mysqlDB.updateChessEloRating(_user2, _chess_elo_rating2);
+		
+		var _db_update = new DB_Update();
+		_db_update.chess_elo_rating_statistics(_user1, _chess_elo_rating1);
+		_db_update.chess_elo_rating_statistics(_user2, _chess_elo_rating2);
 	}
 	
 	/**************************************************************************
 	 * deletes these tables when user first logs in and when user is disconnecting.
-	 * _dataMisc is passed as a paranmeter of _data here.
+	 * _dataMisc is passed as a parameter of _data here.
 	 */
 	public static function deleteRowsFromDatabase(_data:Dynamic):Void
 	{
-		var _mysqlDB = new MysqlDB();
-		_mysqlDB.delete_hostname_at_logged_in_hostname(_data._hostname);
-		_mysqlDB.delete_user_at_logged_in_user_table(_data._username);
+		var _db_delete = new DB_Delete();
+		_db_delete.hostname_at_logged_in_hostname(_data._username);
+		_db_delete.user_at_logged_in_user(_data._username);
 		// also deletes table who_is_host and table room_lock at this line.
-		_mysqlDB.delete_tables_user_logged_off(_data._username);
-		_mysqlDB.delete_user_no_kicked_or_banned(_data._username);
-		_mysqlDB.deleteIsHost(_data._username); 
+		_db_delete.tables_user_logged_off(_data._username);
+		_db_delete.user_no_kicked_or_banned(_data._username);
+		_db_delete.user_at_who_is_host(_data._username);
 	}
 	
 	public static function hostCpuUserNames():Void
@@ -302,6 +303,24 @@ class Functions
 		_http.request();
 		return _data;
 	}
-
+	
+	/******************************
+	 * create a code for GID or email address validation code.
+	 */
+	public static function create_code():String
+	{
+		var _code1:String = Std.string(Math.random());
+		_code1 = _code1.substr(3, 8);
+		var _code2:String = Std.string(Math.random());
+		_code2 = _code2.substr(3, 8);
+		var _code3:String = Std.string(Math.random());
+		_code3 = _code3.substr(3, 8);
+		var _code4:String = Std.string(Math.random());
+		_code4 = _code4.substr(3, 8);
+		
+		var _code:String = _code1 + _code2 + _code3 + _code4;
+		
+		return _code;
+	}
 	
 }

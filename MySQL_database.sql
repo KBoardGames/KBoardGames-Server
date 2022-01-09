@@ -1,13 +1,28 @@
+-- phpMyAdmin SQL Dump
+-- version 4.8.3
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1
+-- Generation Time: Dec 08, 2021 at 01:50 AM
+-- Server version: 10.1.36-MariaDB
+-- PHP Version: 7.2.11
+
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
 --
--- Database: `games`
+-- Database: `board_games`
 --
-CREATE DATABASE IF NOT EXISTS `games` DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
-USE `games`;
+CREATE DATABASE IF NOT EXISTS `board_games` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `board_games`;
 
 -- --------------------------------------------------------
 
@@ -103,9 +118,9 @@ CREATE TABLE `events` (
 --
 
 INSERT INTO `events` (`id`, `name`, `description`, `month_0`, `month_1`, `month_2`, `month_3`, `month_4`, `month_5`, `month_6`, `month_7`, `month_8`, `month_9`, `month_10`, `month_11`, `day_1`, `day_2`, `day_3`, `day_4`, `day_5`, `day_6`, `day_7`, `day_8`, `day_9`, `day_10`, `day_11`, `day_12`, `day_13`, `day_14`, `day_15`, `day_16`, `day_17`, `day_18`, `day_19`, `day_20`, `day_21`, `day_22`, `day_23`, `day_24`, `day_25`, `day_26`, `day_27`, `day_28`, `background_colour`) VALUES
-(53, 'Credits', 'Win a game and earn credits. Instead of cash, you can use credits to purchase something to improve your board game membership. When you have enough credits you can redeem your credits for a month of paid membership or anything else available at the website.\r\nThe way the system works in simple. A credit is given only when you win a game on the day that this event is active. There are credits_today and credits_total for each player in the database. The credits_total will plus one in count every time a credit at credits_today is given. There is a limit of 5 credits per day for credits_today when the credits event is active. \r\nWhen the player first logs in, the current month and day values are compared to that in the database. If that current month value and/or day value does not match the month and day values in the database then a new month and/or day value(s) will be written to the database and the credits_today value set back to zero.', 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3),
-(54, 'Double XP', 'On the day of this event, you will receive double the experience points after your game has ended. A game win gives the full experience points value for that game, while a game loss gives half experience point value for that game. You will receive no experience points for a draw.\r\nDifferent games give different experience points. A game that gives higher experience points is a game that can take longer to finish. Chess can end in three moves but can also take a very long time to finish. Checkers and chess both have a 50 move rules. Therefore, checkers and chess give the same amount of experience points.\r\nAt the website, click the \'Experience Points\' at the main menu. There is a table containing all 2000 experience point level and the experience points needed to advance to a level. So, if you have 110 experience points then you are a level 2 player and depending on your level, a board game feature could be unlocked and your player could be shown at the website \'leaderboards\' page.', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 4),
-(55, 'House Coins', 'In this game, house is a side game where you can make isometric house rooms by purchasing furniture and then placing that furniture anywhere in the house. You start with an empty room by placing floor tiles on the floor. You can add walls, doors and windows. The room is large. You are able to scroll the scene by hovering the mouse cursor from near the edge of the scene to the edge of the scene.\r\nYou can arrange the furniture anyway you like. You can place a furniture item behind a wall or place it in front of a wall. You can stack a furniture item on top of another furniture item or underneath it.\r\nYou can only receive a house coin when this event is active. Use house coins to purchase furniture. You will be given 1 house coin when you lose a board game and 2 house coins when you win a board game.', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5);
+(53, 'Credits', 'Win a game and earn credits. You can use credits to improve your board game account. When you have enough credits you can redeem your credits for something available at the website.\r\nA credit is given only when you win a game on the day that this event is active. There are credits_today and credits_total for each player in the database. The credits_total will plus one in count every time a credit at credits_today is given. There is a limit of 5 credits per day for credits_today when the credits event is active. \r\nWhen the player first logs in, the current month and day values are compared to that in the database. If that current month value and/or day value does not match the month and day values in the database then a new month and/or day value(s) will be written to the database and the credits_today value set back to zero.', 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3),
+(54, 'Double XP', 'On the day of this event, you will receive double the experience points after your game has ended. A game win gives the full experience points value for that game, while a game loss gives half experience point value for that game. You will receive no experience points for a draw.\r\nDifferent games give different experience points. A game that gives higher experience points is a game that can take longer to finish. Chess can end in three moves but can also take a very long time to finish. Checkers and chess both have a 50 move rules. Therefore, checkers and chess give the same amount of experience points.\r\nAt the website, click the \'Experience Points\' at the main menu. There is a table containing all 2000 experience point level and the experience points needed to advance to a level. So, if you have 110 experience points then you are a level 2 player and depending on your level, a board game feature could be unlocked.', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 4),
+(55, 'House Coins', 'House is a side game where you can make isometric rooms by purchasing furniture and then placing that furniture anywhere in the house. You start with an empty room by placing floor tiles on the floor. You can add walls, doors and windows. The room is large. You are able to scroll the scene by hovering the mouse cursor from near the edge of the scene to the edge of the scene.\r\nYou can arrange the furniture anyway you like. You can place a furniture item behind a wall or place it in front of a wall. You can stack a furniture item on top of another furniture item or underneath it.\r\nYou can only receive a house coin when this event is active. Use house coins to purchase furniture. You will be given 1 house coin when you lose a board game and 2 house coins when you win a board game.', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5);
 
 -- --------------------------------------------------------
 
@@ -200,6 +215,17 @@ CREATE TABLE `move_history` (
   `piece_value_old2` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `piece_value_new2` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `piece_value_old3` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `online_users`
+--
+
+CREATE TABLE `online_users` (
+  `session` char(100) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '',
+  `time` int(11) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -333,6 +359,13 @@ CREATE TABLE `servers_status` (
   `do_once_20` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
+--
+-- Dumping data for table `servers_status`
+--
+
+INSERT INTO `servers_status` (`id`, `servers_online`, `connected_1`, `connected_2`, `connected_3`, `connected_4`, `connected_5`, `connected_6`, `connected_7`, `connected_8`, `connected_9`, `connected_10`, `connected_11`, `connected_12`, `connected_13`, `connected_14`, `connected_15`, `connected_16`, `connected_17`, `connected_18`, `connected_19`, `connected_20`, `disconnect_1`, `disconnect_2`, `disconnect_3`, `disconnect_4`, `disconnect_5`, `disconnect_6`, `disconnect_7`, `disconnect_8`, `disconnect_9`, `disconnect_10`, `disconnect_11`, `disconnect_12`, `disconnect_13`, `disconnect_14`, `disconnect_15`, `disconnect_16`, `disconnect_17`, `disconnect_18`, `disconnect_19`, `disconnect_20`, `timestamp_1`, `timestamp_2`, `timestamp_3`, `timestamp_4`, `timestamp_5`, `timestamp_6`, `timestamp_7`, `timestamp_8`, `timestamp_9`, `timestamp_10`, `timestamp_11`, `timestamp_12`, `timestamp_13`, `timestamp_14`, `timestamp_15`, `timestamp_16`, `timestamp_17`, `timestamp_18`, `timestamp_19`, `timestamp_20`, `message_offline`, `message_online`, `do_once_1`, `do_once_2`, `do_once_3`, `do_once_4`, `do_once_5`, `do_once_6`, `do_once_7`, `do_once_8`, `do_once_9`, `do_once_10`, `do_once_11`, `do_once_12`, `do_once_13`, `do_once_14`, `do_once_15`, `do_once_16`, `do_once_17`, `do_once_18`, `do_once_19`, `do_once_20`) VALUES
+(0, 13, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', 'This server will shutdown after 30 minutes expires because of server and/or client maintenance.', 'The admin cancelled the server from going offline. The server does not need to shutdown. Everything seems to be OK.', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
 -- --------------------------------------------------------
 
 --
@@ -343,9 +376,11 @@ CREATE TABLE `statistics` (
   `id` bigint(20) NOT NULL,
   `user` varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `ip` varchar(15) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `user_avatar` varchar(10) NOT NULL DEFAULT '0.png',
   `timestamp` int(15) NOT NULL,
   `is_kicked` tinyint(1) NOT NULL DEFAULT '0',
   `is_banned` tinyint(1) NOT NULL DEFAULT '0',
+  `world_flag` smallint(6) NOT NULL DEFAULT '0',
   `experience_points` float NOT NULL DEFAULT '0',
   `event_month` int(2) NOT NULL,
   `event_day` int(2) NOT NULL,
@@ -402,7 +437,7 @@ CREATE TABLE `tournament_chess_standard_8` (
   `move_total` tinyint(4) NOT NULL DEFAULT '0',
   `round_current` tinyint(4) NOT NULL DEFAULT '1',
   `rounds_total` tinyint(4) NOT NULL DEFAULT '4',
-  `user_email` varchar(100) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `email_address` varchar(100) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `tournament_started` tinyint(4) NOT NULL DEFAULT '0',
   `reminder_by_mail` tinyint(4) NOT NULL DEFAULT '0',
   `reminder_mail_sent` tinyint(4) NOT NULL DEFAULT '0',
@@ -435,6 +470,13 @@ CREATE TABLE `tournament_data` (
   `tie_break` tinyint(4) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='this table holds all data for every tournament type such as chess_tourny_normal or pyramid';
 
+--
+-- Dumping data for table `tournament_data`
+--
+
+INSERT INTO `tournament_data` (`id`, `piece_move_time_limit`, `players`, `games_rated`, `maximum_elo`, `points_available`, `round_current`, `rounds_total`, `games_simultaneous`, `games_completed`, `tie_break`) VALUES
+(1, 24, 8, 1, 1, 100, 1, 4, 0, 0, 0);
+
 -- --------------------------------------------------------
 
 --
@@ -451,6 +493,10 @@ CREATE TABLE `tournament_winners` (
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
+--
+-- Dumping data for table `tournament_winners`
+--
+
 -- --------------------------------------------------------
 
 --
@@ -460,7 +506,10 @@ CREATE TABLE `tournament_winners` (
 CREATE TABLE `users` (
   `id` bigint(20) NOT NULL,
   `user` varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `password_hash` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `email_address` varchar(100) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `ip` varchar(15) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `hostname` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `timestamp` int(15) NOT NULL,
   `is_kicked` tinyint(1) NOT NULL DEFAULT '0',
   `is_banned` tinyint(1) NOT NULL DEFAULT '0',
@@ -495,3 +544,235 @@ CREATE TABLE `who_is_host` (
   `gid` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `room` int(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `banned`
+--
+ALTER TABLE `banned`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user` (`user`);
+
+--
+-- Indexes for table `daily_quests`
+--
+ALTER TABLE `daily_quests`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user` (`user`);
+
+--
+-- Indexes for table `events`
+--
+ALTER TABLE `events`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `house`
+--
+ALTER TABLE `house`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user` (`user`) USING BTREE;
+
+--
+-- Indexes for table `kicked`
+--
+ALTER TABLE `kicked`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user` (`user`);
+
+--
+-- Indexes for table `logged_in_hostname`
+--
+ALTER TABLE `logged_in_hostname`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `host` (`hostname`);
+
+--
+-- Indexes for table `logged_in_users`
+--
+ALTER TABLE `logged_in_users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user` (`user`);
+
+--
+-- Indexes for table `move_history`
+--
+ALTER TABLE `move_history`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `room_data`
+--
+ALTER TABLE `room_data`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user` (`user`);
+
+--
+-- Indexes for table `room_lock`
+--
+ALTER TABLE `room_lock`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `servers_status`
+--
+ALTER TABLE `servers_status`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `statistics`
+--
+ALTER TABLE `statistics`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user` (`user`);
+
+--
+-- Indexes for table `tournament_chess_standard_8`
+--
+ALTER TABLE `tournament_chess_standard_8`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `tournament_data`
+--
+ALTER TABLE `tournament_data`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `tournament_winners`
+--
+ALTER TABLE `tournament_winners`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user` (`user`);
+
+--
+-- Indexes for table `user_actions`
+--
+ALTER TABLE `user_actions`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `who_is_host`
+--
+ALTER TABLE `who_is_host`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `banned`
+--
+ALTER TABLE `banned`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `daily_quests`
+--
+ALTER TABLE `daily_quests`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=163;
+
+--
+-- AUTO_INCREMENT for table `events`
+--
+ALTER TABLE `events`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
+
+--
+-- AUTO_INCREMENT for table `house`
+--
+ALTER TABLE `house`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3673;
+
+--
+-- AUTO_INCREMENT for table `kicked`
+--
+ALTER TABLE `kicked`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `logged_in_hostname`
+--
+ALTER TABLE `logged_in_hostname`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+
+--
+-- AUTO_INCREMENT for table `logged_in_users`
+--
+ALTER TABLE `logged_in_users`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+
+--
+-- AUTO_INCREMENT for table `move_history`
+--
+ALTER TABLE `move_history`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=503;
+
+--
+-- AUTO_INCREMENT for table `room_data`
+--
+ALTER TABLE `room_data`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+
+--
+-- AUTO_INCREMENT for table `room_lock`
+--
+ALTER TABLE `room_lock`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `statistics`
+--
+ALTER TABLE `statistics`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2095;
+
+--
+-- AUTO_INCREMENT for table `tournament_chess_standard_8`
+--
+ALTER TABLE `tournament_chess_standard_8`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `tournament_data`
+--
+ALTER TABLE `tournament_data`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `tournament_winners`
+--
+ALTER TABLE `tournament_winners`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1652;
+
+--
+-- AUTO_INCREMENT for table `user_actions`
+--
+ALTER TABLE `user_actions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `who_is_host`
+--
+ALTER TABLE `who_is_host`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

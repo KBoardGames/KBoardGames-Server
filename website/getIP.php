@@ -58,7 +58,7 @@ curl_close($ch);
 
 //------------------------
 // connect to the db.
-$path = 'C:\xampp\secure/'; // parent folder of this script
+$path = 'C:\secure/'; // parent folder of this script
 $filename = 'config.php';
 $file = $path . DIRECTORY_SEPARATOR . $filename;
 require $file;

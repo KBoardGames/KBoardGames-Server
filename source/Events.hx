@@ -19,11 +19,13 @@
 package;
 
 import Reg;
+import BadWords;
 import Functions;
-import vendor.mphx.connection.IConnection;
-import vendor.mphx.server.impl.Server;
 import sys.FileSystem;
 import sys.net.Host;
+import vendor.ws.SocketImpl;
+import vendor.ws.WebSocketHandler;
+import vendor.ws.WebSocketServer;
 
 /**
  * ...
@@ -192,97 +194,18 @@ class Events
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 	/******************************
-	* This var holds the players data (set) that the server stores for the client to process (get).
-	*/
-	private var allDataGame:Map<vendor.mphx.connection.IConnection,DataGame>;
-	// these are needed. they are game id data.
-	private var allDataGame0:Map<vendor.mphx.connection.IConnection,DataGame0>;
-	private var allDataGame1:Map<vendor.mphx.connection.IConnection,DataGame1>;
-	private var allDataGame2:Map<vendor.mphx.connection.IConnection,DataGame2>;
-	private var allDataGame3:Map<vendor.mphx.connection.IConnection,DataGame3>;
-	private var allDataGame4:Map<vendor.mphx.connection.IConnection,DataGame4>;
-	
-	private var allDataDailyQuests:Map<vendor.mphx.connection.IConnection,DataDailyQuests>;
-	private var allDataQuestions:Map<vendor.mphx.connection.IConnection,DataQuestions>;
-	private var allDataOnlinePlayers:Map<vendor.mphx.connection.IConnection,DataOnlinePlayers>;
-	private var allDataMisc:Map<vendor.mphx.connection.IConnection,DataMisc>;
-	private var allDataPlayers:Map<vendor.mphx.connection.IConnection,DataPlayers>;
-	private var allDataTournaments:Map<vendor.mphx.connection.IConnection,DataTournaments>;
-	private var allDataAccount:Map<vendor.mphx.connection.IConnection,DataAccount>;
-	private var allDataGameMessage:Map<vendor.mphx.connection.IConnection,DataGameMessage>;
-	private var allDataMovement:Map<vendor.mphx.connection.IConnection,DataMovement>;
-	private var allDataStatistics:Map<vendor.mphx.connection.IConnection,DataStatistics>;
-	private var allDataHouse:Map<vendor.mphx.connection.IConnection,DataHouse>;
-	private var allDataLeaderboards:Map<vendor.mphx.connection.IConnection,Leaderboards>;
-	
-	/******************************
-	 * player is the logged in data, such as password or host, that gets and sends to the client. player is used at both client and server while user is server side.
-	 */
-	private var _gameState:Dynamic;
-	private var _gameState1:Dynamic;
-	private var _gameState2:Dynamic;
-	private var _gameState3:Dynamic;
-	private var _gameState4:Dynamic;
-	private var _gameState5:Dynamic;
-	
-	private var _dailyQuestsState:Dynamic;
-	private var _questionsState:Dynamic;
-	private var _onlinePlayersState:Dynamic;
-	private var _miscState:Dynamic;
-	private var _playersState:Dynamic;
-	private var _accountState:Dynamic;
-	private var _MovementState:Dynamic;
-	
-	/******************************
 	 * read the mysql servers_status table every so many ticks. When the do_once field at that table has a value of true, this var will be set to true so that a block of code is is no longer read.
 	 */
 	//private var _mysqlReadServersStatusOnce:Bool = false;
 	
 	// each element refers to the id of a game. the first element is checkers then chess, etc. the player that wins the game gets the experience points value of this vars element. a game lose is half that of a win. so if playing chess and the player lost the game then the experience points gained will be half of 70 rounded to the whole number because we are using Int.
 	private var _experiencePointsGiven:Array<Int> = [70, 70, 50, 50, 90]; 
-		
-	/******************************
-	 * The current total amount of clients connected to this server.
-	 */
-	private var _serverConnections:Int = 0;
-
-	/******************************
-	 * the _gameState that sent the _data.
-	 */
-	private var _sender:vendor.mphx.connection.IConnection;
-	
-	/******************************
-	 * this var is populated from events and at the disconnect event it is passed to the other users. This var is needed because static usernames of the room cannot be taken from the database since a player might have left the room before a request to get the static players values.
-	 * is the player playing a game or waiting to play.
-	 * this holds the username.
-	 * 0: = not playing but still at game room. 
-	 * 1: playing a game. 
-	 * 2: left game room while still playing it. 
-	 * 3: left game room when game was over. 
-	 * 4: quit game.
-	 */
-	private var player_game_state_value_username:Array<String> = [];
-
-	/******************************
-	 * this var is populated from events and at the disconnect event it is passed to the other users. This var is needed because static usernames of the room cannot be taken from the database since a player might have left the room before a request to get the static players values.
-	 * this holds the data, the values below.
-	 * is the player playing a game or waiting to play. 
-	 * 0: = not playing but still at game room. 
-	 * 1: playing a game. 
-	 * 2: left game room while still playing it. 
-	 * 3: left game room when game was over. 
-	 * 4: quit game.
-	 */
-	private var player_game_state_value_data:Array<Array<Int>> = [];
 	
 	/******************************
 	 * button total displayed at client lobby.
+	 * NOTE: remember to change _server.player_game_state_value_username and player_game_state_value_data to this value.
 	 */
-	private var _button_total:Int = 24;
-	
-	// if here at server, the lobby is room 0. if room[1].broadcast is used then at client, only players with room data of 1 can execute code at that code block. sometimes, at client, there is a check to see is the id passed to client matches the id of that user. if there is a match then player can execute code. , eg, if (_data.id == _miscState._data._id) the _miscState is players data where as the _data.id is passed to client.
-	private var room:Array<vendor.mphx.server.room.Room> = [];
-	
+	public var _button_total:Int = 24;	
 	
 	/******************************
 	* closes the server if true. there will be an error if closing within an event because the event code cannot continue if not connected so this var is called in the event and this var "if true" is needed outside the event to close it.
@@ -294,153 +217,314 @@ class Events
 	 */
 	private var _maximumServerConnections:Int = 119;
 	
-	/******************************
-	 * mysql class.
-	 */
-	private var _mysqlDB:MysqlDB;
+	private var _db_delete:DB_Delete;
+	private var _db_insert:DB_Insert;
+	private var _db_select:DB_Select;
+	private var _db_update:DB_Update;
 	
 	/******************************
 	 * to access the _data of the _gameState, miscstate, etc.
 	 */
 	private var _data:Dynamic;
 	
-	/******************************
-	 * Server (computing), a system that responds to requests across a computer network to provide, or help to provide, a network or data service.
-	 */
-	private var _server:Server;
+	private var _server:Main;
+	private var _handler:WebSocketHandler;
 	
-	public function new(data:String, server:Server) 
+	public function new(data:Dynamic, server:Main, handler:WebSocketHandler) 
 	{
 		_data = data;
 		_server = server;
+		_handler = handler;
 		
-		// used to delete any user fields from mysql when the user is disconnecting.
-		_server.onConnectionClose = onDisconnect;
+		_db_delete = new DB_Delete();
+		_db_select = new DB_Select();
+		_db_insert = new DB_Insert();
+		_db_update = new DB_Update();
 		
-		_mysqlDB = new MysqlDB(); // no add(_mysqlDB) needed.
-		
-		// create the rooms.
-		for (i in 0...25) 
-		{
-			room[i] = new vendor.mphx.server.room.Room();
-			_server.rooms.push(room[i]);
-		}
-		
-		//----------------------------------
 		// create the cpu host names for room a and b.
 		Functions.hostCpuUserNames();
+	}	
+	
+	public function name(_data:Dynamic):Void
+	{
+		trace("data received: " + _data._event_name);
 		
-		// sometimes allDataOnlinePlayers.get(_sender) is needed. without that code an error of INVALID FIELD ACCESS.
-		allDataGame = new Map();
-		allDataGame0 = new Map();
-		allDataGame1 = new Map();
-		allDataGame2 = new Map();
-		allDataGame3 = new Map();
-		allDataGame4 = new Map();
-		allDataDailyQuests = new Map();
-		allDataQuestions = new Map();
-		allDataOnlinePlayers = new Map();
-		allDataMisc = new Map();
-		allDataPlayers = new Map();
-		allDataTournaments = new Map();
-		allDataAccount = new Map();
-		allDataGameMessage = new Map();
-		allDataMovement = new Map();
-		allDataStatistics = new Map();
-		allDataHouse = new Map();
-		allDataLeaderboards = new Map();
-		
-		join(_data, _sender);					// called when player joins server.
-		disconnectByServer(_data, _sender); 	// then server is full, this event closes the client that tries to connect.
-		disconnectAllByServer(_data, _sender); 	// disconnect all players from server/
-		isLoggingIn(_data, _sender); 			// the player is logging in.
-		houseLoad(_data, _sender);					// players house where they buy items, place items in room and vote for best house for prizes.
-		houseSave(_data, _sender);	
-		getStatisticsWinLossDraw(_data, _sender);	// Get Statistics Win Loss Draw, such as, wins, draws and losses.
-		getStatisticsAll(_data, _sender);		// get all stats such as experience points, credits, wins, etc.
-		greaterRoomStateValue(_data, _sender);	// event player has entered the room, so change the roomstate value.
-		lesserRoomStateValue(_data, _sender);	// event player has left the room, so change the roomstate value.
-		isRoomLocked(_data, _sender);
-		setRoomData(_data, _sender); 			// save room data to database. able to put user into room.
-		getRoomData(_data, _sender);			// load room data from database.
-		
-		roomLock1(_data, _sender); 				// Used at lobby to delay the second player from entering into the room until the room lock is removed from that room. 
-		roomLock2(_data, _sender);				// This event only removes the room lock.
-		getRoomPlayers(_data, _sender);
-		chatSend(_data, _sender);				// the players chat message.
-		
-		gameMessageNotSender(_data, _sender); 	// Game message. Not a message box.
-		
-		gameMessageBoxForSpectatorWatching(_data, _sender);	// message box.
-
-		messageKick(_data, _sender); 			// stop player from playing for some time.
-		removeKickedFromUser(_data, _sender);
-		
-		messageBan(_data, _sender); 			// stop player from playing forever.
-		
-		drawOffer(_data, _sender);			// offer game draw so that it is a tie.
-		drawAnsweredAs(_data, _sender);	// draw reply.
-		restartOffer(_data, _sender);		// offer game restart so that another game can be played.
-		restartAnsweredAs(_data, _sender);	// chess restart reply.
-
-		OnlinePlayerOfferInvite(_data, _sender);// offer an invite to a player at the lobby.
-		enterGameRoom(_data, _sender);				// this event enters the game room.
-		gameWin(_data, _sender);				// win text using a message popup.
-		gameLose(_data, _sender);				// lose text using a message popup.
-		gameWinThenLoseForOther(_data, _sender);// win text using a message popup then lose message box for the other player.
-		gameLoseThenWinForOther(_data, _sender);// lose text using a message popup, then win message box for the other player.
-		gameDraw(_data, _sender);				// draw text using a message popup.
-		saveWinStats(_data, _sender);			// save win stats of current player.
-		saveLoseStats(_data, _sender);			// save lose stats of current player.
-		saveWinStatsForBoth(_data, _sender);	// save win stats of current player then a lose for the other player.
-		saveLoseStatsForBoth(_data, _sender);	// save lose stats of current player then a win for the other player.
-		saveDrawStats(_data, _sender);			// save draw stats of current player.
-		tournamentChessStandard8Get(_data, _sender);			// gets the selected tournament data.
-		tournamentChessStandard8Put(_data, _sender);			// puts the selected tournament data to the mysql database.
-		playerLeftGameRoom(_data, _sender);		// Trigger an event that the player has left the game room.
-		playerLeftGame(_data, _sender);			// Trigger an event that the player has left the game.
-		loggedInUsers(_data, _sender);			// list of online players with stats. used to invite.
-		actionByPlayer(_data, _sender);			// refers to an action, eg, 1 = kick. see the "Action By Player" event at server.
-		isActionNeededForPlayer(_data, _sender);	
-
-		playerMoveTimeRemaining(_data, _sender);		// gets the current move timer for the player that is moving. the value is sent to the other clients so that they have the update value.
-		
-		gameIsFinished(_data, _sender);		// save a var to mySql so that someone cannot invite when still in game room. also, triggers a var called Reg._gameOverForAllPlayers to equal true so that the game has ended for everyone.
-		
-		isGameFinished(_data, _sender);	// false if game is still being played. defaults to true because when entering the game room the game for those players has not started yet.
-		
-		returnedToLobby(_data, _sender);	// at lobby, so return all vars to 0 for player, so that lobby data can be calculated to display data at lobby correctly.
-						
-		playerMoveId0(_data, _sender);	// called when player moves a piece.
-		playerMoveId1(_data, _sender);	// id 1 = chess.	
-		playerMoveId2(_data, _sender);	// reversi.
-		playerMoveId3(_data, _sender);	// snakes and ladders.
-		playerMoveId4(_data, _sender);	// signature game.
-		
-		isHost(_data, _sender); 		// EVENT WAITING ROOM SETS HOST OF THE ROOM.
-		
-		tradeProposalOffer(_data, _sender); // currently this event is for the signature game. a player sends a trade unit to another player and this event is for that other player receiving the trade. a dialog box displays, with trade details, asking if the player would like that trade. 30 seconds countdown. when timer reaches zero, the dialog box closes.
-		tradeProposalAnsweredAs(_data, _sender); // what did the player answer as the trade request dialog box!
-		
-		Movement(_data, _sender);  // makes all clients move the same piece at the same time. this is not automatic. you need to set the values below at the game code. see SignatureGameClickMe.hx. at client.
-		
-		gamePlayersValues(_data, _sender);	// is the player playing a game or waiting to play. 0 = not playing but still at game room. 1 playing a game. 2: left game room while still playing it. 3 left game or game room when game was over. 
-		
-		spectatorWatching(_data, _sender); // user who requested to watch a game. that user can never play a game in that game room.
-		
-		spectatorWatchingGetMoveNumber(_data, _sender); // send the current move number to the watching spectator so that the timer and white box underneath the P1, P2, P3 or P4 moves, can be updated.
-		
-		moveHistoryNextEntry(_data, _sender);	// every player that moves a piece will use the host of the room to call this event so to update the move history at mysql. this is needed so that when a spectator watching enters the room, that person can get all the move history for that game.
-		
-		moveHistoryAllEntry(_data, _sender);	// the spectator has just joined the game room because there is currently only one move in that users history, do this event to get all the moves in the move history for this game.
-		
-		leaderboards(_data, _sender);			// display a 50 player list of the players with the top experence points.
-		
-		saveNewAccountConfigurations(_data, _sender); // save new user account information. when user first enters online game and chess elo equals zero then the user is new. the user will then be redirected to a new account scene where new user configuration will be set, such as chess skill level. when the save button is pressed, this event is called.
-		
-		dailyQuests(_data, _sender); 			// conpete these daily quests for rewards.
-		dailyQuestsClaim(_data, _sender); 		// At the client the daily quest reward was given to player. this event saves the _reward var so that a second reward of the same type will not be given to player.
-		dailyRewardSave(_data, _sender); // A daily reward has been claimed. now save the reward(s) to the database.
+		switch (_data._event_name)
+		{
+			// called when player joins server.
+			case "Join":
+				join(_data, _server, _handler);
+			
+			// the player is logging in.
+			case "Is Logging In":
+				isLoggingIn(_data, _server, _handler);
+			
+			// players house where they buy items, place items in room and vote for best house for prizes.
+			case "House Load":
+				houseLoad(_data, _server, _handler);
+			
+			// save the house layout for player.
+			case "House Save":
+				houseSave(_data, _server, _handler);
+			
+			// verifies if the email address is valid. validation code could be sent to a user's email address.
+			case "Email Address Validate":
+				emailAddressValidate(_data, _server, _handler);
+			
+			// Get Statistics Win Loss Draw, such as, wins, draws and losses.
+			case "Get Statistics Win Loss Draw":
+				getStatisticsWinLossDraw(_data, _server, _handler);
+			
+			// get all stats such as experience points, credits, wins, etc.
+			case "Get Statistics All":
+				getStatisticsAll(_data, _server, _handler);
+			
+			// event player has entered the room, so change the roomstate value.
+			case "Greater RoomState Value":
+				greaterRoomStateValue(_data, _server, _handler);
+			
+			// event player has left the room, so change the roomstate value.
+			case "Lesser RoomState Value":
+				lesserRoomStateValue(_data, _server, _handler);
+			
+			// if room is locked then player cannot enter it. room is locked for everyone until that player gets all events for that room.
+			case "Is Room Locked":
+				isRoomLocked(_data, _server, _handler);
+			
+			// save room data to database. able to put user into room.
+			case "Set Room Data":
+				setRoomData(_data, _server, _handler);
+			
+			// load room data from database.
+			case "Get Room Data":
+				getRoomData(_data, _server, _handler);
+			
+			// Used at lobby to delay the second player from entering into the room until the room lock is removed from that room.
+			case "Room Lock 1":
+				roomLock1(_data, _server, _handler); 
+			
+			// This event only removes the room lock.
+			case "Room Lock 2":
+				roomLock2(_data, _server, _handler);
+			
+			case "Get Room Players":
+				getRoomPlayers(_data, _server, _handler);
+			
+			// the players chat message.
+			case "Chat Send":
+				chatSend(_data, _server, _handler);
+			
+			// Game message. Not a message box.
+			case "Game Message Not Sender":
+				gameMessageNotSender(_data, _server, _handler);
+			
+			// message box.
+			case "Game Message Box For Spectator Watching":
+				gameMessageBoxForSpectatorWatching(_data, _server, _handler);
+			
+			// stop player from playing for some time.
+			case "Message Kick":
+				messageKick(_data, _server, _handler); 
+			
+			case "Remove Kicked From User":
+				removeKickedFromUser(_data, _server, _handler);
+			
+			// stop player from playing forever.
+			case "Message Ban":
+				messageBan(_data, _server, _handler);
+			
+			// offer game draw so that it is a tie.
+			case "Draw Offer":
+				drawOffer(_data, _server, _handler);
+			
+			// draw reply.
+			case "Draw Answered As":
+				drawAnsweredAs(_data, _server, _handler);
+			
+			// offer game restart so that another game can be played.
+			case "Restart Offer":
+				restartOffer(_data, _server, _handler);
+			
+			// game restart reply.
+			case "Restart Answered As":
+				restartAnsweredAs(_data, _server, _handler);
+			
+			// offer an invite to a player at the lobby.
+			case "Online Player Offer Invite":
+				onlinePlayerOfferInvite(_data, _server, _handler);
+			
+			// this event enters the game room.
+			case "Enter Game Room":
+				enterGameRoom(_data, _server, _handler);
+			
+			// win text using a message popup.
+			case "Game Win":
+				gameWin(_data, _server, _handler);
+			
+			// lose text using a message popup.
+			case "Game Lose":
+				gameLose(_data, _server, _handler);
+			
+			// win text using a message popup then lose message box for the other player.
+			case "Game Win Then Lose For Other":
+				gameWinThenLoseForOther(_data, _server, _handler);
+			
+			// lose text using a message popup, then win message box for the other player.
+			case "Game Lose Then Win For Other":
+				gameLoseThenWinForOther(_data, _server, _handler);
+			
+			// draw text using a message popup.
+			case "Game Draw":
+				gameDraw(_data, _server, _handler);
+			
+			// save win stats of current player.
+			case "Save Win Stats":
+				saveWinStats(_data, _server, _handler);
+			
+			// save lose stats of current player.
+			case "Save Lose Stats":
+				saveLoseStats(_data, _server, _handler);	
+			
+			// save win stats of current player then a lose for the other player.
+			case "Save Win Stats For Both":
+				saveWinStatsForBoth(_data, _server, _handler);
+			
+			// save lose stats of current player then a win for the other player.
+			case "Save Lose Stats For Both":
+				saveLoseStatsForBoth(_data, _server, _handler);
+			
+			// save draw stats of current player.
+			case "Save Draw Stats":
+				saveDrawStats(_data, _server, _handler);
+			
+			// gets the selected tournament data.
+			case "Tournament Chess Standard 8 Get":
+				tournamentChessStandard8Get(_data, _server, _handler);			
+			
+			// puts the selected tournament data to the mysql database.
+			case "Tournament Chess Standard 8 Put":
+				tournamentChessStandard8Put(_data, _server, _handler);
+			
+			// 0: not subscribed to mail. 1: true.
+			case "Tournament Reminder By Mail":
+				tournamentReminderByMail(_data, _server, _handler);
+			
+			// 0: removed from tournament. 1: joined.
+			case "Tournament Participating":
+				tournamentParticipating(_data, _server, _handler);
+			
+			// Trigger an event that the player has left the game room.
+			case "Player Left Game Room":
+				playerLeftGameRoom(_data, _server, _handler);
+			
+			// Trigger an event that the player has left the game.
+			case "Player Left Game":
+				playerLeftGame(_data, _server, _handler);
+			
+			// list of online players with stats. used to invite.
+			case "Logged In Users":
+				loggedInUsers(_data, _server, _handler);
+			
+			// refers to an action, eg, 1 = kick. see the "Action By Player" event at server.
+			case "Action By Player":
+				actionByPlayer(_data, _server, _handler);
+			
+			case "Is Action Needed For Player":
+				isActionNeededForPlayer(_data, _server, _handler);	
+			
+			// gets the current move timer for the player that is moving. the value is sent to the other clients so that they have the update value.
+			case "Player Move Time Remaining":
+				playerMoveTimeRemaining(_data, _server, _handler);
+			
+			// save a var to mySql so that someone cannot invite when still in game room. also, triggers a var called Reg._gameOverForAllPlayers to equal true so that the game has ended for everyone.
+			case "Game Is Finished":
+				gameIsFinished(_data, _server, _handler);
+			
+			// false if game is still being played. defaults to true because when entering the game room the game for those players has not started yet.
+			case "Is Game Finished":
+				isGameFinished(_data, _server, _handler);
+			
+			// at lobby, so return all vars to 0 for player, so that lobby data can be calculated to display data at lobby correctly.
+			case "Returned To Lobby":
+				returnedToLobby(_data, _server, _handler);
+			
+			// called when player moves a piece.
+			// checkers.
+			case "Player Move Id 0":
+				playerMoveId0(_data, _server, _handler);
+			
+			// chess.
+			case "Player Move Id 1":
+				playerMoveId1(_data, _server, _handler);	
+			
+			// reversi.
+			case "Player Move Id 2":
+				playerMoveId2(_data, _server, _handler);
+			
+			// snakes and ladders.
+			case "Player Move Id 3":
+				playerMoveId3(_data, _server, _handler);
+			
+			// signature game.
+			case "Player Move Id 4":
+				playerMoveId4(_data, _server, _handler);
+			
+			// event waiting room sets host of the room.
+			case "Is Host":
+				isHost(_data, _server, _handler);
+			
+			// currently this event is for the signature game. a player sends a trade unit to another player and this event is for that other player receiving the trade. a dialog box displays, with trade details, asking if the player would like that trade. 30 seconds countdown. when timer reaches zero, the dialog box closes.
+			case "Trade Proposal Offer":
+				tradeProposalOffer(_data, _server, _handler);
+			
+			// what did the player answer as the trade request dialog box!
+			case "Trade Proposal Answered As":
+				tradeProposalAnsweredAs(_data, _server, _handler);
+			
+			// is the player playing a game or waiting to play. 0 = not playing but still at game room. 1 playing a game. 2: left game room while still playing it. 3 left game or game room when game was over. 
+			case "Game Players Values":
+				gamePlayersValues(_data, _server, _handler);
+			
+			// user who requested to watch a game. that user can never play a game in that game room.
+			case "Spectator Watching":
+				spectatorWatching(_data, _server, _handler); 
+			
+			// send the current move number to the watching spectator so that the timer and white box underneath the P1, P2, P3 or P4 moves, can be updated.
+			case "Spectator Watching Get Move Number":
+				spectatorWatchingGetMoveNumber(_data, _server, _handler); 
+			
+			// every player that moves a piece will use the host of the room to call this event so to update the move history at mysql. this is needed so that when a spectator watching enters the room, that person can get all the move history for that game.
+			case "Move History Next Entry":
+				moveHistoryNextEntry(_data, _server, _handler);
+			
+			// the spectator has just joined the game room because there is currently only one move in that users history, do this event to get all the moves in the move history for this game.
+			case "Move History All Entry":
+				moveHistoryAllEntry(_data, _server, _handler);
+			
+			// display a 50 player list of the players with the top experence points.
+			case "Leaderboards":
+				leaderboards(_data, _server, _handler);
+			
+			// save new user account information. when user first enters online game and chess elo equals zero then the user is new. the user will then be redirected to a new account scene where new user configuration will be set, such as chess skill level. when the save button is pressed, this event is called.
+			case "Save New Account Configurations":
+				saveNewAccountConfigurations(_data, _server, _handler); 
+			
+			// conpete these daily quests for rewards.
+			case "Daily Quests":
+				dailyQuests(_data, _server, _handler);
+			
+			// At the client the daily quest reward was given to player. this event saves the _reward var so that a second reward of the same type will not be given to player.
+			case "Daily Quests Claim":
+				dailyQuestsClaim(_data, _server, _handler); 
+			
+			// A daily reward has been claimed. now save the reward(s) to the database.
+			case "Daily Reward Save":
+				dailyRewardSave(_data, _server, _handler);
+			
+			// you need to set the values below at the game code. see SignatureGameClickMe.hx. at client. makes all clients move the same piece at the same time. this is not automatic.
+			case "Movement":
+				movement(_data, _server, _handler);
+		}
 	}
 	
 	/**************************************************************************
@@ -451,28 +535,28 @@ class Events
 	{
 		//-------------------------------
 		// daily quests.
-		_mysqlDB.saveDailyQuests_3_in_a_row_win(_username);
+		_db_update.daily_quests_3_in_a_row_win(_username);
 		
 		// if finished a game of chess in 5 or under moves...
 		if (_data._gameId == 1 && _data._moveTotal <= 5) 
-			_mysqlDB.saveDailyQuests_chess_5_moves_under(_username);
+			_db_update.daily_quests_chess_5_moves_under(_username);
 		// if finished a game of snakes and ladder in under 4 moves...
 		if (_data._gameId == 3 && _data._moveTotal < 4) 
-			_mysqlDB.saveDailyQuests_snakes_under_4_moves(_username);
+			_db_update.daily_quests_snakes_under_4_moves(_username);
 		if (_data._timeTotal == 300) // 300 is 5m * 60s (5*60)
-			_mysqlDB.saveDailyQuests_win_5_minute_game(_username);
+			_db_update.daily_quests_win_5_minute_game(_username);
 		
 		if (_data._house_items_daily_total >= 4)
-			_mysqlDB.saveDailyQuests_buy_four_house_items(_username);
+			_db_update.daily_quests_buy_four_house_items(_username);
 		if (_data._gameId == 4) // signature game.
-			_mysqlDB.saveDailyQuests_finish_signature_game(_username);
+			_db_update.daily_quests_finish_signature_game(_username);
 		if (_data._gameId == 2 && _data._piece_total_for_winner >= 50)
-			_mysqlDB.saveDailyQuests_reversi_occupy_50_units(_username);
+			_db_update.daily_quests_reversi_occupy_50_units(_username);
 
 			//------------------------------
 			// checkers.	
 			if (_data._gameId == 0 && _data._checkers_king_total >= 6) 
-				_mysqlDB.saveDailyQuests_checkers_get_6_kings(_username);
+				_db_update.daily_quests_checkers_get_6_kings(_username);
 				
 			_data._all_boardgames_played_total[_data._gameId] = 1;
 			
@@ -485,8 +569,8 @@ class Events
 			}
 			
 			if (_count == true)
-				_mysqlDB.saveDailyQuests_play_all_5_board_games(_username);
-			//----------------------------
+				_db_update.daily_quests_play_all_5_board_games(_username);
+			
 		//------------------------------
 		
 		doEvent(0, _data, false, _username); // credits.
@@ -500,7 +584,7 @@ class Events
 	 */
 	private function eventsLose(_data:Dynamic, _username:Dynamic):Void
 	{
-		_mysqlDB.saveDailyQuests_3_in_a_row_lose(_username);
+		_db_update.daily_quests_3_in_a_row_lose(_username);
 		
 		doEvent(1, _data, true, _username); // experience points.
 		doEvent(2, _data, true, _username); // house coins.
@@ -517,7 +601,7 @@ class Events
 		{
 			case 0: // credits
 			{
-				var rset = _mysqlDB.getEventCreditsFromUsersTable(_data._username);
+				var rset = _db_select.user_get_all_at_statistics(_data._username);
 				
 				// month january starts at 0 not 1.
 				var _intMonth = Std.parseInt(DateTools.format(Date.now(), "%m")) -1;
@@ -530,13 +614,13 @@ class Events
 					if (_intMonth != rset._eventMonth[0]
 					&&  _intDay != rset._eventDay[0])
 					{
-						_mysqlDB.changeEventCreditsMonthAndDay(_data._username, _intMonth, _intDay);
+						_db_update.credits_for_user_at_statistics(_data._username, _intMonth, _intDay);
 					}
 					
 					// if under 5 credits for today then give 1 credit to user that won the game. note that this event is called when game is won.
 					else if (rset._creditsToday[0] < 5)
 					{
-						_mysqlDB.giveCreditToUser(_data._username);
+						_db_update.credits_date_for_user_at_statistics(_data._username);
 					}
 				}
 				
@@ -557,13 +641,13 @@ class Events
 					{
 						// double the experience points divided by 2.
 						var _halfExperiencePointsGiven:Int = Math.round((_experiencePointsGiven[_data._gameId] * 2) / 2);
-						_mysqlDB.giveExperiencePointsToUser(_data._username, _halfExperiencePointsGiven);
+						_db_update.exp_points_for_user_at_statistics(_data._username, _halfExperiencePointsGiven);
 					}
 					
 					else 
 					{
 						// double the experience points.
-						_mysqlDB.giveExperiencePointsToUser(_data._username, _experiencePointsGiven[_data._gameId] * 2);
+						_db_update.exp_points_for_user_at_statistics(_data._username, _experiencePointsGiven[_data._gameId] * 2);
 					}
 				}
 				
@@ -574,14 +658,14 @@ class Events
 					{
 						// normal expierience points divided by 2.
 						var _halfExperiencePointsGiven:Int = Math.round(_experiencePointsGiven[_data._gameId] / 2);
-						_mysqlDB.giveExperiencePointsToUser(_data._username, _halfExperiencePointsGiven);
+						_db_update.exp_points_for_user_at_statistics(_data._username, _halfExperiencePointsGiven);
 						
 					}
 					
 					else 
 					{
 						// give normal experience points.
-						_mysqlDB.giveExperiencePointsToUser(_data._username, _experiencePointsGiven[_data._gameId]);
+						_db_update.exp_points_for_user_at_statistics(_data._username, _experiencePointsGiven[_data._gameId]);
 					}
 				}
 			}
@@ -600,12 +684,12 @@ class Events
 					
 					if (_loseGame == true)
 					{
-						_mysqlDB.giveHouseCoinsToUser(_data._username, 1);
+						_db_update.house_coins_for_user_at_statistics(_data._username, 1);
 					}
 					
 					else 
 					{
-						_mysqlDB.giveHouseCoinsToUser(_data._username, 2);
+						_db_update.house_coins_for_user_at_statistics(_data._username, 2);
 					}
 				}
 				
@@ -622,257 +706,195 @@ class Events
 	* EVENT JOIN
 	* this Join event is the first read when the client connects to this server.
 	*/
-	private function join(_data, _sender):Void
+	private function join(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Join", function(_data:Dynamic, _sender:vendor.mphx.connection.IConnection)
+		/*trace(_data.id);
+		trace(_data._username);
+		trace(_data._hostname);
+		trace(_data._password_hash);
+		trace(_data._ip);*/
+		
+		try 
 		{
-			try 
+			Functions.userLogs("Join", "", "", ""); // logs.
+			
+			if (_data.id.length > 80) return;
+			if (_data._username.length > 80) return;
+			if (_data._hostname.length > 150) return;
+			if (_data._password_hash.length > 150) return;
+			if (_data._email_address.length > 100) return;
+			
+			// a client has connected to this server. Therefore, increase the amount of clients connected.
+			_server._serverConnections += 1;
+
+			Sys.println ("A client has joined the server.");
+
+			// a client has connected to this server. Therefore, increase the amount of clients connected.
+
+			Sys.println ("Clients connected: " + _server._serverConnections);
+
+			var host = _db_insert.hostname_to_logged_in_hostname(_data._username, _data._hostname);
+
+			if (host == true) _data._alreadyOnlineHost = true;
+			else _data._alreadyOnlineHost = false;
+
+			// TODO if removing this block then remember to remove _db_select.user_all_at_users() function.
+			//var rset = _db_select.user_all_at_users(_data._username);
+			//var _resolve_ip = new Host(Std.string(rset._ip[0]));
+			//_data._ip = Std.string(_resolve_ip);
+			
+			// get the current room data for user.
+			/*_miscState._roomState = _roomState;
+			_miscState._roomPlayerLimit = _roomPlayerLimit;
+			_miscState._roomPlayerCurrentTotal = _roomPlayerCurrentTotal;
+			_miscState._vsComputer = _vsComputer;
+			_miscState._allowSpectators = _allowSpectators;
+			_miscState._roomGameIds = _roomGameIds;
+			_miscState._roomHostUsername = _roomHostUsername;
+			_miscState._gid = _gid;
+			*/
+			_data._server_fast_send = "";
+			_data._server_blocking = "";			
+			_data._clients_connected = _server._serverConnections;
+			
+			// host not found for username.
+			// check if hostname exists in database.
+			var _row = _db_select.data_from_hostname_at_users(_data._hostname);
+			
+			if (Std.string(_row._hostname[0]) != _data._hostname) 
 			{
-				Functions.userLogs("Join", "", "", ""); // logs.
+				var _found:Bool = false;
 				
-				if (_data.id.length > 80) return;
-				if (_data._username.length > 80) return;
-				if (_data._popupMessage.length) return;
-				if (_data._hostname.length > 200) return;
+				// is this a guest account?
 				
-				//if (_data._username.length == 0) _data._username = "bot ben"; 
+				var _row2 = _db_select.guests_from_users_table();
 				
-				// _sender is the current player connected to this server. _sender is passed through this event. the _senders _data is set for the client to get.
-				allDataGame.set(_sender, _data);
-				allDataGame0.set(_sender, _data);
-				allDataGame1.set(_sender, _data);
-				allDataGame2.set(_sender, _data);
-				allDataGame3.set(_sender, _data);
-				allDataGame4.set(_sender, _data);
-				
-				allDataDailyQuests.set(_sender, _data);
-				allDataQuestions.set(_sender, _data);
-				allDataOnlinePlayers.set(_sender, _data);
-				allDataMisc.set(_sender, _data);
-				allDataPlayers.set(_sender, _data);
-				allDataTournaments.set(_sender, _data);
-				allDataAccount.set(_sender, _data);
-				allDataGameMessage.set(_sender, _data);
-				allDataMovement.set(_sender, _data);
-				allDataStatistics.set(_sender, _data);
-				allDataHouse.set(_sender, _data);
-				allDataLeaderboards.set(_sender, _data);
-				
-				// a client has connected to this server. Therefore, increase the amount of clients connected.
-				_serverConnections += 1;
-
-				// if no more connections are allowed then send _data to the clients "DisconnectByServer" event. Every client will receive the broadcast but only the player with the id of the sender will be disconnected.
-				if (_serverConnections >= _maximumServerConnections)
+				if (_data._username == "Guest1")
 				{
-					_server.broadcast("DisconnectByServer", _data);
-				}
-				// connection is allowed, send a trace message to the servers console about the connection. Next broadcast the _data so every open client has the connected player displayed in that app.
-				else
-				{
-					Sys.println ("A client has joined the server.");
-
-					// a client has connected to this server. Therefore, increase the amount of clients connected.
-
-					Sys.println ("Clients connected: " + _serverConnections);
-
-					_accountState = allDataAccount.get(_sender);
-					
-					
-					var host = _mysqlDB.insert_hostname_to_logged_in_table(_accountState._hostname);
-
-					if (host == true) _accountState._alreadyOnlineHost = true;
-					else _accountState._alreadyOnlineHost = false;
-
-					//var rset = _mysqlDB.select_ip(_data._username);
-					//var _resolve_ip = new Host(Std.string(rset._ip[0]));
-					//_accountState._ip = Std.string(_resolve_ip);
-					
-					// get the current room data for user.
-					/*_miscState._roomState = _roomState;
-					_miscState._roomPlayerLimit = _roomPlayerLimit;
-					_miscState._roomPlayerCurrentTotal = _roomPlayerCurrentTotal;
-					_miscState._vsComputer = _vsComputer;
-					_miscState._allowSpectators = _allowSpectators;
-					_miscState._roomGameIds = _roomGameIds;
-					_miscState._roomHostUsername = _roomHostUsername;
-					_miscState._gid = _gid;
-					*/
-					_accountState._server_fast_send = _server.fastSend;
-					_accountState._server_blocking = _server.blocking;			
-					_accountState._clients_connected = _serverConnections;
-					
-					// host not found for username.
-					// check if hostname exists in database.
-					var _row = _mysqlDB.select_host_at_users_table(_data._hostname);
-					
-					if (Std.string(_row._hostname[0]) != _data._hostname) 
+					for (i in 0... _row2._user.length)
 					{
-						var _found:Bool = false;
-						
-						// is this a guest account?
-						
-						var _row2 = _mysqlDB.select_guests_from_users_table();
-						
-						if (_data._username == "Guest1")
+						if ( Std.string(_row2._user[i]) != "Guest" + Std.string((i+1)))
 						{
-							for (i in 0... _row2._user.length)
-							{
-								if ( Std.string(_row2._user[i]) != "Guest" + Std.string((i+1)))
-								{
-									_data._username = _accountState._username = "Guest" + Std.string((i+1));
-									_found = true;
-								}
-								
-								if (_found == true) break;
-							}
+							_data._username = "Guest" + Std.string((i+1));
+							_found = true;
 						}
+						
+						if (_found == true) break;
 					}
-					
-					else if (_data._username == "Guest1")
-					{
-						var _row3 = _mysqlDB.select_host_at_users_table(_data._hostname);
-						_data._username = _accountState._username = Std.string(_row3._user[0]);
-					}
-					
-					else
-					{
-						var rset = _mysqlDB.select_host_at_users_table(_data._hostname);
-						var _hash = Std.string(rset._password_hash[0]);
-						var _user = Std.string(rset._user[0]);
-						var _hostname = Std.string(rset._hostname[0]);
-				
-						// no longer using a guest account. save players name to the row that has the hostname.
-						if (_user != _data._username
-						&&	_hostname == _data._hostname)
-							_mysqlDB.update_players_name(_data._username, _user, _data._password_hash, _data._hostname);
-					}
-					
-					_server.broadcast("Join", _accountState);
-					
 				}
 			}
-			catch (e:Dynamic)
+			
+			else if (_data._username == "Guest1")
 			{
-				Sys.println ('Warning, someone accessed the server perhaps from a "is my port active" service.');
-				
-				Functions.userLogs("Join", "", "", ""); // logs.				
+				var _row3 = _db_select.data_from_hostname_at_users(_data._hostname);
+				_data._username = Std.string(_row3._user[0]);
 			}
-		});
-	}
-
-	/******************************
-	* EVENT DISCONNECT BY SERVER
-	* then server is full, this event closes the client that tries to connect. this is the same as the disconnect event but it works because it calls a different code at client.
-	*/
-	private function disconnectByServer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
-	{
-		_server.events.on("DisconnectByServer", function (_data, _sender)
+			
+			else
+			{
+				var rset = _db_select.data_from_hostname_at_users(_data._hostname);
+				var _hash = Std.string(rset._password_hash[0]);
+				var _user = Std.string(rset._user[0]);
+				var _hostname = Std.string(rset._hostname[0]);
+		
+				// no longer using a guest account. save players name to the row that has the hostname.
+				if (_user != _data._username
+				&&	_hostname == _data._hostname)
+					_db_update.rename_user_from_guest_at_users(_data._username, _user, _data._password_hash, _data._hostname);
+			}
+			
+			for (i in 0... BadWords.list.length)
+			{
+				if (_data._username.toLowerCase() == BadWords.list[i].toLowerCase())
+					_data._username_restricted = BadWords.list[i];
+			}
+			
+			_server._is_logged_in_twice(_data);
+			_server.put_in_room(_data);
+			_server.send_to_handler(_data);
+			
+		}
+		catch (e:Dynamic)
 		{
-			_miscState = allDataMisc.get(_sender);
-			_miscState._alreadyOnlineHost = _data._alreadyOnlineHost;
-			_miscState._host = _data._host;
-
-			_sender.send("DisconnectByServer", _miscState);
-		});
-	}
-	
-	/******************************
-	* EVENT DISCONNECT ALL PLAYERS BY SERVER
-	*/
-	private function disconnectAllByServer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
-	{
-		_server.events.on("Disconnect All By Server",function (_data, _sender){
-			_closeServer = true;
-
-			_miscState = allDataMisc.get(_sender);
-			_miscState._alreadyOnlineHost = _data._alreadyOnlineHost;
-			_miscState._host = _data._host;
-
-			_server.broadcast("Disconnect All By Server", _miscState); // need to call this event here to remove all players or else when user clicks the X button at the top-right corner of the client application the _gameState at the other clients will not be deleted.
-		});
+			Sys.println ('Warning, someone accessed the server perhaps from a "is my port active" service.');
+			
+			Functions.userLogs("Join", "", "", ""); // logs.				
+		}
 	}
 	
 	/******************************
 	* EVENT IS LOGGING IN. user is typing a username and password to enter the lobby.
 	* _dataAccount
 	*/
-	private function isLoggingIn(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function isLoggingIn(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Is Logging In", function (_data, _sender)
+		var rset = _db_select.user_all_at_users(_data._username);
+		var _hash = Std.string(rset._password_hash[0]);
+		var _user = Std.string(rset._user[0]);
+		var _hostname = Std.string(rset._hostname[0]);
+		
+		// 1: save hash to database if hash was not found in database.
+		if (_hash == "")
 		{
-			_accountState = allDataAccount.get(_sender);
+			// saves either a guest or regular username.
+			_db_update.user_password_hash_at_users(_data._username, _data._password_hash);
 			
-			var rset = _mysqlDB.select_hash(_data._username);
-			var _hash = Std.string(rset._password_hash[0]);
-			var _user = Std.string(rset._user[0]);
-			var _hostname = Std.string(rset._hostname[0]);
 			
-			// 1: save hash to database if hash was not found in database.
-			if (_hash == "")
+			_hash = _data._password_hash;
+		}
+
+		if (_data._username != "" // old account
+		&&	_hash == _data._password_hash
+		||	_data._username.toLowerCase() != "nobody"
+		||	_user == "null" && _hash != "" /* new account */
+		||	_data._username == "bot ben"
+		||	_data._username == "bot zak"
+		||	_data._username == "bot piper"
+		||	_data._username == "bot lisa"
+		||	_data._username == "bot amy"
+		)
+		{
+			_db_delete.tables_user_logged_off(_data._username);
+			_db_delete.user_no_kicked_or_banned(_data._username);
+			_db_delete.user_at_who_is_host(_data._username); 
+			
+			// check if user is already online.				
+			var _found = _db_select.count_from_logged_in_users(_data._username);
+
+			if (_found == true) 
 			{
-				// saves either a guest or regular username.
-				_mysqlDB.password_hash(_data._username, _data._password_hash);
-				
-				
-				_hash = _data._password_hash;
-			}
-
-			if (_data._username != "" // old account
-			&&	_hash == _data._password_hash
-			||	_user == "null" && _hash != "" /* new account */
-			||	_data._username == "bot ben"
-			||	_data._username == "bot zak"
-			||	_data._username == "bot piper"
-			||	_data._username == "bot lisa"
-			||	_data._username == "bot amy"
-			)
-			{
-				_mysqlDB.delete_tables_user_logged_off(_accountState._username);
-				_mysqlDB.delete_user_no_kicked_or_banned(_accountState._username);
-				_mysqlDB.deleteIsHost(_accountState._username); 
-				
-				// check if user is already online.				
-				var _found = _mysqlDB.requestLoggedInUsers(_accountState._username);
-
-				if (_found == true) 
-				{
-					_accountState._alreadyOnlineUser = true; // username is already online. this var will be sent to client at that time the user will be disconnected.
-				}
-				else
-				{
-					// create room_data mysql fields. when user logs off, the mysql username rows will be deleted.
-					addRowsToDatabase(_accountState);
-					
-				}
-				
-				if (_data._username.substr(0, 5) == "Guest")	
-					_mysqlDB.update_hostname_at_users_table(_data._username, _data._hostname);
-				
-				// the vars hold the state of a player's game, such as, did the player quit the game, or is the player at the game room but is not playing the game? these vars are at the button of events that use these vars and also at the disconnect event so that the player can send these updated vars to other players in that room. those other players need these vars to that a proper message is displayed to them, such as, the player had left the room message.
-				player_game_state_value_username.push(_data._username);
-				player_game_state_value_data.push([0,0,0,1]);
-
-				_accountState._alreadyOnlineHost = false;
-				_accountState._popupMessage = "Login successful."; // if you change the value of this string then you need to change it also at client.
-				
-				_mysqlDB.update_avatar_at_login(_data._username, _data._avatarNumber);
-
-				// TODO add a _data_some_new_var here which cab be used to bypass this code so that the user's avatar at website is used. also, see client PlayState class, the code just above the "is logging in" event.
-				Functions.userLogs("Is Logging In", _data.id, _data._username); // logs.
-				_mysqlDB.insertUserToUsersTable(_data._username, _data._password_hash, _data._ip, _data._hostname);
-				_mysqlDB.insertUserToDailyQuestsTable(_data._username);
-				
-				_sender.putInRoom(room[0]);
-				
+				_data._alreadyOnlineUser = true; // username is already online. this var will be sent to client at that time the user will be disconnected.
 			}
 			else
 			{
-				_accountState._popupMessage = "Login failed."; // if you change the value of this string then you need to change it also at client.
+				// create room_data mysql fields. when user logs off, the mysql username rows will be deleted.
+				addRowsToDatabase(_data);
+				
 			}
 			
-			_sender.send("Is Logging In", _accountState);
+			if (_data._username.substr(0, 5) == "Guest")	
+				_db_update.hostname_at_users(_data._username, _data._hostname);
 			
-		});
+			_data._alreadyOnlineHost = false;
+			_data._popupMessage = "Login successful."; // if you change the value of this string then you need to change it also at client.
+			
+			_db_update.avatar_at_login(_data._username, _data._avatarNumber);
+
+			// TODO add a _data_some_new_var here which cab be used to bypass this code so that the user's avatar at website is used. also, see client PlayState class, the code just above the "is logging in" event.
+			Functions.userLogs("Is Logging In", _data.id, _data._username); // logs.
+			_db_insert.user_and_data_to_users(_data._username, _data._password_hash, _data._ip, _data._hostname);
+			_db_insert.user_data_to_daily_quests(_data._username);
+			
+			_data._room = 0;
+			
+		}
+		else
+		{
+			_data._popupMessage = "Login failed."; // if you change the value of this string then you need to change it also at client.
+		}
+		
+		_server.send_to_handler(_data);
+		
 	}
 	
 	private function player_game_state_value_update(_data:Dynamic):Void
@@ -881,13 +903,15 @@ class Events
 		if (_data._username != null
 		&&	_data._gamePlayersValues != null)
 		{		
-			for (i in 0...player_game_state_value_username.length+1)
+			for (i in 0...4)
 			{
 				// find the username is this var.
-				if (_data._username == player_game_state_value_username[i])
+				if (_data._usernamesStatic[i] != ""
+				&&	_data._username == _data._usernamesStatic[i])
 				{
 					// update the game state for this player.
-					player_game_state_value_data[i] = _data._gamePlayersValues;
+					_server.player_game_state_value_username[_data._room][i] = _data._usernamesStatic[i];
+					_server.player_game_state_value_data[_data._room][i] = _data._gamePlayersValues[i];
 				}
 			}
 		}
@@ -898,138 +922,121 @@ class Events
 	* EVENT LOAD HOUSE DATA.
 	* players house where they buy items, place items in room and vote for best house for prizes.
 	*/
-	private function houseLoad(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function houseLoad(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("House Load", function (_data, _sender)
+		Functions.userLogs("House Load", _data.id, _data._username, _data); // logs.
+
+		var row = _db_select.user_all_at_house(_data._username);
+
+		_data._sprite_number = Std.string(row._spriteNumber[0]);
+		_data._sprite_name = Std.string(row._spriteName[0]);
+		_data._items_x = Std.string(row._itemsX[0]);
+		_data._items_y = Std.string(row._itemsY[0]);
+		_data._map_x = Std.string(row._mapX[0]);
+		_data._map_y = Std.string(row._mapY[0]);
+		_data._is_item_purchased = Std.string(row._isItemPurchased[0]);
+		_data._item_direction_facing = Std.string(row._itemDirectionFacing[0]);
+		_data._map_offset_x = Std.string(row._mapOffsetX[0]);
+		_data._map_offset_y = Std.string(row._mapOffsetY[0]);
+		_data._item_is_hidden = Std.string(row._itemIsHidden[0]);
+		_data._item_order = Std.string(row._itemOrder[0]);
+		_data._item_behind_walls = Std.string(row._itemBehindWalls[0]);
+		_data._floor = Std.string(row._floor[0]);
+		_data._wall_left = Std.string(row._wallLeft[0]);
+		_data._wall_up_behind = Std.string(row._wallUpBehind[0]);
+		_data._wall_up_in_front = Std.string(row._wallUpInFront[0]);
+		_data._floor_is_hidden = Std.string(row._floorIsHidden[0]);
+		_data._wall_left_is_hidden = Std.string(row._wallLeftIsHidden[0]);
+		_data._wall_up_behind_is_hidden = Std.string(row._wallUpBehindIsHidden[0]);
+		_data._wall_up_in_front_is_hidden = Std.string(row._wallUpInFrontIsHidden[0]);
+		
+		_server.send_to_handler(_data);
+	}
+	
+	/******************************
+	* EVENT EMAIL ADDRESS VALIDATE
+	* verifies if the email address is valid. validation code could be sent to a user's email address.
+	* _dataAccount
+	*/
+	private function emailAddressValidate(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
+	{
+		Functions.userLogs("Email Address Validate", _data.id, _data._username, _data); // logs.
+		
+		if (_data._send_email_address_validation_code == true)
 		{
-			Functions.userLogs("House Load", _data.id, _data._username, _data); // logs.
-	
-			var row = _mysqlDB.getHouseDataForUser(_data._username);
-	
-			_data._sprite_number = Std.string(row._spriteNumber[0]);
-			_data._sprite_name = Std.string(row._spriteName[0]);
-			_data._items_x = Std.string(row._itemsX[0]);
-			_data._items_y = Std.string(row._itemsY[0]);
-			_data._map_x = Std.string(row._mapX[0]);
-			_data._map_y = Std.string(row._mapY[0]);
-			_data._is_item_purchased = Std.string(row._isItemPurchased[0]);
-			_data._item_direction_facing = Std.string(row._itemDirectionFacing[0]);
-			_data._map_offset_x = Std.string(row._mapOffsetX[0]);
-			_data._map_offset_y = Std.string(row._mapOffsetY[0]);
-			_data._item_is_hidden = Std.string(row._itemIsHidden[0]);
-			_data._item_order = Std.string(row._itemOrder[0]);
-			_data._item_behind_walls = Std.string(row._itemBehindWalls[0]);
-			_data._floor = Std.string(row._floor[0]);
-			_data._wall_left = Std.string(row._wallLeft[0]);
-			_data._wall_up_behind = Std.string(row._wallUpBehind[0]);
-			_data._wall_up_in_front = Std.string(row._wallUpInFront[0]);
-			_data._floor_is_hidden = Std.string(row._floorIsHidden[0]);
-			_data._wall_left_is_hidden = Std.string(row._wallLeftIsHidden[0]);
-			_data._wall_up_behind_is_hidden = Std.string(row._wallUpBehindIsHidden[0]);
-			_data._wall_up_in_front_is_hidden = Std.string(row._wallUpInFrontIsHidden[0]);
+			// create the email validation code.
+			var _validation_code = Functions.create_code();
 			
-			_sender.send("House Load", _data);
-		});
+			_db_update.user_validation_code_at_users(_data._username, _data._email_address, _validation_code);
+			
+			// send the email address validation code to the new requested email address.
+			var _send_mail = new EasyMail();
+			_send_mail.compose("K Board Games: Validate Email Address.", "", 
+			'<p>Welcome to <a href="kboardgames.com">K Board Games.</a></p>
+
+<p>In compliance with the Canadian Anti-Spam Legislation, ' + Reg._domain + ' is requesting your response that you want your email address validated.</p><p>A user with a validated email address can subscribe to chess tournament move piece notices. To validate your email address, click <a href= "' + Reg._domain + '/server/emailAddressValidate.php?u=' + _data._username + '&v=' + _validation_code + '">here</a>.</p>
+
+<p>Just ignore this email if you have not requested it or you are not interested in chess tournament play.</p>');
+			_send_mail.send(Reg._smtpFrom, "admin@kboardgames.com", Reg._smtpHost, Reg._smtpPort, Reg._smtpUsername, Reg._smtpPassword);
+			
+		}
+		
+		_server.send_to_handler(_data);
+
 	}
 	
 	/**************************************************************************
 	* EVENT SAVE HOUSE DATA.
 	*/
-	private function houseSave(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function houseSave(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("House Save", function (_data, _sender)
-		{
-			Functions.userLogs("House Save", _data.id, _data._username, _data); // logs.
+		Functions.userLogs("House Save", _data.id, _data._username, _data); // logs.
 			
-			_mysqlDB.saveHouseDataForUser(_data._username, _data._sprite_number, _data._sprite_name, _data._items_x, _data._items_y, _data._map_x, _data._map_y, _data._is_item_purchased, _data._item_direction_facing, _data._map_offset_x, _data._map_offset_y, _data._item_is_hidden, _data._item_order, _data._item_behind_walls, _data._floor, _data._wall_left, _data._wall_up_behind, _data._wall_up_in_front, _data._floor_is_hidden, _data._wall_left_is_hidden, _data._wall_up_behind_is_hidden, _data._wall_up_in_front_is_hidden);
+		_db_update.user_house_data_at_house(_data._username, _data._sprite_number, _data._sprite_name, _data._items_x, _data._items_y, _data._map_x, _data._map_y, _data._is_item_purchased, _data._item_direction_facing, _data._map_offset_x, _data._map_offset_y, _data._item_is_hidden, _data._item_order, _data._item_behind_walls, _data._floor, _data._wall_left, _data._wall_up_behind, _data._wall_up_in_front, _data._floor_is_hidden, _data._wall_left_is_hidden, _data._wall_up_behind_is_hidden, _data._wall_up_in_front_is_hidden);
 	
-		});
 	}
 		
 	/******************************
 	* EVENT PLAYER MOVE TIME REMAINING
 	* Gets the current move timer for the player that is moving. the value is sent to the other clients so that they have the update value.
 	*/
-	private function playerMoveTimeRemaining(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function playerMoveTimeRemaining(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Player Move Time Remaining",function (_data, _sender)
-		{			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Player Move Time Remaining", _data);
-				}
-			}
-
-		});
+		_server.broadcast_everyone(_data);
 	}
 
 	/******************************
 	* EVENT PLAYER MOVE
 	* the client sends a player move event.
 	*/
-	private function playerMoveId0(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function playerMoveId0(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Player Move Id 0",function (_data, _sender)
-		{
-			Functions.userLogs("Player Move Id 0", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Player Move Id 0", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Player Move Id 0", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);
+		
 	}
 
 	/******************************
 	* EVENT PLAYER MOVE
 	* the client sends a player move event.
 	*/
-	private function playerMoveId1(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function playerMoveId1(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Player Move Id 1",function (_data, _sender)
-		{
-			Functions.userLogs("Player Move Id 1", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Player Move Id 1", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Player Move Id 1", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}	
 	
 	/******************************
 	* EVENT PLAYER MOVE
 	* the client sends a player move event.
 	*/
-	private function playerMoveId2(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function playerMoveId2(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Player Move Id 2",function (_data, _sender)
-		{
-			Functions.userLogs("Player Move Id 2", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Player Move Id 2", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Player Move Id 2", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}
 	
 	/******************************
@@ -1037,44 +1044,22 @@ class Events
 	* the client sends a player move event.
 	* RegTypedef._dataGame3._gameUnitNumberNew
 	*/
-	private function playerMoveId3(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function playerMoveId3(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Player Move Id 3",function (_data, _sender)
-		{
-			Functions.userLogs("Player Move Id 3", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Player Move Id 3", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Player Move Id 3", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}	
 	
 	/******************************
 	* EVENT PLAYER MOVE
 	* the client sends a player move event.
 	*/
-	private function playerMoveId4(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function playerMoveId4(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Player Move Id 4",function (_data, _sender)
-		{
-			Functions.userLogs("Player Move Id 4", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Player Move Id 4", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Player Move Id 4", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/****************************************************************************
@@ -1082,101 +1067,99 @@ class Events
 	* complete these daily quests for rewards.
 	* _dailyQuestsState
 	*/
-	private function dailyQuests(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function dailyQuests(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Daily Quests",function (_data, _sender)
+		Functions.userLogs("Daily Quests", _data.id, _data._username, _data); // logs.
+		
+		var rset = _db_select.user_daily_quests(_data._username);
+		var _day_name_current = Std.string(rset._day_name[0]);
+		
+		// get the rewards data from the database then split it at the comma then store it as an array so that we can work with each of the posible 3 rewards that can be given.
+		var _rewards_str = Std.string(rset._rewards[0]);
+		var _rewards = _rewards_str.split(",");
+		
+		// this var counts how many quests are complete.
+		var _num = 0;
+		
+		//------------------------ determine first reward.
+		_data._three_in_a_row = Std.string(rset._three_in_a_row[0]);
+		if (Std.parseInt(_data._three_in_a_row) >= 3) _num += 1;
+		
+		_data._chess_5_moves_under = Std.string(rset._chess_5_moves_under[0]);
+		if (Std.parseInt(_data._chess_5_moves_under) == 1) _num += 1;
+		
+		_data._snakes_under_4_moves = Std.string(rset._snakes_under_4_moves[0]);
+		if (Std.parseInt(_data._snakes_under_4_moves) == 1) _num += 1;
+		
+		_data._win_5_minute_game = Std.string(rset._win_5_minute_game[0]);
+		if (Std.parseInt(_data._win_5_minute_game) == 1) _num += 1;
+		
+		_data._buy_four_house_items = Std.string(rset._buy_four_house_items[0]);
+		if (Std.parseInt(_data._buy_four_house_items) >= 4) _num += 1;
+		
+		_data._finish_signature_game = Std.string(rset._finish_signature_game[0]);
+		if (Std.parseInt(_data._finish_signature_game) == 1) _num += 1;
+		
+		_data._reversi_occupy_50_units = Std.string(rset._reversi_occupy_50_units[0]);
+		if (Std.parseInt(_data._reversi_occupy_50_units) == 1) _num += 1;
+		
+		_data._checkers_get_6_kings = Std.string(rset._checkers_get_6_kings[0]);
+		if (Std.parseInt(_data._checkers_get_6_kings) == 1) _num += 1;
+		
+		_data._play_all_5_board_games = Std.string(rset._play_all_5_board_games[0]);
+		if (Std.parseInt(_data._play_all_5_board_games) >= 5) _num += 1; // TODO currently 5 board games. change 5 to 6 when the enxt game is ready.
+		
+		//--------------------------------
+		if (_rewards[0] == "0" && _num >= 3)
 		{
-			Functions.userLogs("Daily Quests", _data.id, _data._username, _data); // logs.
-			
-			var rset = _mysqlDB.selectDailyQuestsData(_data._username);
-			var _day_name_current = Std.string(rset._day_name[0]);
-			
-			// get the rewards data from the database then split it at the comma then store it as an array so that we can work with each of the posible 3 rewards that can be given.
-			var _rewards_str = Std.string(rset._rewards[0]);
-			var _rewards = _rewards_str.split(",");
-			
-			// this var counts how many quests are complete.
-			var _num = 0;
-			
-			//------------------------ determine first reward.
-			_data._three_in_a_row = Std.string(rset._three_in_a_row[0]);
-			if (Std.parseInt(_data._three_in_a_row) >= 3) _num += 1;
-			
-			_data._chess_5_moves_under = Std.string(rset._chess_5_moves_under[0]);
-			if (Std.parseInt(_data._chess_5_moves_under) == 1) _num += 1;
-			
-			_data._snakes_under_4_moves = Std.string(rset._snakes_under_4_moves[0]);
-			if (Std.parseInt(_data._snakes_under_4_moves) == 1) _num += 1;
-			
-			_data._win_5_minute_game = Std.string(rset._win_5_minute_game[0]);
-			if (Std.parseInt(_data._win_5_minute_game) == 1) _num += 1;
-			
-			_data._buy_four_house_items = Std.string(rset._buy_four_house_items[0]);
-			if (Std.parseInt(_data._buy_four_house_items) >= 4) _num += 1;
-			
-			_data._finish_signature_game = Std.string(rset._finish_signature_game[0]);
-			if (Std.parseInt(_data._finish_signature_game) == 1) _num += 1;
-			
-			_data._reversi_occupy_50_units = Std.string(rset._reversi_occupy_50_units[0]);
-			if (Std.parseInt(_data._reversi_occupy_50_units) == 1) _num += 1;
-			
-			_data._checkers_get_6_kings = Std.string(rset._checkers_get_6_kings[0]);
-			if (Std.parseInt(_data._checkers_get_6_kings) == 1) _num += 1;
-			
-			_data._play_all_5_board_games = Std.string(rset._play_all_5_board_games[0]);
-			if (Std.parseInt(_data._play_all_5_board_games) >= 5) _num += 1; // TODO currently 5 board games. change 5 to 6 when the enxt game is ready.
-			
-			//--------------------------------
-			if (_rewards[0] == "0" && _num >= 3)
-			{
-				_rewards[0] = "1"; // first reward can now be given at client. we will save this as part of the _rewards var down below to the database.
-			}
-						
-			if (_rewards[1] == "0" && _num >= 6)
-			{
-				_rewards[1] = "1"; // second reward can now be given at client. we will save this as part of the _rewards var down below to the database.
-			}
-			
-			if (_rewards[2] == "0" && _num >= 9
-			)
-			{
-				_rewards[2] = "1"; // third reward can now be given at client. we will save this as part of the _rewards var down below to the database.
-			}
+			_rewards[0] = "1"; // first reward can now be given at client. we will save this as part of the _rewards var down below to the database.
+		}
+					
+		if (_rewards[1] == "0" && _num >= 6)
+		{
+			_rewards[1] = "1"; // second reward can now be given at client. we will save this as part of the _rewards var down below to the database.
+		}
 		
-			// add one day into the future, so if current time is greater than this time (86400 = 1 day + some minutes) then the daily quests will be reset. see near end of this event.
-			var _timestamp = Std.string(rset._timestamp[0]); 
-			var _timestamp_daily = Std.parseInt(_timestamp + 87000);
+		if (_rewards[2] == "0" && _num >= 9
+		)
+		{
+			_rewards[2] = "1"; // third reward can now be given at client. we will save this as part of the _rewards var down below to the database.
+		}
+	
+		// add one day into the future, so if current time is greater than this time (86400 = 1 day + some minutes) then the daily quests will be reset. see near end of this event.
+		var _timestamp = Std.string(rset._timestamp[0]); 
+		var _timestamp_daily = Std.parseInt(_timestamp + 87000);
 
-			_data._rewards = _rewards[0] + "," + _rewards[1] + "," + _rewards[2];
-			_mysqlDB.saveDailyQuests_rewards(_data._username, _data._rewards);
-			
-			//---------------------------------
+		_data._rewards = _rewards[0] + "," + _rewards[1] + "," + _rewards[2];
+		_db_update.daily_quests_rewards(_data._username, _data._rewards);
 		
-			var _now = Date.now();
-			var _dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saterday"];
-			var _day_name = _dayNames[_now.getDay()];
+		//---------------------------------
+	
+		var _now = Date.now();
+		var _dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saterday"];
+		var _day_name = _dayNames[_now.getDay()];
+		
+		// if this is a different day than that which is stored in the database then reset all daily quest data back to 0 and then save that data to the database because we are starting a new day.
+		// 86400 equals 24 hours.		 
+		if (_day_name != _day_name_current
+		||  Sys.time() > _timestamp_daily)
+		{
+			_data._three_in_a_row = "0";
+			_data._chess_5_moves_under = "0";
+			_data._snakes_under_4_moves = "0";
+			_data._win_5_minute_game = "0";
+			_data._buy_four_house_items = "0";
+			_data._finish_signature_game = "0";
+			_data._reversi_occupy_50_units = "0";
+			_data._checkers_get_6_kings = "0";
+			_data._play_all_5_board_games = "0";
+			_data._rewards = "0,0,0";
 			
-			// if this is a different day than that which is stored in the database then reset all daily quest data back to 0 and then save that data to the database because we are starting a new day.
-			// 86400 equals 24 hours.		 
-			if (_day_name != _day_name_current
-			||  Sys.time() > _timestamp_daily)
-			{
-				_data._three_in_a_row = "0";
-				_data._chess_5_moves_under = "0";
-				_data._snakes_under_4_moves = "0";
-				_data._win_5_minute_game = "0";
-				_data._buy_four_house_items = "0";
-				_data._finish_signature_game = "0";
-				_data._reversi_occupy_50_units = "0";
-				_data._checkers_get_6_kings = "0";
-				_data._play_all_5_board_games = "0";
-				_data._rewards = "0,0,0";
-				
-				_mysqlDB.deleteThenRecreateDailyQuestsTable(_data._username);
-			}
-						
-			_sender.send("Daily Quests",_data);
-		});
+			_db_delete.then_recreate_user_data_daily_quests(_data._username);
+		}
+		
+		_server.send_to_handler(_data);
+
 	}
 	
 	/****************************************************************************
@@ -1184,14 +1167,10 @@ class Events
 	* At the client the daily quest reward was given to player. this event saves the _reward var so that a second reward of the same type will not be given to player.
 	* _dailyQuestsState
 	*/
-	private function dailyQuestsClaim(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function dailyQuestsClaim(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Daily Quests Claim",function (_data, _sender)
-		{
-			Functions.userLogs("Daily Quests Claim", _data.id, _data._username, _data); // logs.
-		
-			_mysqlDB.saveDailyQuests_rewards(_data._username, _data._rewards);
-		});
+		Functions.userLogs("Daily Quests Claim", _data.id, _data._username, _data); // logs.
+		_db_update.daily_quests_rewards(_data._username, _data._rewards);
 	}
 	
 	/****************************************************************************
@@ -1199,166 +1178,135 @@ class Events
 	* A daily reward has been claimed. now save the reward(s) to the database.
 	* _dataStatistics
 	*/
-	private function dailyRewardSave(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function dailyRewardSave(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Daily Reward Save",function (_data, _sender)
-		{
-			Functions.userLogs("Daily Reward Save", _data.id, _data._username, _data); // logs.
-		
-			_mysqlDB.daily_reward_save(_data._username, _data._experiencePoints, _data._houseCoins, _data._creditsTotal);
-		});
+		Functions.userLogs("Daily Reward Save", _data.id, _data._username, _data); // logs.
+		_db_update.daily_reward_at_statistics(_data._username, _data._experiencePoints, _data._houseCoins, _data._creditsTotal);
 	}
 	
-	/**************************************************************************
-	 * makes all clients move the same piece at the same time. this is not automatic. you need to set the values below at the game code. see SignatureGameClickMe.hx. at client.
-	 */
-	private function Movement(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
-	{
-		_server.events.on("Movement",function (_data, _sender)
-		{
-			Functions.userLogs("Movement", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Movement", _data);
-				}
-			}
-			
-		});
-	}
-		
 	/******************************
 	* EVENT GET STATISTICS WIN LOSS DRAW
 	* Win - Draw - Loss Stats for player(s).
 	* _dataPlayers
 	*/
-	private function getStatisticsWinLossDraw(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function getStatisticsWinLossDraw(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Get Statistics Win Loss Draw", function(_data, _sender)
+		Functions.userLogs("Get Statistics Win Loss Draw", _data.id, _data._username, _data); // logs.
+		
+		// clear data. we will populate it down below.
+		for (i in 0...4)
 		{
-			Functions.userLogs("Get Statistics Win Loss Draw", _data.id, _data._username, _data); // logs.
-			
-			// clear data. we will populate it down below.
-			for (i in 0...4)
-			{
-				_data._usernamesDynamic[i] = "";
-				_data._gamesAllTotalWins[i] = 0;
-				_data._gamesAllTotalLosses[i] = 0;
-				_data._gamesAllTotalDraws[i] = 0;
-			}
-			
-			// get all users in waiting room.
-			var rset = _mysqlDB.selectPlayersUsernames(_data._room);
-			
-			// these users are in room. for a 2 player game, only the first two of these vars will not be empty.
-			var _user1 = rset._user[0];
-			var _user2 = rset._user[1];
-			var _user3 = rset._user[2];
-			var _user4 = rset._user[3];
+			_data._usernamesDynamic[i] = "";
+			_data._gamesAllTotalWins[i] = 0;
+			_data._gamesAllTotalLosses[i] = 0;
+			_data._gamesAllTotalDraws[i] = 0;
+		}
+		
+		// get all users in waiting room.
+		var rset = _db_select.room_by_timestamp_asc_at_room_data(_data._room);
+		
+		// these users are in room. for a 2 player game, only the first two of these vars will not be empty.
+		var _user1 = rset._user[0];
+		var _user2 = rset._user[1];
+		var _user3 = rset._user[2];
+		var _user4 = rset._user[3];
 
+		
+		var rset2 = _db_select.user_all_at_statistics(Std.string(_user1));
+		
+		// if username exists in database...
+		// put those stats into the _data to send to client.
+		if (_user1 != null)
+		{
+			_data._usernamesDynamic[0] = Std.string(_user1);
 			
-			var rset2 = _mysqlDB.getStatsWinLoseDrawFromUsers(Std.string(_user1));
+			_data._gamesAllTotalWins[0] = rset2._gamesAllTotalWins[0];
+			_data._gamesAllTotalLosses[0] = rset2._gamesAllTotalLosses[0];
+			_data._gamesAllTotalDraws[0] = rset2._gamesAllTotalDraws[0];
+			
+			var rset3 = _db_select.user_avatar_from_statistics(Std.string(_user1));
+			_data._avatarNumber[0] = Std.string(rset3._avatarNumber[0]);
+			
+			if (_data._avatarNumber[0] == "") _data._avatarNumber[0] = "0.png";
+		}	
+		
+		if (_user2 != null)
+		{
+			var rset2 = _db_select.user_all_at_statistics(Std.string(_user2));
 			
 			// if username exists in database...
 			// put those stats into the _data to send to client.
-			if (_user1 != null)
-			{
-				_data._usernamesDynamic[0] = Std.string(_user1);
-				
-				_data._gamesAllTotalWins[0] = rset2._gamesAllTotalWins[0];
-				_data._gamesAllTotalLosses[0] = rset2._gamesAllTotalLosses[0];
-				_data._gamesAllTotalDraws[0] = rset2._gamesAllTotalDraws[0];
-				
-				var rset3 = _mysqlDB.selectUserAvatar(Std.string(_user1));
-				_data._avatarNumber[0] = Std.string(rset3._avatarNumber[0]);
-				
-				if (_data._avatarNumber[0] == "") _data._avatarNumber[0] = "0.png";
-			}	
+			_data._usernamesDynamic[1] = Std.string(_user2);
 			
-			if (_user2 != null)
-			{
-				var rset2 = _mysqlDB.getStatsWinLoseDrawFromUsers(Std.string(_user2));
-				
-				// if username exists in database...
-				// put those stats into the _data to send to client.
-				_data._usernamesDynamic[1] = Std.string(_user2);
-				
-				_data._gamesAllTotalWins[1] = rset2._gamesAllTotalWins[0];
-				_data._gamesAllTotalLosses[1] = rset2._gamesAllTotalLosses[0];
-				_data._gamesAllTotalDraws[1] = rset2._gamesAllTotalDraws[0];
-				
-				var rset3 = _mysqlDB.selectUserAvatar(Std.string(_user2));
-				_data._avatarNumber[1] = Std.string(rset3._avatarNumber[0]);
-				
-				if (_data._avatarNumber[1] == "") _data._avatarNumber[1] = "0.png";
+			_data._gamesAllTotalWins[1] = rset2._gamesAllTotalWins[0];
+			_data._gamesAllTotalLosses[1] = rset2._gamesAllTotalLosses[0];
+			_data._gamesAllTotalDraws[1] = rset2._gamesAllTotalDraws[0];
+			
+			var rset3 = _db_select.user_avatar_from_statistics(Std.string(_user2));
+			_data._avatarNumber[1] = Std.string(rset3._avatarNumber[0]);
+			
+			if (_data._avatarNumber[1] == "") _data._avatarNumber[1] = "0.png";
 
-			}
+		}
+		
+		
+		if (_user3 != null)
+		{
+			var rset2 = _db_select.user_all_at_statistics(Std.string(_user3));
 			
+			// if username exists in database...
+			// put those stats into the _data to send to client.
+			_data._usernamesDynamic[2] = Std.string(_user3);
+							
+			_data._gamesAllTotalWins[2] = rset2._gamesAllTotalWins[0];
+			_data._gamesAllTotalLosses[2] = rset2._gamesAllTotalLosses[0];
+			_data._gamesAllTotalDraws[2] = rset2._gamesAllTotalDraws[0];
 			
-			if (_user3 != null)
-			{
-				var rset2 = _mysqlDB.getStatsWinLoseDrawFromUsers(Std.string(_user3));
-				
-				// if username exists in database...
-				// put those stats into the _data to send to client.
-				_data._usernamesDynamic[2] = Std.string(_user3);
-								
-				_data._gamesAllTotalWins[2] = rset2._gamesAllTotalWins[0];
-				_data._gamesAllTotalLosses[2] = rset2._gamesAllTotalLosses[0];
-				_data._gamesAllTotalDraws[2] = rset2._gamesAllTotalDraws[0];
-				
-				var rset3 = _mysqlDB.selectUserAvatar(Std.string(_user3));
-				_data._avatarNumber[2] = Std.string(rset3._avatarNumber[0]);
-				
-				if (_data._avatarNumber[2] == "") _data._avatarNumber[2] = "0.png";
+			var rset3 = _db_select.user_avatar_from_statistics(Std.string(_user3));
+			_data._avatarNumber[2] = Std.string(rset3._avatarNumber[0]);
+			
+			if (_data._avatarNumber[2] == "") _data._avatarNumber[2] = "0.png";
 
-			}
+		}
+		
+		
+		if (_user4 != null)
+		{
+			var rset2 = _db_select.user_all_at_statistics(Std.string(_user4));
 			
+			// if username exists in database...
+			// put those stats into the _data to send to client.
+			_data._usernamesDynamic[3] = Std.string(_user4);
+							
+			_data._gamesAllTotalWins[3] = rset2._gamesAllTotalWins[0];
+			_data._gamesAllTotalLosses[3] = rset2._gamesAllTotalLosses[0];
+			_data._gamesAllTotalDraws[3] = rset2._gamesAllTotalDraws[0];
 			
-			if (_user4 != null)
-			{
-				var rset2 = _mysqlDB.getStatsWinLoseDrawFromUsers(Std.string(_user4));
-				
-				// if username exists in database...
-				// put those stats into the _data to send to client.
-				_data._usernamesDynamic[3] = Std.string(_user4);
-								
-				_data._gamesAllTotalWins[3] = rset2._gamesAllTotalWins[0];
-				_data._gamesAllTotalLosses[3] = rset2._gamesAllTotalLosses[0];
-				_data._gamesAllTotalDraws[3] = rset2._gamesAllTotalDraws[0];
-				
-				var rset3 = _mysqlDB.selectUserAvatar(Std.string(_user4));
-				_data._avatarNumber[3] = Std.string(rset3._avatarNumber[0]);
-				
-				if (_data._avatarNumber[3] == "") _data._avatarNumber[3] = "0.png";
+			var rset3 = _db_select.user_avatar_from_statistics(Std.string(_user4));
+			_data._avatarNumber[3] = Std.string(rset3._avatarNumber[0]);
+			
+			if (_data._avatarNumber[3] == "") _data._avatarNumber[3] = "0.png";
 
-			}
-			
-			// the "room waiting" calls this event every some many ticks, so here is a good time to update the players move order.
-			var rset = _mysqlDB.selectPlayersUsernames(_data._room);
-			
-			var _num:Int = 0;
-			for (i in 0..._data._usernamesDynamic.length)
-			{
-				_num += 1;
-				_mysqlDB.moveNumber(_data._usernamesDynamic[i], _num);
-				_data._moveNumberDynamic[i] = _num;
-			}
-			
-			// chat, score and stuff that is not a win, lose or draw data is passed to the server.
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Get Statistics Win Loss Draw", _data);
-				}
-			}
-			
-		});
+		}
+		
+		// the "room waiting" calls this event every some many ticks, so here is a good time to update the players move order.
+		var rset = _db_select.room_by_timestamp_asc_at_room_data(_data._room);
+		
+		var _num:Int = 0;
+		for (i in 0..._data._usernamesDynamic.length)
+		{
+			_num += 1;
+			_db_update.move_number_dynamic_at_room_data(_data._usernamesDynamic[i], _num);
+			_data._moveNumberDynamic[i] = _num;
+		}
+		
+		// this is needed for game room. without this code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times.
+		if (_data._triggerEvent == "sender")
+			_server.send_to_handler(_data);
+		
+		// chat, score and stuff that is not a win, lose or draw data is passed to the server.
+		else _server.broadcast_in_room(_data);
+		
 	}
 
 	/******************************
@@ -1366,391 +1314,369 @@ class Events
 	* Example, experience points, credits, win - draw - loss, all stats.
 	* _dataStatistics
 	*/
-	private function getStatisticsAll(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function getStatisticsAll(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Get Statistics All", function(_data, _sender)
-		{
-			Functions.userLogs("Get Statistics All", _data.id, _data._username, _data); // logs.
-			
-			var rset = _mysqlDB.getStatsAllFromUsers(_data._username);
+		Functions.userLogs("Get Statistics All", _data.id, _data._username, _data); // logs.
+		
+		var rset = _db_select.user_all_at_statistics(_data._username);
 
-			// put stats into an array.
-			// these vars was declared at this file.
-			_data._chess_elo_rating = rset._chess_elo_rating[0];
-			
-			_data._gamesAllTotalWins = rset._gamesAllTotalWins[0];
-			_data._gamesAllTotalLosses = rset._gamesAllTotalLosses[0];
-			_data._gamesAllTotalDraws = rset._gamesAllTotalDraws[0];
-			_data._creditsTotal = rset._creditsTotal[0];
-			_data._experiencePoints = rset._experiencePoints[0];
-			_data._houseCoins = rset._houseCoins[0];
-			
-			_data._checkersWins = rset._checkersWins[0];
-			_data._checkersLosses = rset._checkersLosses[0];
-			_data._checkersDraws = rset._checkersDraws[0];
-			_data._chessWins = rset._chessWins[0];
-			_data._chessLosses = rset._chessLosses[0];
-			_data._chessDraws = rset._chessDraws[0];
-			_data._reversiWins = rset._reversiWins[0];
-			_data._reversiLosses = rset._reversiLosses[0];
-			_data._reversiDraws = rset._reversiDraws[0];
-			_data._snakesAndLaddersWins = rset._snakesAndLaddersWins[0];
-			_data._snakesAndLaddersLosses = rset._snakesAndLaddersLosses[0];
-			_data._snakesAndLaddersDraws = rset._snakesAndLaddersDraws[0];
-			_data._signatureGameWins = rset._signatureGameWins[0];
-			_data._signatureGameLosses = rset._signatureGameLosses[0];
-			_data._signatureGameDraws = rset._signatureGameDraws[0];
-			
-			_sender.send("Get Statistics All",_data);
-			
-		});
+		// put stats into an array.
+		// these vars was declared at this file.
+		_data._chess_elo_rating = rset._chess_elo_rating[0];
+		
+		_data._gamesAllTotalWins = rset._gamesAllTotalWins[0];
+		_data._gamesAllTotalLosses = rset._gamesAllTotalLosses[0];
+		_data._gamesAllTotalDraws = rset._gamesAllTotalDraws[0];
+		_data._creditsTotal = rset._creditsTotal[0];
+		_data._experiencePoints = rset._experiencePoints[0];
+		_data._houseCoins = rset._houseCoins[0];
+		
+		_data._checkersWins = rset._checkersWins[0];
+		_data._checkersLosses = rset._checkersLosses[0];
+		_data._checkersDraws = rset._checkersDraws[0];
+		_data._chessWins = rset._chessWins[0];
+		_data._chessLosses = rset._chessLosses[0];
+		_data._chessDraws = rset._chessDraws[0];
+		_data._reversiWins = rset._reversiWins[0];
+		_data._reversiLosses = rset._reversiLosses[0];
+		_data._reversiDraws = rset._reversiDraws[0];
+		_data._snakesAndLaddersWins = rset._snakesAndLaddersWins[0];
+		_data._snakesAndLaddersLosses = rset._snakesAndLaddersLosses[0];
+		_data._snakesAndLaddersDraws = rset._snakesAndLaddersDraws[0];
+		_data._signatureGameWins = rset._signatureGameWins[0];
+		_data._signatureGameLosses = rset._signatureGameLosses[0];
+		_data._signatureGameDraws = rset._signatureGameDraws[0];
+		
+		_server.send_to_handler(_data);
+		
 	}
 	
 	/******************************
 	* EVENT PLAYER HAS ENTERED THE ROOM, SO CHANGE THE ROOMSTATE VALUE.
 	* _dataMisc
 	*/
-	private function greaterRoomStateValue(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function greaterRoomStateValue(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Greater RoomState Value", function(_data, _sender)
+		Functions.userLogs("Greater RoomState Value", _data.id, _data._username, _data); // logs.
+		
+		_data._roomState = _roomState;
+		_vsComputer[_data._room] = _data._vsComputer[_data._room];
+		
+		// roomState was added to this line to stop a bug where leaving a game and reentering the room would set the button to playing game while the user would stay at lobby.
+		if (_data._gameRoom == true && _data._userLocation >= 2)
 		{
-			Functions.userLogs("Greater RoomState Value", _data.id, _data._username, _data); // logs.
+			_data._roomState[_data._room] = 8; // trigger the playing game text at lobby button.
+							
+			_data._userLocation = 3; // playing game room.	
+			_data._usernamesTotalDynamic = _data._roomPlayerLimit[_data._room];
+			_data._usernamesTotalStatic = _data._roomPlayerLimit[_data._room];
+		}
+		
+		else 
+		{
+			var _found:Bool = false;
 			
-			_data._roomState = _roomState;
-			_vsComputer[_data._room] = _data._vsComputer[_data._room];
-			
-			// roomState was added to this line to stop a bug where leaving a game and reentering the room would set the button to playing game while the user would stay at lobby.
-			if (_data._gameRoom == true && _data._userLocation >= 2)
+			var rset = _db_select.user_all_by_timestamp_at_room_data(_data._room);
+		
+		
+			for ( i in 0...rset._userLocation.length)
 			{
-				_data._roomState[_data._room] = 8; // trigger the playing game text at lobby button.
+				// if true then there is a user creating a room.
+				if (rset._userLocation[i] == 1
+				 && Std.string(rset._user[i].toString) != 
+					Std.string(_data._username)
+				 && _data._userLocation == 1)
+				{
+					_found = true;
+				}
+				
+				if (rset._userLocation[i] == 2
+				 && Std.string(rset._user[i].toString) != 
+					Std.string(_data._username)
+				)
+				{
+					// for all other users in the room...
+					_data._roomPlayerLimit[_data._room] = rset._playerLimit[i];					
+				}
+				
+			}
+			
+			
+			// create room.
+			if (_found == true || _data._roomState[_data._room] == 0)
+			{
+				_data._roomState[_data._room] = 1;
+				_data._userLocation = 1;
+			}				
+			
+			// if false, then a user is entering a room. determine if user should enter a room.
+			
+			// roomState value of 2 = creating a room. value of 3 means player is in the room. if max player limit is 2 and there is 1 player in the room. that means we need to plus 1 to this code so that the code condition works.
+			else if (_data._roomState[_data._room] < 3 || _data._roomPlayerLimit[_data._room] == 0) // roomState of 2 and a limit of 2 does not work so we plus 1 to the limit.
+			{
+				_data._roomState[_data._room] += 1;								
+				
+				var rset2 = _db_select.user_all_at_room_data(_data._username);
 								
-				_data._userLocation = 3; // playing game room.	
-				_data._usernamesTotalDynamic = _data._roomPlayerLimit[_data._room];
-				_data._usernamesTotalStatic = _data._roomPlayerLimit[_data._room];
+				_data._userLocation = 2;
 				
-			}
-			
-			else 
-			{
-				var _found:Bool = false;
-				
-				var rset = _mysqlDB.selectRoomData(_data._room);
-			
-			
-				for ( i in 0...rset._userLocation.length)
-				{
-					// if true then there is a user creating a room.
-					if (rset._userLocation[i] == 1
-					 && Std.string(rset._user[i].toString) != 
-						Std.string(_data._username)
-					 && _data._userLocation == 1)
-					{
-						_found = true;
-					}
-					
-					if (rset._userLocation[i] == 2
-					 && Std.string(rset._user[i].toString) != 
-					    Std.string(_data._username)
-					)
-					{
-						// for all other users in the room...
-						_data._roomPlayerLimit[_data._room] = rset._playerLimit[i];					
-					}
-					
-				}
-				
-				
-				// create room.
-				if (_found == true || _data._roomState[_data._room] == 0)
-				{
-					_data._roomState[_data._room] = 1;
-					_data._userLocation = 1;
-				}				
-				
-				// if false, then a user is entering a room. determine if user should enter a room.
-				
-				// roomState value of 2 = creating a room. value of 3 means player is in the room. if max player limit is 2 and there is 1 player in the room. that means we need to plus 1 to this code so that the code condition works.
-				else if (_data._roomState[_data._room] < 3 || _data._roomPlayerLimit[_data._room] == 0) // roomState of 2 and a limit of 2 does not work so we plus 1 to the limit.
-				{
-					_data._roomState[_data._room] += 1;								
-					
-					var rset2 = _mysqlDB.selectRoomDataUser(_data._username);
-									
-					_data._userLocation = 2;
-					
-					if (_data._roomPlayerLimit[_data._room] > 0)
-						_roomPlayerLimit[_data._room] = _data._roomPlayerLimit[_data._room];
-				}
-			}	
-				
-			if (_data._spectatorWatching == false)
-			{
-				_mysqlDB.saveRoomStateRoom(_data._room, _data._roomState[_data._room], _data._userLocation, _data._roomPlayerLimit[_data._room]);
-			}
-			
-			else _mysqlDB._spectatorWatching(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
-			
-			// when entering the game room, get all usernames from the database. this is needed for the server on disconnect event, so that correct data can be sent to the rest of the players at game room at the time the player disconnects.
-			if (_data._userLocation == 3)
-			{
-				_usernames_static[_data._room][0] = "";
-				_usernames_static[_data._room][1] = "";
-				_usernames_static[_data._room][2] = "";
-				_usernames_static[_data._room][3] = "";
-				
-				var rset3 = _mysqlDB.selectRoomData(_data._room);
-				
-				if (rset3._user[0] != null) 
-					_usernames_static[_data._room][0] = Std.string(rset3._user[0]);
-					
-				if (rset3._user[1] != null) 
-					_usernames_static[_data._room][1] = Std.string(rset3._user[1]);
-				
-				if (rset3._user[2] != null) 
-					_usernames_static[_data._room][2] = Std.string(rset3._user[2]);
-				
-				if (rset3._user[3] != null) 
-					_usernames_static[_data._room][3] = Std.string(rset3._user[3]);
-			}
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Greater RoomState Value", _data);
-				}
-			}
-						
-		});
+				if (_data._roomPlayerLimit[_data._room] > 0)
+					_roomPlayerLimit[_data._room] = _data._roomPlayerLimit[_data._room];
 
+				for (i in 0...4)
+				{
+					// reset this data back to 0 before a new game starts.
+					_server.player_game_state_value_username[_data._room][i] = "";
+					_server.player_game_state_value_data[_data._room][i] = 0;
+				}
+				
+			}
+		}	
+			
+		if (_data._spectatorWatching == false)
+		{
+			_db_update.data_for_room_at_room_data(_data._room, _data._roomState[_data._room], _data._userLocation, _data._roomPlayerLimit[_data._room]);
+		}
+		
+		else
+		{
+			_db_update.user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
+		}
+		
+		// when entering the game room, get all usernames from the database. this is needed for the server on disconnect event, so that correct data can be sent to the rest of the players at game room at the time the player disconnects.
+		if (_data._userLocation == 3)
+		{
+			_usernames_static[_data._room][0] = "";
+			_usernames_static[_data._room][1] = "";
+			_usernames_static[_data._room][2] = "";
+			_usernames_static[_data._room][3] = "";
+			
+			var rset3 = _db_select.user_all_by_timestamp_at_room_data(_data._room);
+			
+			if (rset3._user[0] != null) 
+				_usernames_static[_data._room][0] = Std.string(rset3._user[0]);
+				
+			if (rset3._user[1] != null) 
+				_usernames_static[_data._room][1] = Std.string(rset3._user[1]);
+			
+			if (rset3._user[2] != null) 
+				_usernames_static[_data._room][2] = Std.string(rset3._user[2]);
+			
+			if (rset3._user[3] != null) 
+				_usernames_static[_data._room][3] = Std.string(rset3._user[3]);
+		}
+		
+		
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
 	* EVENT PLAYER HAS LEFT THE ROOM, SO CHANGE THE ROOMSTATE VALUE.
 	* _dataMisc
 	*/
-	private function lesserRoomStateValue(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function lesserRoomStateValue(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Lesser RoomState Value", function(_data, _sender)
+		Functions.userLogs("Lesser RoomState Value", _data.id, _data._username, _data); // logs.
+		
+		var _room = _data._room;
+		
+		var _count = _db_select.count_room_for_room_state_at_room_data(_room);
+		
+		if (_data._spectatorWatching == false)
 		{
-			Functions.userLogs("Lesser RoomState Value", _data.id, _data._username, _data); // logs.
-			
-			var _room = _data._room;
-			
-			var _count = _mysqlDB.usersPlayingGameCount(_room);
-			
-			if (_data._spectatorWatching == false)
-			{
-				if (_data._roomPlayerCurrentTotal[_room] == 1) 
-				{					
-					_roomPlayerLimit[_room] = _data._roomPlayerLimit[_room] = 0;
-				}
-								
-				// if ended a game where there are two or more players still playing, minus one from the total players playing so that the total players are the correct count at that lobby room.
-				else if (_data._roomPlayerLimit[_room] > 2
-				&&  _data._roomState[_room] == 8)
-					_roomPlayerLimit[_room] = _data._roomPlayerLimit[_room] -= 1;
-					
+			if (_data._roomPlayerCurrentTotal[_room] == 1) 
+			{					
+				_roomPlayerLimit[_room] = _data._roomPlayerLimit[_room] = 0;
+			}
+							
+			// if ended a game where there are two or more players still playing, minus one from the total players playing so that the total players are the correct count at that lobby room.
+			else if (_data._roomPlayerLimit[_room] > 2
+			&&  _data._roomState[_room] == 8)
+				_roomPlayerLimit[_room] = Std.int(_data._roomPlayerLimit[_room] -= 1);
 				
-					// if true then there is not enought players to play a game. remove all players from room at database so that at lobby a player can enter that room.
-				//if (_data._roomPlayerCurrentTotal[_room] == 2) 
-						
+			
+				// if true then there is not enought players to play a game. remove all players from room at database so that at lobby a player can enter that room.
+			//if (_data._roomPlayerCurrentTotal[_room] == 2) 
+					
+		}
+		
+		//_vsComputer[_data._room] = _data._vsComputer[_data._room];
+		//_data._roomState = _roomState;
+		
+		if (_data._spectatorWatching == false)
+		{
+			// this removes host from room by deleting any user that exists at room at this database table.
+			if (_count <= 2)
+			{
+				// delete host only if game has endded and no one else has created or is creating a room.
+				if (_roomState[_data._room] < 1
+				||  _roomState[_data._room] == 8)
+				{
+					_roomHostUsername[_data._room] = _data._roomHostUsername[_data._room] = "";	
+				_gid[_data._room] = _data._gid[_data._room] = "";
+					
+					_db_delete.room_at_who_is_host(_data._room);
+				}
+									
+				// if player is hosting a room then remove player because the remove deleteIsHostRoom might fail.
+				_db_delete.user_at_who_is_host(_data._username);
+				
 			}
 			
-			//_vsComputer[_data._room] = _data._vsComputer[_data._room];
-			//_data._roomState = _roomState;
-			
-			if (_data._spectatorWatching == false)
+			if (_data._roomState[_data._room] == 8) 
 			{
-				// this removes host from room by deleting any user that exists at room at this database table.
+				//if (_count == 2) _db_delete.room_from_room_data_data._room);
+				
+				// when value is true, there are 2 or less players.
 				if (_count <= 2)
 				{
-					// delete host only if game has endded and no one else has created or is creating a room.
-					if (_roomState[_data._room] < 1
-					||  _roomState[_data._room] == 8)
-					{
-						_roomHostUsername[_data._room] = _data._roomHostUsername[_data._room] = "";	
-					_gid[_data._room] = _data._gid[_data._room] = "";
-						
-						_mysqlDB.deleteIsHostRoom(_data._room);
-					}
-										
-					// if player is hosting a room then remove player because the remove deleteIsHostRoom might fail.
-					_mysqlDB.deleteIsHost(_data._username);
+					_data._roomState[_data._room] = 0;
+					//_data._roomGameIds[_data._room] = -1; // this gets set at this client event.
+					_data._allowSpectators[_data._room] = 0;					
+					_roomPlayerCurrentTotal[_data._room] = 0;
 					
+					// if two or less players, and one player is leaving room, then there is not enough players to play game. set all data to zero for the playing that where playing a game.
+					_db_update.most_to_zero_for_room_at_room_data(_data._room, _data._roomState[_data._room], _data._userLocation, _data._roomPlayerLimit[_data._room]);
+					
+					_data._userLocation = 0;
 				}
-				
-				if (_data._roomState[_data._room] == 8) 
-				{
-					//if (_count == 2) _mysqlDB.delete_room_from_room_data_table_data._room);
-					
-					// when value is true, there are 2 or less players.
-					if (_count <= 2)
-					{
-						_data._roomState[_data._room] = 0;
-						//_data._roomGameIds[_data._room] = -1; // this gets set at this client event.
-						_data._allowSpectators[_data._room] = 0;					
-						_roomPlayerCurrentTotal[_data._room] = 0;
-						
-						// if two or less players, and one player is leaving room, then there is not enought players to play game. set all data to zero for the playing that where playing a game.
-						_mysqlDB.saveRoomToZero(_data._room, _data._roomState[_data._room], _data._userLocation, _data._roomPlayerLimit[_data._room]);
-						
-						_data._userLocation = 0;
-					}
-					
-					else
-					{
-						_mysqlDB.saveUsernameDataToZero(_data._username);
-						
-						// if here then the only some data needs to be set back to default.
-						_mysqlDB.saveRoomPlayerLimit(_data._username, _data._room, _data._roomPlayerLimit[_data._room]);
-					}
-					
-					_data._room = 0;								
-					_data._gameRoom = false;
-				}						
 				
 				else
 				{
-					// if at waiting room...
-					if (_data._userLocation == 2)				
-					{
-						//if value after minus 1 is greater than 1 then there were more than 1 user at the room, roomState could be 3,4,5 or 6. in this case, minus 1 from roomState.
-						//_data._roomState[_data._room] -= 1; 
-						_roomPlayerCurrentTotal[_data._room] -= 1;
-						
-						// else if this is true then user has a roomState value of 3, user is the only player in that room. that user roomState will be set to 0 because user is leaving. 
-						if (_data._roomState[_data._room] == 1) 
-						{					
-							_data._roomGameIds[_data._room] = -1;
-							_data._roomState[_data._room] = 0;	
-						}
-						
-						// if player has a roomState of 4 and another player left that room, this _mysqlDB will set all roomState for that room to a value of 3.
-						_mysqlDB.saveRoomAtRoomData(_data._roomState[_data._room], _data._room);
-						
-						_data._userLocation = 0;
-												
-						// saves room state to MySQL which is used for online players list.
-						_mysqlDB.saveRoomData(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
-						_data._room = 0;
+					_db_update.user_all_to_zero_at_room_data(_data._username);
+					
+					// if here then the only some data needs to be set back to default.
+					_db_update.player_limit_at_room_data(_data._username, _data._room, _data._roomPlayerLimit[_data._room]);
+				}
+				
+				_data._room = 0;								
+				_data._gameRoom = false;
+			}						
+			
+			else
+			{
+				// if at waiting room...
+				if (_data._userLocation == 2)				
+				{
+					//if value after minus 1 is greater than 1 then there were more than 1 user at the room, roomState could be 3,4,5 or 6. in this case, minus 1 from roomState.
+					//_data._roomState[_data._room] -= 1; 
+					_roomPlayerCurrentTotal[_data._room] -= 1;
+					
+					// else if this is true then user has a roomState value of 3, user is the only player in that room. that user roomState will be set to 0 because user is leaving. 
+					if (_data._roomState[_data._room] == 1) 
+					{					
+						_data._roomGameIds[_data._room] = -1;
+						_data._roomState[_data._room] = 0;	
 					}
 					
+					// if player has a roomState of 4 and another player left that room, this will set all roomState for that room to a value of 3.
+					_db_update.room_with_room_state_at_room_data(_data._roomState[_data._room], _data._room);
+					
+					_data._userLocation = 0;
+											
+					// saves room state to MySQL which is used for online players list.
+					_db_update.all_for_user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
+					_data._room = 0;
 				}
 				
 			}
 			
-			// now set these values for user because user is returning to lobby.
-			_data._roomState[_room] = 0;
-			_data._userLocation = 0;
-			_data._room = 0;
-			
-			_mysqlDB.saveUsernameDataToZero(_data._username);
-			
-			// unlock the room.
-			_data._roomLockMessage = "";	
-			_mysqlDB.deleteRoomUnlock(_data._username, _room);
-			
-			_sender.putInRoom(room[0]);
-			_server.broadcast("Lesser RoomState Value", _data);
-			
-		});
-
+		}
+		
+		// now set these values for user because user is returning to lobby.
+		_data._roomState[_room] = 0;
+		_roomPlayerLimit[_room] = _data._roomPlayerLimit[_room] = 0;
+		
+		_data._userLocation = 0;
+		_data._room = 0;
+		
+		_db_update.user_all_to_zero_at_room_data(_data._username);
+		
+		// unlock the room.
+		_data._roomLockMessage = "";	
+		_db_delete.user_at_room_lock(_data._username, _room);
+		
+		_server.broadcast_everyone(_data);
 	}
 
-	private function isRoomLocked(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function isRoomLocked(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Is Room Locked", function(_data, _sender)
+		Functions.userLogs("Is Room Locked", _data.id, _data._username, _data); // logs.
+		
+		var _rs = _db_select.room_at_room_lock(_data._room);
+		
+		if (_rs._room.length == 0
+		||  _data._roomCheckForLock[_data._room] == 0)
 		{
-			Functions.userLogs("Is Room Locked", _data.id, _data._username, _data); // logs.
+			_data._roomLockMessage = "";
 			
-			var _rs = _mysqlDB.selectRoomIslocked(_data._room);
-			
-			if (_rs._room.length == 0
-			||  _data._roomCheckForLock[_data._room] == 0)
-			{
-				_data._roomLockMessage = "";
-				
-				// lock the room.
-				_mysqlDB.saveRoomLock(_data._username, _data._room);
-			}
-			
-			else _data._roomLockMessage = "Someone beat you to this room. This room is locked until server sends room data to that person.";
-			
-			//_server.broadcast("Is Room Locked", _data);
-			_sender.send("Is Room Locked",_data);
-			
-		});
-
+			// lock the room.
+			_db_insert.save_is_locked_for_user_at_room_lock(_data._username, _data._room);
+		}
+		
+		else _data._roomLockMessage = "Someone beat you to this room. This room is locked until server sends room data to that person.";
+		
+		_server.send_to_handler(_data);
 	}
 	
 	/******************************
 	* EVENT WAITING ROOM SETS HOST OF THE ROOM.
 	* _dataMisc
 	*/
-	private function isHost(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function isHost(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Is Host", function (_data, _sender)
+		// dump the complete _data var.						
+		Functions.userLogs("Is Host", _data.id, _data._username, _data); // logs. // do not use
+	
+		if (_data._roomState[_data._room] > 1 && _data._roomState[_data._room] < 8)
 		{
-			// dump the complete _data var.						
-			Functions.userLogs("Is Host", _data.id, _data._username, _data); // logs. // do not use
-		
-			if (_data._roomState[_data._room] > 1 && _data._roomState[_data._room] < 8)
-			{
-				_mysqlDB.saveIsHost(_data._username, _data._gid[_data._room], _data._room);
-				_roomHostUsername[_data._room] = _data._username;
-				_gid[_data._room] = _data.id;
-				_data._triggerEvent = "";
-			}
-			
-			
-		});
+			_db_insert.room_and_user_at_who_is_host(_data._username, _data._gid[_data._room], _data._room);
+			_roomHostUsername[_data._room] = _data._username;
+			_gid[_data._room] = _data.id;
+			_data._triggerEvent = "";
+		}
 	}	
 
 	/******************************
 	* EVENT SET ROOM DATA. SAVE ROOM DATA TO DATABASE.\
 	* _dataMisc
 	*/
-	private function setRoomData(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function setRoomData(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Set Room Data", function(_data, _sender)
+		Functions.userLogs("Set Room Data", _data.id, _data._username, _data); // logs.
+		
+		if (_data._roomLockMessage == "")
 		{
-			Functions.userLogs("Set Room Data", _data.id, _data._username, _data); // logs.
+			var room = _data._room;
 			
-			if (_data._roomLockMessage == "")
+			var _bool = _db_select.count_for_room_at_who_is_host(_data._room);
+			
+			if (_bool == false && _data._userLocation == 2) // this value will be changed to 2 later down below. remember, this event plus 1 to userLocation. when entering room, which is true here, then save the host of the room to database.
 			{
-				var room = _data._room;
-				
-				var _bool = _mysqlDB.countIsHost(_data._room);
-				
-				if (_bool == false && _data._userLocation == 2) // this value will be changed to 2 later down below. remember, this event plus 1 to userLocation. when entering room, which is true here, then save the host of the room to database.
-				{
-					_mysqlDB.saveIsHost(_data._username, _data._gid[_data._room], _data._room);
-				}
-					
-				if (_data._roomState[_data._room] > 0 && _data._roomState[_data._room] < 8) _mysqlDB.saveRoomData(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
-				
-				// update this user's online list that has ip, host, roomstate information for this user.
-				_mysqlDB.updateLoggedInUser(_data._username, _data._roomState[_data._room]);
-							
-				// set room values to be used at the "Get Room Data" event at client.
-				_roomState[_data._room] = _data._roomState[_data._room];
-				_roomGameIds[_data._room] = _data._roomGameIds[_data._room];
-				//_vsComputer[_data._room] = _data._vsComputer[_data._room];
-				_allowSpectators[_data._room] = _data._allowSpectators[_data._room];
-				_roomHostUsername[_data._room] = _data._roomHostUsername[_data._room];
-				if (_data._username == _data._roomHostUsername[_data._room])
-					_roomPlayerLimit[_data._room] = _data._roomPlayerLimit[_data._room];
-				// not host so get room limit from the data that host created.
-				else _data._roomPlayerLimit[_data._room] = _roomPlayerLimit[_data._room];
-				
-				_gid[_data._room] = _data._gid[_data._room];
+				_db_insert.room_and_user_at_who_is_host(_data._username, _data._gid[_data._room], _data._room);
 			}
+				
+			if (_data._roomState[_data._room] > 0 && _data._roomState[_data._room] < 8) _db_update.all_for_user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
 			
-			_sender.send("Set Room Data",_data);
-	
-		});
+			// update this user's online list that has IP, host, room state information for this user.
+			_db_update.user_at_logged_in_users(_data._username, _data._roomState[_data._room]);
+						
+			// set room values to be used at the "Get Room Data" event at client.
+			_roomState[_data._room] = _data._roomState[_data._room];
+			_roomGameIds[_data._room] = _data._roomGameIds[_data._room];
+			//_vsComputer[_data._room] = _data._vsComputer[_data._room];
+			_allowSpectators[_data._room] = _data._allowSpectators[_data._room];
+			_roomHostUsername[_data._room] = _data._roomHostUsername[_data._room];
+			if (_data._username == _data._roomHostUsername[_data._room])
+				_roomPlayerLimit[_data._room] = _data._roomPlayerLimit[_data._room];
+			// not host so get room limit from the data that host created.
+			else _data._roomPlayerLimit[_data._room] = _roomPlayerLimit[_data._room];
+			
+			_gid[_data._room] = _data._gid[_data._room];
+		}
+		
+		_server.send_to_handler(_data);
 
 	}
 		
@@ -1759,177 +1685,174 @@ class Events
 	* USED AT LOBBY TO GET ROOM DATA.
 	* _dataMisc
 	*/
-	private function getRoomData(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function getRoomData(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Get Room Data", function(_data, _sender)
-		{
-			Functions.userLogs("Get Room Data", _data.id, _data._username, _data); // logs.
-			
-			var _rs = _mysqlDB.selectRoomIslocked(_data._room);
-			
-			if (_data._roomLockMessage == "")
-			{
-				// get data from all users online. the data will populate roomState so that everyone at lobby and waiting room will have the correct state of a room.
-				var rows = _mysqlDB.selectRoomDataAll();
-				
-				// next we clear the roomState var to prepare it for the new data.
-				_roomState =
-				[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-				_roomPlayerCurrentTotal =
-				[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-				 
-				_vsComputer =
-						[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-				
-				_allowSpectators =
-				[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+		Functions.userLogs("Get Room Data", _data.id, _data._username, _data); // logs.
 		
-				_roomGameIds =
-				[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-				 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-				 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-				 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-				 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
-				
-				_roomHostUsername = 
-				["", "", "", "", "", "", "", "", "", "",
-				"", "", "", "", "", "", "", "", "", "",
-				"", "", "", "", "", "", "", "", "", "",
-				"", "", "", "", "", "", "", "", "", "",
-				"", "", "", "", "", "", "", "", "", ""];
-				
-				_gid = 
-				["", "", "", "", "", "", "", "", "", "",
-				"", "", "", "", "", "", "", "", "", "",
-				"", "", "", "", "", "", "", "", "", "",
-				"", "", "", "", "", "", "", "", "", "",
-				"", "", "", "", "", "", "", "", "", ""];
-					
-				var _stop = false;
-				
-				// populate roomState and _roomPlayerCurrentTotal with the correct data.
-				// this is the total rows in the mysql database table.
-				var _room_number = rows._room.length;
-				
-				while (_room_number-- > 0)
-				{
-					// button total is the total rooms at lobby.
-					var _room_desc = _button_total;
-					
-					// search backwards, starting from the last room.
-					while (-- _room_desc > 0)
-					{
-						// count backwards, search for the first occurrence of a room value. for example, if there are 3 players in room then the last player's _roomState value will be compared.
-						if (_room_desc == rows._room[_room_number])
-						{
-							_roomState[_room_desc] = rows._roomState[_room_number];
-							
-							// set the room limit text for lobby.
-							_roomPlayerLimit[_room_desc] = rows._playerLimit[_room_number];
-							// set the text of the game currently set to room.
-							_roomGameIds[_room_desc] = rows._gameId[_room_number];
-							_vsComputer[_room_desc] = rows._vsComputer[_room_number];
-							_allowSpectators[_room_desc] = rows._allowSpectators[_room_number];
+		var _rs = _db_select.room_at_room_lock(_data._room);
+		
+		if (_data._roomLockMessage == "")
+		{
+			// get data from all users online. the data will populate roomState so that everyone at lobby and waiting room will have the correct state of a room.
+			var rows = _db_select.all_by_desc_at_room_data();
 			
-							_stop = true;
-							break;
-						}
+			// next we clear the roomState var to prepare it for the new data.
+			_roomState =
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+			_roomPlayerCurrentTotal =
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+			 
+			_vsComputer =
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+			
+			_allowSpectators =
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+	
+			_roomGameIds =
+			[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+			 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+			 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+			 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+			 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+			
+			_roomHostUsername = 
+			["", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", ""];
+			
+			_gid = 
+			["", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "", "", ""];
+				
+			var _stop = false;
+			
+			// populate roomState and _roomPlayerCurrentTotal with the correct data.
+			// this is the total rows in the mysql database table.
+			var _room_number = rows._room.length;
+			
+			while (_room_number-- > 0)
+			{
+				// button total is the total rooms at lobby.
+				var _room_desc = _button_total;
+				
+				// search backwards, starting from the last room.
+				while (-- _room_desc > 0)
+				{
+					// count backwards, search for the first occurrence of a room value. for example, if there are 3 players in room then the last player's _roomState value will be compared.
+					if (_room_desc == rows._room[_room_number])
+					{
+						_roomState[_room_desc] = rows._roomState[_room_number];
 						
-						if (_stop == true) break;
-					}	
-				}
-				
-				_vsComputer[_data._room] = _data._vsComputer[_data._room];
-				
-				// get every host of rooms.
-				var erows = _mysqlDB.loadIsHost();
-				
-				for (i in 0...erows._room.length)
-				{
-					_roomHostUsername[erows._room[i]] = Std.string(erows._user[i]);
-					_gid[erows._room[i]] = Std.string(erows._gid[i]);
-				}
-				
-				_data._roomState = _roomState;
-				_data._roomGameIds = _roomGameIds;			
-				_data._roomPlayerLimit = _roomPlayerLimit;
-				_data._vsComputer = _vsComputer;
-				_data._allowSpectators = _allowSpectators;
-				_data._roomHostUsername = _roomHostUsername;
-				_data._gid = _gid;
-								
-				// get all players in room but not playing a game. the list is used to determine if player can join room.
-				var rset = _mysqlDB.selectAllPlayersInRoomButNotPlayingGame();		
-				
-				// clear list.
-				for (i in 0..._roomPlayerCurrentTotal.length)
-				{
-					_roomPlayerCurrentTotal[i] = 0;
-				}
-				
-				for (i in 0...25) // rooms
-				{
-					var _count = _mysqlDB.usersPlayingGameCount2(i);
+						// set the room limit text for lobby.
+						_roomPlayerLimit[_room_desc] = rows._playerLimit[_room_number];
 						
-					// if playing against the cpu, set the total player in that room to equal _data._roomPlayerLimit var. this is needed since the _mysqlDB.usersPlayingGameCount2 above will only find 1 player in the room.
-					if (_data._roomState[i] == 8 && _count == 1) _roomPlayerCurrentTotal[i] = _data._roomPlayerLimit[i];
-					else _roomPlayerCurrentTotal[i] = _count;
-				}	
-				
-				_data._roomPlayerCurrentTotal = _roomPlayerCurrentTotal;
-				
-				var cset = _mysqlDB.selectRoomDataUser(_data._username);
+						// set the text of the game currently set to room.
+						_roomGameIds[_room_desc] = rows._gameId[_room_number];
+						_vsComputer[_room_desc] = rows._vsComputer[_room_number];
+						_allowSpectators[_room_desc] = rows._allowSpectators[_room_number];
+		
+						_stop = true;
+						break;
+					}
 					
-				if (Std.string(cset._room[0]) == "0") 
-				{
-					// player left game so set the isGameFinished var so that player can get an invite.
-					_mysqlDB.saveIsGameFinishedUser(_data._username, true, false);
-				}
-				
-				
+					if (_stop == true) break;
+				}	
 			}
 			
-			/*
-			//---------------- these cpu bots will host room a and b when there are no players in those rooms.
-			// signature game - 2 players.
-			_data._roomState[1] = _roomState[1] = 2;
-			_data._roomGameIds[1] = _roomGameIds[1] = 4;
-			_data._roomPlayerLimit[1] = _roomPlayerLimit[1] = 2;
-			_data._vsComputer[1] = _vsComputer[1] = 1;
-			_data._allowSpectators[1] = _allowSpectators[1] = 0;
-			_data._roomHostUsername[1] = _roomHostUsername[1] = Reg._cpu_host_name1;
-			_data._roomPlayerCurrentTotal[1] = 1;
+			_vsComputer[_data._room] = _data._vsComputer[_data._room];
 			
-			// chess.
-			_data._roomState[2] = _roomState[2] = 2;	
-			_data._roomGameIds[2] = _roomGameIds[2] = 1;
-			_data._roomPlayerLimit[2] = _roomPlayerLimit[2] = 2;
-			_data._vsComputer[2] = _vsComputer[2] = 1;
-			_data._allowSpectators[2] = _allowSpectators[2] = 0;
-			_data._roomHostUsername[2] = _roomHostUsername[2] = Reg._cpu_host_name2;
-			_data._roomPlayerCurrentTotal[2] = 1;
-			*/
+			// get every host of rooms.
+			var erows = _db_select.all_at_who_is_host();
 			
-			_sender.send("Get Room Data", _data);
+			for (i in 0...erows._room.length)
+			{
+				_roomHostUsername[erows._room[i]] = Std.string(erows._user[i]);
+				_gid[erows._room[i]] = Std.string(erows._gid[i]);
+			}
 			
-		});
+			_data._roomState = _roomState;
+			_data._roomGameIds = _roomGameIds;			
+			_data._roomPlayerLimit = _roomPlayerLimit;
+			_data._vsComputer = _vsComputer;
+			_data._allowSpectators = _allowSpectators;
+			_data._roomHostUsername = _roomHostUsername;
+			_data._gid = _gid;
+							
+			// get all players in room but not playing a game. the list is used to determine if player can join room.
+			var rset = _db_select.waiting_room_by_timestamp_at_room_data();		
+			
+			// clear list.
+			for (i in 0..._roomPlayerCurrentTotal.length)
+			{
+				_roomPlayerCurrentTotal[i] = 0;
+			}
+			
+			for (i in 0...25) // rooms
+			{
+				var _count = _db_select.count_room_at_room_data(i);
+					
+				// if playing against the cpu, set the total player in that room to equal _data._roomPlayerLimit var. this is needed since the _db_select.count_room_at_room_data above will only find 1 player in the room.
+				if (_data._roomState[i] == 8 && _count == 1) _roomPlayerCurrentTotal[i] = _data._roomPlayerLimit[i];
+				else _roomPlayerCurrentTotal[i] = _count;
+			}	
+			
+			_data._roomPlayerCurrentTotal = _roomPlayerCurrentTotal;
+			
+			var cset = _db_select.user_all_at_room_data(_data._username);
+				
+			if (Std.string(cset._room[0]) == "0") 
+			{
+				// player left game so set the isGameFinished var so that player can get an invite.
+				_db_update.is_game_finished_for_user_at_room_data(_data._username, true, false);
+			}
+			
+			
+		}
+		
+		/*
+		//---------------- these cpu bots will host room a and b when there are no players in those rooms.
+		// signature game - 2 players.
+		_data._roomState[1] = _roomState[1] = 2;
+		_data._roomGameIds[1] = _roomGameIds[1] = 4;
+		_data._roomPlayerLimit[1] = _roomPlayerLimit[1] = 2;
+		_data._vsComputer[1] = _vsComputer[1] = 1;
+		_data._allowSpectators[1] = _allowSpectators[1] = 0;
+		_data._roomHostUsername[1] = _roomHostUsername[1] = Reg._cpu_host_name1;
+		_data._roomPlayerCurrentTotal[1] = 1;
+		
+		// chess.
+		_data._roomState[2] = _roomState[2] = 2;	
+		_data._roomGameIds[2] = _roomGameIds[2] = 1;
+		_data._roomPlayerLimit[2] = _roomPlayerLimit[2] = 2;
+		_data._vsComputer[2] = _vsComputer[2] = 1;
+		_data._allowSpectators[2] = _allowSpectators[2] = 0;
+		_data._roomHostUsername[2] = _roomHostUsername[2] = Reg._cpu_host_name2;
+		_data._roomPlayerCurrentTotal[2] = 1;
+		*/
+		
+		_server.send_to_handler(_data);
 
 	}
 	
@@ -1938,13 +1861,9 @@ class Events
 	* USED AT LOBBY TO DELAY THE SECOND PLAYER FROM ENTERING INTO THE ROOM UNTIL THE ROOM LOCK IS REMOVED FROM THAT ROOM. THIS EVENT ONLY SENDS _data TO CLIENT. AT THAT CLIENT A VAR IS TRIGGERED TO UPDATE THE ROOMS TEXT AND THEN CLIENT SENDS TO ROOM LOCK 2 THEN THAT EVENT AT SERVER REMOVES THE LOCK.
 	* _dataMisc
 	*/
-	private function roomLock1(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function roomLock1(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Room Lock 1", function(_data, _sender)
-		{
-			_server.broadcast("Room Lock 1",_data);
-		});
-
+		_server.broadcast_everyone(_data);
 	}	
 	
 	/******************************
@@ -1952,38 +1871,22 @@ class Events
 	* THIS EVENT ONLY REMOVES THE ROOM LOCK.
 	* _dataMisc
 	*/
-	private function roomLock2(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function roomLock2(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Room Lock 2", function(_data, _sender)
-		{
-			_data._roomLockMessage = "";
-			
-			// unlock the room.
-			_mysqlDB.deleteRoomUnlock(_data._username, _data._room);
-		});
-
+		_data._roomLockMessage = "";
+		
+		// unlock the room.
+		_db_delete.user_at_room_lock(_data._username, _data._room);
 	}
 	
 	/******************************
 	* EVENT GET ROOM PLAYERS
 	*/
-	private function getRoomPlayers(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function getRoomPlayers(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Get Room Players", function(_data, _sender)
-		{	
-			Functions.userLogs("Get Room Players", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Get Room Players", _data);
-				}
-			}
-			
-		});
-
+		Functions.userLogs("Get Room Players", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
@@ -1991,372 +1894,242 @@ class Events
 	* chat message of the player.
 	* _dataMisc
 	*/
-	private function chatSend(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function chatSend(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Chat Send", function(_data, _sender)
-		{
-			Functions.userLogs("Chat Send", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Chat Send", _data);
-				}
-			}
-			
-		});
-
+		Functions.userLogs("Chat Send", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
 	* EVENT DRAW OFFER
 	* offer draw so that no one wins and loses a game. its a tie.
 	*/
-	private function drawOffer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function drawOffer(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Draw Offer", function(_data, _sender)
-		{
-			Functions.userLogs("Draw Offer", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Draw Offer", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Draw Offer", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
 	* EVENT DRAW ANSWERED AS
 	* reply to the offer draw so that no one wins and loses a game. its a tie.
 	*/
-	private function drawAnsweredAs(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function drawAnsweredAs(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Draw Answered As", function(_data, _sender)
-		{
-			Functions.userLogs("Draw Answered As", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Draw Answered As", _data);
-				}
-			}
-			
-		});
-
+		Functions.userLogs("Draw Answered As", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
 	* EVENT RESTART OFFER.
 	* offer to restart and play another game.
 	*/
-	private function restartOffer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function restartOffer(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Restart Offer", function(_data, _sender)
-		{
-			Functions.userLogs("Restart Offer", _data.id, _data._username, _data); // logs.
+		Functions.userLogs("Restart Offer", _data.id, _data._username, _data); // logs.
 
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Restart Offer", _data);
-				}
-			}
-			
-		});
-
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
 	* EVENT RESTART ANSWERED AS
 	* reply to the restart a chess game offer so that another game can be played.
 	*/
-	private function restartAnsweredAs(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function restartAnsweredAs(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Restart Answered As", function(_data, _sender)
+		Functions.userLogs("Restart Answered As", _data.id, _data._username, _data); // logs.
+		
+		if (_data._restartGameAnsweredAs == true)
 		{
-			Functions.userLogs("Restart Answered As", _data.id, _data._username, _data); // logs.
+			var _isGameFinished:Bool = false;
+			var _is_spectator_watching:Bool = _data._spectatorWatching;
 			
-			if (_data._restartGameAnsweredAs == true)
-			{
-				var _isGameFinished:Bool = false;
-				var _is_spectator_watching:Bool = _data._spectatorWatching;
-				
-				_mysqlDB.saveIsGameFinished(_data._room, _isGameFinished, _is_spectator_watching);
-			}
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Restart Answered As", _data);
-				}
-			}
-
-		});
-
+			_db_update.is_game_finished_for_room_at_room_data(_data._room, _isGameFinished, _is_spectator_watching);
+		}
+		
+		_server.broadcast_in_room(_data);		
 	}
 	
 	/******************************
 	* EVENT 
 	* currently this event is for the signature game. a player sends a trade unit to another player and this event is for that other player receiving the trade.
 	*/
-	private function tradeProposalOffer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function tradeProposalOffer(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Trade Proposal Offer", function(_data, _sender)
-		{
-			Functions.userLogs("Trade Proposal Offer", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Trade Proposal Offer", _data);
-				}
-			}
-			
-		});
-
+		Functions.userLogs("Trade Proposal Offer", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}
 	
 	/******************************
 	* EVENT 
 	* currently this event is for the signature game. replied to the trade request.
 	*/
-	private function tradeProposalAnsweredAs(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function tradeProposalAnsweredAs(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Trade Proposal Answered As", function(_data, _sender)
-		{
-			Functions.userLogs("Trade Proposal Answered As", _data.id, _data._username, _data); // logs.
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Trade Proposal Answered As", _data);
-				}
-			}
-			
-		});
-
+		Functions.userLogs("Trade Proposal Answered As", _data.id, _data._username, _data); // logs.
+		
+		_server.broadcast_in_room(_data);		
 	}
 	
 	/******************************
 	* EVENT ONLINE PLAYER OFFER INVITE.
 	* offer an invite to a player at the lobby.
 	*/
-	private function OnlinePlayerOfferInvite(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function onlinePlayerOfferInvite(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Online Player Offer Invite", function(_data, _sender)
-		{
-			Functions.userLogs("Online Player Offer Invite", _data.id, _data._username, _data); // logs.
-			
-			_server.broadcast("Online Player Offer Invite",_data);
-		});
+		Functions.userLogs("Online Player Offer Invite", _data.id, _data._username, _data); // logs.
+		_server.broadcast_everyone(_data);
 	}
 	
 	/******************************
 	* EVENT GAME MESSAGE. NOT A MESSAGE BOX.
 	*/
-	private function gameMessageNotSender(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gameMessageNotSender(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Game Message Not Sender", function(_data, _sender)
-		{
-			Functions.userLogs("Game Message Not Sender", _data.id, _data._username, _data); // logs
+		Functions.userLogs("Game Message Not Sender", _data.id, _data._username, _data); // logs
 
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Game Message Not Sender", _data);
-				}
-			}
-			
-		});
-
+		_server.broadcast_in_room(_data);		
 	}
 	
 	/******************************
-	* A MESSAGE BOX MESSSGE SENT To ALL SPECTATORS WATCHING NOT SPECTATORs PLAYING.
+	* A MESSAGE BOX MESSSGE SENT TO ALL SPECTATORS WATCHING NOT SPECTATORS PLAYING.
 	*/
-	private function gameMessageBoxForSpectatorWatching(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gameMessageBoxForSpectatorWatching(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Game Message Box For Spectator Watching", function(_data, _sender)
-		{
-			Functions.userLogs("Game Message Box For Spectator Watching", _data.id, _data._username, _data); // logs
+		Functions.userLogs("Game Message Box For Spectator Watching", _data.id, _data._username, _data); // logs
 
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					_sender.send("Game Message Box For Spectator Watching", _data);
-				}
-			}
-			
-		});
-
-	}
+		_server.broadcast_in_room(_data);	}
 
 	/******************************
 	* EVENT MESSAGE KICK
 	* kick: player cannot play for a while because admin kicked player.
 	*/
-	private function messageKick(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function messageKick(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Message Kick", function(_data, _sender)
+		Functions.userLogs("Message Kick", _data.id, _data._username, _data); // logs // do not use.
+		
+		var _user:String = "";
+		var _message:String = "";
+		var _minutesTotal:String = "";
+		var _timestamp:String = "";
+		
+		var rset = _db_select.limit_120_kicked_users();
+
+		if (rset._user.length > 0)
 		{
-			Functions.userLogs("Message Kick", _data.id, _data._username, _data); // logs // do not use.
-			
-			var _user:String = "";
-			var _message:String = "";
-			var _minutesTotal:String = "";
-			var _timestamp:String = "";
-			
-			var rset = _mysqlDB.select120KickedUsers();
-
-			if (rset._user.length > 0)
+			for ( i in 0...rset._user.length)
 			{
-				for ( i in 0...rset._user.length)
-				{
-					// populate all data from the mysql table. separate each element in these strings with a comma. later, the populated data will be added to arrays. if kicked time is remaining then those data will be passed to the client and the client will determine if a kicked message should be displayed.
-					_user = _user + rset._user[i] + ",";
-					_message = _message + rset._message[i] + ",";
-					_minutesTotal = _minutesTotal + rset._minutesTotal[i] + ",";
-					_timestamp = _timestamp + rset._timestamp[i] + ",";
-						
-				}
-
-				// get the current time.
-				var _currentTime = Std.int(Sys.time());
-
-				var paragraph:Array<String> = _user.split(","); // cut each username data at comma.
-				var paragraph2:Array<String> = _message.split(","); // cut _clientCommandMessage data at comma.
-				var paragraph4:Array<String> = _minutesTotal.split(","); // total minutes when kicked.
-				var paragraph5:Array<String> = _timestamp.split(","); // cut user timestamps data at comma.
-
-
-				var _timeRemaining:Array<Int> = [ for (i in 0...120) 0];
-
-				// populate the data to be sent to client.
-				for (i in 0...120)
-				{
-					if (paragraph5[i+1] != null) // this line is needed to address bug.
-					{
-						// how much time in seconds is remaining in current timestamp minus users timestamp. convert to minutes.
-						var _timeMinus:Int = _currentTime - Std.parseInt(paragraph5[i]);
-						_timeMinus = Std.int(_timeMinus / 60);
+				// populate all data from the MySQL table. separate each element in these strings with a comma. later, the populated data will be added to arrays. if kicked time is remaining then those data will be passed to the client and the client will determine if a kicked message should be displayed.
+				_user = _user + rset._user[i] + ",";
+				_message = _message + rset._message[i] + ",";
+				_minutesTotal = _minutesTotal + rset._minutesTotal[i] + ",";
+				_timestamp = _timestamp + rset._timestamp[i] + ",";
 					
-						var _currentTimeRemaining:Int = Std.parseInt(paragraph4[i]) - _timeMinus;
-						// change the time at _clientCommandMessage.
-						paragraph2[i] = StringTools.replace(paragraph2[i], paragraph4[i], Std.string(_currentTimeRemaining));
+			}
 
-						// next time remaining needs to be changed to the new time.
-						paragraph4[i] = Std.string(_currentTimeRemaining);
-						
-					}
-				}
+			// get the current time.
+			var _currentTime = Std.int(Sys.time());
 
-				var _text:String = "";
-				var _text2:String = "";
-				var _text3:String = "";
-				var _text4:String = "";
-				var _text5:String = "";
+			var paragraph:Array<String> = _user.split(","); // cut each username data at comma.
+			var paragraph2:Array<String> = _message.split(","); // cut _clientCommandMessage data at comma.
+			var paragraph4:Array<String> = _minutesTotal.split(","); // total minutes when kicked.
+			var paragraph5:Array<String> = _timestamp.split(","); // cut user timestamps data at comma.
 
-				// remove user from all kicked files when time remaining less or equal zero.
-				for (i in 0...paragraph.length) // populate _text var with the new paragraph data.
+
+			var _timeRemaining:Array<Int> = [ for (i in 0...120) 0];
+
+			// populate the data to be sent to client.
+			for (i in 0...120)
+			{
+				if (paragraph5[i+1] != null) // this line is needed to address bug.
 				{
-					if (paragraph[i] != "" && Std.parseInt(paragraph4[i]) >0)
-					{
-						_text = _text + paragraph[i] + ",";		// _clientCommand users.
-						_text2 = _text2 + paragraph2[i] + ",";	// _clientCommand messages.
-							
-					}
-				}
+					// how much time in seconds is remaining in current timestamp minus users timestamp. convert to minutes.
+					var _timeMinus:Int = _currentTime - Std.parseInt(paragraph5[i]);
+					_timeMinus = Std.int(_timeMinus / 60);
+				
+					var _currentTimeRemaining:Int = Std.parseInt(paragraph4[i]) - _timeMinus;
+					// change the time at _clientCommandMessage.
+					paragraph2[i] = StringTools.replace(paragraph2[i], paragraph4[i], Std.string(_currentTimeRemaining));
 
-				if (_text  != "") _data._clientCommandUsers = _text;
-				if (_text2 != "") _data._clientCommandMessage = _text2;
-
-				if (_text != "" && _text2 != "")
-				{
-					_sender.putInRoom(room[0]);
-					room[0].broadcast("Message Kick", _data);
+					// next time remaining needs to be changed to the new time.
+					paragraph4[i] = Std.string(_currentTimeRemaining);
+					
 				}
 			}
-			
-			
-		});
 
+			var _text:String = "";
+			var _text2:String = "";
+			var _text3:String = "";
+			var _text4:String = "";
+			var _text5:String = "";
+
+			// remove user from all kicked files when time remaining less or equal zero.
+			for (i in 0...paragraph.length) // populate _text var with the new paragraph data.
+			{
+				if (paragraph[i] != "" && Std.parseInt(paragraph4[i]) >0)
+				{
+					_text = _text + paragraph[i] + ",";		// _clientCommand users.
+					_text2 = _text2 + paragraph2[i] + ",";	// _clientCommand messages.
+						
+				}
+			}
+
+			if (_text  != "") _data._clientCommandUsers = _text;
+			if (_text2 != "") _data._clientCommandMessage = _text2;
+
+			if (_text != "" && _text2 != "")
+			{
+				_server.broadcast_in_room(_data);
+			}
+		}
 	}
 
 	
-	private function removeKickedFromUser(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function removeKickedFromUser(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Remove Kicked From User", function(_data, _sender)
-		{
-			Functions.userLogs("Remove Kicked From User", _data.id, _data._username, _data); // logs
-			
-			_mysqlDB.updateUsersKickedData(_data._username);
-		});
-
+		Functions.userLogs("Remove Kicked From User", _data.id, _data._username, _data); // logs
+		_db_update.user_set_is_kicked_at_users(_data._username);
 	}
 	
 	/******************************
 	* EVENT MESSAGE BAN
 	* ban: admin stopped player from playing forever.
 	*/
-	private function messageBan(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function messageBan(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Message Ban", function(_data, _sender)
+		// TODO uncomment this. it is commented to see if the type command outputs when error at server console happens.
+		//Functions.userLogs("Message Ban", _data.id, _data._username, _data); // logs
+		
+		var _user:String = "";
+		var _message:String = "";
+		var _ip:String = "";
+		
+		var rset = _db_select.limit_120_banned_users();
+		
+		if (rset._user.length > 0)
 		{
-			// TODO uncomment this. it is commented to see if the type command outputs when error at server console happens.
-			//Functions.userLogs("Message Ban", _data.id, _data._username, _data); // logs
-			
-			var _user:String = "";
-			var _message:String = "";
-			var _ip:String = "";
-			
-			var rset = _mysqlDB.select120BannedUsers();
-			
-			if (rset._user.length > 0)
+			for ( i in 0...rset._user.length)
 			{
-				for ( i in 0...rset._user.length)
-				{
-					// populate all data from the mysql table. separate each element in these strings with a comma. later, the populated data will be added to arrays. 
-					_user = _user + rset._user[i] + ",";
-					_message = _message + rset._message[i] + ",";
-					_ip = _ip + rset._ip[i] + ",";
-				}
-
-				// pass banned data to client. at that time, if user is banned then client will display the banned message.
-				_data._username = _user;
-				_data._clientCommandMessage = _message;
-				_data._clientCommandIPs = _ip;
-								
-				if (_message != "")
-				{
-					_sender.putInRoom(room[0]);
-					room[0].broadcast("Message Ban", _data);
-				}
+				// populate all data from the mysql table. separate each element in these strings with a comma. later, the populated data will be added to arrays. 
+				_user = _user + rset._user[i] + ",";
+				_message = _message + rset._message[i] + ",";
+				_ip = _ip + rset._ip[i] + ",";
 			}
 
-		});
-
+			// pass banned data to client. at that time, if user is banned then client will display the banned message.
+			_data._username = _user;
+			_data._clientCommandMessage = _message;
+			_data._clientCommandIPs = _ip;
+							
+			if (_message != "")
+			{
+				_server.broadcast_in_room(_data);
+			}
+		}
 	}
 
 	/******************************
@@ -2364,27 +2137,16 @@ class Events
 	* this event enters the game room.
 	* _dataMisc
 	*/
-	private function enterGameRoom(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function enterGameRoom(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Enter Game Room", function (_data, _sender)
-		{
-			Functions.userLogs("Enter Game Room", _data.id, _data._username, _data); // logs
+		Functions.userLogs("Enter Game Room", _data.id, _data._username, _data); // logs
+		
+		var _isGameFinished:Bool = true;
+		var _is_spectator_watching:Bool = _data._spectatorWatching;
 			
-			var _isGameFinished:Bool = true;
-			var _is_spectator_watching:Bool = _data._spectatorWatching;
-				
-			_mysqlDB.saveIsGameFinished(_data._room, _isGameFinished, _is_spectator_watching);
-				
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Enter Game Room", _data);
-				}
-			}
+		_db_update.is_game_finished_for_room_at_room_data(_data._room, _isGameFinished, _is_spectator_watching);
 			
-		});
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
@@ -2392,15 +2154,10 @@ class Events
 	* this player wins the game.
 	* _dataPlayers
 	*/
-	private function gameWin(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gameWin(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Game Win", function (_data, _sender)
-		{
-			Functions.userLogs("Game Win", _data.id, _data._username, _data); // logs
-			
-			_sender.send("Game Win",_data);
-			
-		});
+		Functions.userLogs("Game Win", _data.id, _data._username, _data); // logs
+		_server.send_to_handler(_data);
 	}
 
 	/******************************
@@ -2408,23 +2165,12 @@ class Events
 	* this player loses the game.
 	* _dataPlayers
 	*/
-	private function gameLose(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gameLose(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		// at server, do not use "_sender.send" because more than one player can lose game.
-		_server.events.on("Game Lose", function (_data, _sender)
-		{
-			Functions.userLogs("Game Lose", _data.id, _data._username, _data); // logs
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Game Lose", _data);
-				}
-			}
-			
-		});
+		// at server, do not use "_handler.send" because more than one player can lose game.
+		Functions.userLogs("Game Lose", _data.id, _data._username, _data); // logs
+		
+		_server.broadcast_in_room(_data);		
 	}
 	
 	/******************************
@@ -2432,22 +2178,11 @@ class Events
 	* this player wins the game.
 	* _dataPlayers
 	*/
-	private function gameWinThenLoseForOther(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gameWinThenLoseForOther(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Game Win Then Lose For Other", function (_data, _sender)
-		{
-			Functions.userLogs("Game Win Then Lose For Other", _data.id, _data._username, _data); // logs
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Game Win Then Lose For Other", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Game Win Then Lose For Other", _data.id, _data._username, _data); // logs
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
@@ -2455,22 +2190,11 @@ class Events
 	* this player loses the game.
 	* _dataPlayers
 	*/
-	private function gameLoseThenWinForOther(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gameLoseThenWinForOther(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Game Lose Then Win For Other", function (_data, _sender)
-		{
-			Functions.userLogs("Game Lose Then Win For Other", _data.id, _data._username, _data); // logs
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Game Lose Then Win For Other", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Game Lose Then Win For Other", _data.id, _data._username, _data); // logs
+		
+		_server.broadcast_in_room(_data);		
 	}
 	
 	/******************************
@@ -2478,23 +2202,12 @@ class Events
 	* this game ends in a tie.
 	* _dataPlayers
 	*/
-	private function gameDraw(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gameDraw(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		// at server, do not use "_sender.send" because more than one player can be in a draw.
-		_server.events.on("Game Draw", function (_data, _sender)
-		{
-			Functions.userLogs("Game Draw", _data.id, _data._username, _data); // logs
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Game Draw", _data);
-				}
-			}
-			
-		});
+		// at server, do not use "_handler.send" because more than one player can be in a draw.
+		Functions.userLogs("Game Draw", _data.id, _data._username, _data); // logs
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
@@ -2502,52 +2215,49 @@ class Events
 	* save the win stats of the player that was sent here and then return that value to the cilent.
 	* _dataPlayers
 	*/
-	private function saveWinStats(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function saveWinStats(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Save Win Stats", function (_data, _sender)
+		Functions.userLogs("Save Win Stats", _data.id, _data._username, _data); // logs
+		
+		var _isGameFinished:Bool = true;
+		var _is_spectator_watching:Bool = _data._spectatorWatching;
+			
+		_db_update.is_game_finished_for_room_at_room_data(_data._room, _isGameFinished, _is_spectator_watching);
+		// _playersState.
+		// put those stats into the _data to send to client.
+		if (_data._spectatorWatching == false)
 		{
-			Functions.userLogs("Save Win Stats", _data.id, _data._username, _data); // logs
-			
-			var _isGameFinished:Bool = true;
-			var _is_spectator_watching:Bool = _data._spectatorWatching;
-				
-			_mysqlDB.saveIsGameFinished(_data._room, _isGameFinished, _is_spectator_watching);
-			// _playersState.
-			// put those stats into the _data to send to client.
-			if (_data._spectatorWatching == false)
+			for (i in 0...4)
 			{
-				for (i in 0...4)
+				if (_data._username == _data._usernamesStatic[i] 
+				&&  _data._gamePlayersValues[i] == 1
+				&&  _data._spectatorPlaying == false
+				||  _data._username == _data._usernamesStatic[i]
+				&&  _data._gamePlayersValues[i] == 1
+				&&  _vsComputer[_data._room] == 1)
 				{
-					if (_data._username == _data._usernamesStatic[i] 
-					&&  _data._gamePlayersValues[i] == 1
-					&&  _data._spectatorPlaying == false
-					||  _data._username == _data._usernamesStatic[i]
-					&&  _data._gamePlayersValues[i] == 1
-					&&  _vsComputer[_data._room] == 1)
-					{
-						_data._gamesAllTotalWins[i] += 1;
-											
-						// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
-						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
-						
-						// send that username to mysql to save the stats.
-						_mysqlDB.saveWinStats(_data._gameId, _data._username, _game_time_played_in_seconds); 
-						_mysqlDB.saveGamePlayer(_data._username, 0);
-						
-						// this checks if there is an event to give on this day.
-						// see the doEvent() function. 
-						eventsWin(_data, _data._username);
-						
-						_vsComputer[_data._room] = 0;
-						
-					} 
-				}
+					_data._gamesAllTotalWins[i] += 1;
+										
+					// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
+					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
+					
+					// send that username to mysql to save the stats.
+					_db_update.win_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds)); 
+					_db_update.game_players_values_at_room_data(_data._username, 0);
+					
+					// this checks if there is an event to give on this day.
+					// see the doEvent() function. 
+					eventsWin(_data, _data._username);
+					
+					_vsComputer[_data._room] = 0;
+					
+				} 
 			}
-			
-			player_game_state_value_update(_data);
-			_sender.send("Save Win Stats",_data);
-
-		});
+		}
+		
+		player_game_state_value_update(_data);
+		
+		_server.send_to_handler(_data);
 	}
 
 	/******************************
@@ -2555,55 +2265,45 @@ class Events
 	* save the lose stats of the player that was sent here and then return that value to the cilent.
 	* _dataPlayers
 	*/
-	private function saveLoseStats(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function saveLoseStats(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Save Lose Stats", function (_data, _sender)
+		Functions.userLogs("Save lose Stats", _data.id, _data._username, _data); // logs
+		
+		_db_update.is_game_finished_for_user_at_room_data(_data._username, true, _data._spectatorWatching);
+		 
+		if (_data._spectatorWatching == false)
 		{
-			Functions.userLogs("Save lose Stats", _data.id, _data._username, _data); // logs
-			
-			_mysqlDB.saveIsGameFinishedUser(_data._username, true, _data._spectatorWatching);
-			 
-			if (_data._spectatorWatching == false)
-			{
-				var user:String = _data._username;
+			var user:String = _data._username;
 
-				// put those stats into the _data to send to client.
-				for (i in 0...4)
-				{
-					if (_data._username == _data._usernamesDynamic[i]
-					&&  _data._spectatorPlaying == false
-					||  _data._username == _data._usernamesDynamic[i]
-					&&  _vsComputer[_data._room] == 1)
-					{			
-						_data._gamesAllTotalLosses[i] += 1;
-						
-						// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
-						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
-						
-						// send that username to mysql to get the stats.
-						_mysqlDB.saveLoseStats(_data._gameId, _data._username, _game_time_played_in_seconds);
-						_mysqlDB.saveGamePlayer(_data._username, 0);
-											
-						// this checks if there is an event to give on this day.
-						// see the doEvent() function.
-						eventsLose(_data, _data._username);
-						
-						_vsComputer[_data._room] = 0;
-					} 
-				}
-			}
-			
-			player_game_state_value_update(_data);
-			for (i in 0...25)
+			// put those stats into the _data to send to client.
+			for (i in 0...4)
 			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Save Lose Stats", _data);
-				}
+				if (_data._username == _data._usernamesDynamic[i]
+				&&  _data._spectatorPlaying == false
+				||  _data._username == _data._usernamesDynamic[i]
+				&&  _vsComputer[_data._room] == 1)
+				{			
+					_data._gamesAllTotalLosses[i] += 1;
+					
+					// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
+					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
+					
+					// send that username to mysql to get the stats.
+					_db_update.lose_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds));
+					_db_update.game_players_values_at_room_data(_data._username, 0);
+										
+					// this checks if there is an event to give on this day.
+					// see the doEvent() function.
+					eventsLose(_data, _data._username);
+					
+					_vsComputer[_data._room] = 0;
+				} 
 			}
-			
-		});
+		}
+		
+		player_game_state_value_update(_data);
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
@@ -2612,79 +2312,69 @@ class Events
 	* only a 2 player game should use this event.
 	* _dataPlayers
 	*/
-	private function saveWinStatsForBoth(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function saveWinStatsForBoth(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Save Win Stats For Both", function (_data, _sender)
+		Functions.userLogs("Save Win Stats For Both", _data.id, _data._username, _data); // logs 
+		
+		// _playersState.
+		// put those stats into the _data to send to client.
+		if (_data._spectatorWatching == false)
 		{
-			Functions.userLogs("Save Win Stats For Both", _data.id, _data._username, _data); // logs 
-			
-			// _playersState.
-			// put those stats into the _data to send to client.
-			if (_data._spectatorWatching == false)
+			for (i in 0...4)
 			{
-				for (i in 0...4)
+				if (_data._username == _data._usernamesStatic[i])
 				{
-					if (_data._username == _data._usernamesStatic[i])
-					{
-						_data._gamesAllTotalWins[i] += 1;
+					_data._gamesAllTotalWins[i] += 1;
+					
+					// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
+					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
+					
+					_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
+					_db_update.game_players_values_at_room_data(_data._username, 0);					
+					_vsComputer[_data._room] = 0;
+					
+					_data._username = _data._usernamesStatic[i];
+					eventsWin(_data, _data._usernamesStatic[i]);
+				} 
+			}
+		}
+		
+		var _stop:Bool = false;
+		
+		// player lost game.
+		if (_data._spectatorWatching == false)
+		{	
+			for (i in 0...4)
+			{
+				if (_data._username != _data._usernamesStatic[i])
+				{
+					if (_data._gamePlayersValues[i] == 1
+					||  _data._gamePlayersValues[i] == 2
+					||  _data._gamePlayersValues[i] == 4)
+					{					
+						_data._gamesAllTotalLosses[i] += 1;
 						
-						// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
 						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 						
-						_mysqlDB.saveWinStats(_data._gameId, _data._usernamesStatic[i], _game_time_played_in_seconds);
-						_mysqlDB.saveGamePlayer(_data._username, 0);					
+						// send that username to mysql to get the stats.
+						_db_update.lose_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
+						_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], 0);
+						
 						_vsComputer[_data._room] = 0;
 						
-						_data._username = _data._usernamesStatic[i];
-						eventsWin(_data, _data._usernamesStatic[i]);
-					} 
-				}
-			}
-			
-			var _stop:Bool = false;
-			
-			// player lost game.
-			if (_data._spectatorWatching == false)
-			{	
-				for (i in 0...4)
-				{
-					if (_data._username != _data._usernamesStatic[i])
-					{
-						if (_data._gamePlayersValues[i] == 1
-						||  _data._gamePlayersValues[i] == 2
-						||  _data._gamePlayersValues[i] == 4)
-						{					
-							_data._gamesAllTotalLosses[i] += 1;
-							
-							var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
-							
-							// send that username to mysql to get the stats.
-							_mysqlDB.saveLoseStats(_data._gameId, _data._usernamesStatic[i], _game_time_played_in_seconds);
-							_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], 0);
-							
-							_vsComputer[_data._room] = 0;
-							
-							eventsLose(_data, _data._usernamesStatic[i]);
-							
-							_stop = true;
-						}
+						eventsLose(_data, _data._usernamesStatic[i]);
 						
-						if (_stop == true) break;
+						_stop = true;
 					}
+					
+					if (_stop == true) break;
 				}
 			}
-			
-			player_game_state_value_update(_data);
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Save Win Stats For Both", _data);
-				}
-			}
-			
-		});
+		}
+		
+		player_game_state_value_update(_data);
+		
+		_server.broadcast_in_room(_data);		
 	}
 
 	/******************************
@@ -2693,130 +2383,119 @@ class Events
 	* only a 2 player game should use this event.
 	* playersData.
 	*/
-	private function saveLoseStatsForBoth(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function saveLoseStatsForBoth(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Save Lose Stats For Both", function (_data, _sender)
+		Functions.userLogs("Save Lose Stats For Both", _data.id, _data._username, _data); // logs
+		// those are used to load, save and calculate the chess elo ratings on this game that ended.
+		var _p1_username = "";
+		var _p2_username = "";
+		
+		// the value of this chess elo var is populated from the data
+		var _p1_chess_elo_rating:Float = 0;
+		var _p2_chess_elo_rating:Float = 0;
+		
+		var _isGameFinished:Bool = true;
+		var _is_spectator_watching:Bool = _data._spectatorWatching;
+			
+		_db_update.is_game_finished_for_room_at_room_data(_data._room, _isGameFinished, _is_spectator_watching);
+			
+		// _playersState.
+		if (_data._spectatorWatching == false)
 		{
-			Functions.userLogs("Save Lose Stats For Both", _data.id, _data._username, _data); // logs
-			// those are used to load, save and calculate the chess elo ratings on this game that ended.
-			var _p1_username = "";
-			var _p2_username = "";
-			
-			// the value of this chess elo var is populated from the data
-			var _p1_chess_elo_rating:Float = 0;
-			var _p2_chess_elo_rating:Float = 0;
-			
-			var _isGameFinished:Bool = true;
-			var _is_spectator_watching:Bool = _data._spectatorWatching;
-				
-			_mysqlDB.saveIsGameFinished(_data._room, _isGameFinished, _is_spectator_watching);
-				
-			// _playersState.
-			if (_data._spectatorWatching == false)
+			// put those stats into the _data to send to client.
+			for (i in 0...4)
 			{
-				// put those stats into the _data to send to client.
-				for (i in 0...4)
+				if (_data._username == _data._usernamesStatic[i])
 				{
-					if (_data._username == _data._usernamesStatic[i])
+					_data._gamesAllTotalLosses[i] += 1;
+					
+					// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
+					var _game_time_played_in_seconds = _data._timeTotal - Std.int(_data._moveTimeRemaining[i]); 	
+					
+					_db_update.lose_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds));
+					_db_update.game_players_values_at_room_data(_data._username, 0);
+					
+					_vsComputer[_data._room] = 0;
+					
+					eventsLose(_data, _data._username);
+					
+					// load the elo rating for player whom lost the game of chess.
+					if (_data._gameId == 1)
 					{
-						_data._gamesAllTotalLosses[i] += 1;
+						_p2_username = _data._username;
 						
-						// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
-						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
+						var rset = _db_select.user_elo_rating_from_statistics(_p2_username);
+						_p2_chess_elo_rating = rset._chess_elo_rating[0];
+					}
+					
+				} 
+			}
+		}
+		
+		var _stop:Bool = false;
+		
+		// player won game.
+		if (_data._spectatorWatching == false)
+		{
+			for (i in 0...4)
+			{
+				// do not use _data._username instead of _data._usernamesStatic[i] in this code block because you will have two of the same user saving to two different accounts!
+				if (_data._username != _data._usernamesStatic[i])
+				{
+					if (_data._gamePlayersValues[i] == 1
+					||  _data._gamePlayersValues[i] == 2
+					||  _data._gamePlayersValues[i] == 4)
+					{					
+						_data._gamesAllTotalWins[i] += 1;
 						
-						_mysqlDB.saveLoseStats(_data._gameId, _data._username, _game_time_played_in_seconds);
-						_mysqlDB.saveGamePlayer(_data._username, 0);
+						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 
+						
+						// send that username to mysql to get the stats.
+						_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
+						_db_update.game_players_values_at_room_data(_data._usernamesStaic[i], 0);
 						
 						_vsComputer[_data._room] = 0;
 						
-						eventsLose(_data, _data._username);
+						eventsWin(_data, _data._usernamesStatic[i]);
 						
 						// load the elo rating for player whom lost the game of chess.
 						if (_data._gameId == 1)
 						{
-							_p2_username = _data._username;
+							_p1_username = _data._usernamesStatic[i];
 							
-							var rset = _mysqlDB.selectUserEloRating(_p2_username);
-							_p2_chess_elo_rating = rset._chess_elo_rating[0];
+							var rset = _db_select.user_elo_rating_from_statistics(_p1_username);
+							_p1_chess_elo_rating = rset._chess_elo_rating[0];
+							
 						}
 						
-					} 
-				}
-			}
-			
-			var _stop:Bool = false;
-			
-			// player won game.
-			if (_data._spectatorWatching == false)
-			{
-				for (i in 0...4)
-				{
-					// do not use _data._username instead of _data._usernamesStatic[i] in this code block because you will have two of the same user saving to two different accounts!
-					if (_data._username != _data._usernamesStatic[i])
-					{
-						if (_data._gamePlayersValues[i] == 1
-						||  _data._gamePlayersValues[i] == 2
-						||  _data._gamePlayersValues[i] == 4)
-						{					
-							_data._gamesAllTotalWins[i] += 1;
-							
-							var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 
-							
-							// send that username to mysql to get the stats.
-							_mysqlDB.saveWinStats(_data._gameId, _data._usernamesStatic[i], _game_time_played_in_seconds);
-							_mysqlDB.saveGamePlayer(_data._usernamesStaic[i], 0);
-							
-							_vsComputer[_data._room] = 0;
-							
-							eventsWin(_data, _data._usernamesStatic[i]);
-							
-							// load the elo rating for player whom lost the game of chess.
-							if (_data._gameId == 1)
-							{
-								_p1_username = _data._usernamesStatic[i];
-								
-								var rset = _mysqlDB.selectUserEloRating(_p1_username);
-								_p1_chess_elo_rating = rset._chess_elo_rating[0];
-								
-							}
-							
-							_stop = true;
-						}
-						
-						if (_stop == true) break;
+						_stop = true;
 					}
-				}
-			}
-			
-			// Chess ELO rating.
-			if (_data._spectatorWatching == false)
-			{
-				if (_data._gameId == 1)
-				{
-					// lowest posiiable elo rating is 100.
-					if (_p1_chess_elo_rating < 100)
-						_p1_chess_elo_rating = 100;
-						
-					if (_p2_chess_elo_rating < 100)
-						_p2_chess_elo_rating = 100;
 					
-					// save the chess elo rating for each player at this function but first calculate the new elo values.
-					Functions.EloRating(_p1_username, _p2_username, _p1_chess_elo_rating, _p2_chess_elo_rating, _chess_elo_k, _chess_did_player1_win);				
+					if (_stop == true) break;
 				}
 			}
-			
-			player_game_state_value_update(_data);
-			for (i in 0...25)
+		}
+		
+		// Chess ELO rating.
+		if (_data._spectatorWatching == false)
+		{
+			if (_data._gameId == 1)
 			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Save Lose Stats For Both", _data);
-				}
-			}
-
+				// lowest posiiable elo rating is 100.
+				if (_p1_chess_elo_rating < 100)
+					_p1_chess_elo_rating = 100;
+					
+				if (_p2_chess_elo_rating < 100)
+					_p2_chess_elo_rating = 100;
 				
-		});
+				// save the chess elo rating for each player at this function but first calculate the new elo values.
+				Functions.EloRating(_p1_username, _p2_username, _p1_chess_elo_rating, _p2_chess_elo_rating, _chess_elo_k, _chess_did_player1_win);				
+			}
+		}
+		
+		player_game_state_value_update(_data);
+
+		_server.broadcast_in_room(_data);
 	}
 
 	/******************************
@@ -2824,45 +2503,35 @@ class Events
 	* save the draw stats of the player that was sent here and then return that value to the cilent.
 	* _dataPlayers
 	*/
-	private function saveDrawStats(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function saveDrawStats(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Save Draw Stats", function (_data, _sender)
+		Functions.userLogs("Save Draw Stats", _data.id, _data._username, _data); // logs
+		
+		var _isGameFinished:Bool = true;
+		var _is_spectator_watching:Bool = _data._spectatorWatching;
+			
+		_db_update.is_game_finished_for_room_at_room_data(_data._room, _isGameFinished, _is_spectator_watching);
+			
+		if (_data._spectatorWatching == false)
 		{
-			Functions.userLogs("Save Draw Stats", _data.id, _data._username, _data); // logs
-			
-			var _isGameFinished:Bool = true;
-			var _is_spectator_watching:Bool = _data._spectatorWatching;
-				
-			_mysqlDB.saveIsGameFinished(_data._room, _isGameFinished, _is_spectator_watching);
-				
-			if (_data._spectatorWatching == false)
+			for (i in 0...4)
 			{
-				for (i in 0...4)
+				if (_data._usernamesDynamic[i] != ""
+				&&  _data._username == _data._usernamesDynamic[i])
 				{
-					if (_data._usernamesDynamic[i] != ""
-					&&  _data._username == _data._usernamesDynamic[i])
-					{
-						_data._gamesAllTotalDraws[i] += 1;
-						// send that username to mysql to get the stats.
-						_mysqlDB.saveDrawStats(_data._gameId, _data._username);
-						_mysqlDB.saveGamePlayer(_data._username, 0);
-						
-						_vsComputer[_data._room] = 0;
-					}
+					_data._gamesAllTotalDraws[i] += 1;
+					// send that username to mysql to get the stats.
+					_db_update.draw_at_statistics(_data._gameId, _data._username);
+					_db_update.game_players_values_at_room_data(_data._username, 0);
+					
+					_vsComputer[_data._room] = 0;
 				}
 			}
-			
-			player_game_state_value_update(_data);
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Save Draw Stats", _data);
-				}
-			}
-			
-		});
+		}
+		
+		player_game_state_value_update(_data);
+
+		_server.broadcast_in_room(_data);
 	}
 	
 	/******************************
@@ -2870,60 +2539,61 @@ class Events
 	* gets the selected tournament data.
 	* _dataTournaments
 	*/
-	private function tournamentChessStandard8Get(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function tournamentChessStandard8Get(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Tournament Chess Standard 8 Get", function (_data, _sender)
-		{
-			Functions.userLogs("Tournament Chess Standard 8 Get", _data.id, _data._username, _data); // logs
+		Functions.userLogs("Tournament Chess Standard 8 Get", _data.id, _data._username, _data); // logs
+	
+		var rset = _db_select.tournament_chess_standard_8(_data._username, 1);
+		//############################# TOURNAMENT CHESS STANDARD 8.
 		
-			var rset = _mysqlDB.select_tournament_chess_standard_8(_data._username, 1);
-			//############################# TOURNAMENT CHESS STANDARD 8.
+		// set this to empty in case another tournament data was read before this one because we need to know if a user exists in this mysql table,
+		_data._player1 = "";
+		if (rset._user[0] != null) 
+		{
+			_data._player1 = Std.string(rset._user[0]);
+			_data._player2 = Std.string(rset._user2[0]);
+			_data._gid = Std.string(rset._gid[0]);
 			
-			// set this to empty in case another tournament data was read before this one because we need to know if a user exists in this mysql table,
-			_data._player1 = "";
-			if (rset._user[0] != null) 
-			{
-				_data._player1 = Std.string(rset._user[0]);
-				_data._player2 = Std.string(rset._user2[0]);
-				_data._gid = Std.string(rset._gid[0]);
-				
-				_data._round_current = Std.parseInt(Std.string(rset._round_current[0]));
-				_data._rounds_total = Std.parseInt(Std.string(rset._rounds_total[0]));
-				_data._move_total = Std.parseInt(Std.string(rset._move_total[0]));
-				_data._won_game = Std.parseInt(Std.string(rset._won_game[0]));
-				var _tournament_started = Std.parseInt(Std.string(rset._tournament_started[0]));
-				if (_tournament_started == 0) _data._tournament_started = false;
-				else _data._tournament_started = true;
-				
-				var _move_piece = Std.parseInt(Std.string(rset._move_piece[0]));
-				if (_move_piece == 0) _data._move_piece = false;
-				else _data._move_piece = true;
-				
-				_data._time_remaining_player1 = Std.string(rset._time_remaining_player1[0]);
-				_data._time_remaining_player2 = Std.string(rset._time_remaining_player2[0]);
-				
-				_data._move_number_current = Std.int(rset._move_number_current[0]);
-				_data._timestamp = Std.parseInt(Std.string(rset._timestamp[0]));
-				_data._game_over = Std.parseInt(Std.string(rset._isGameFinished[0]));
-			}
+			_data._round_current = Std.parseInt(Std.string(rset._round_current[0]));
+			_data._rounds_total = Std.parseInt(Std.string(rset._rounds_total[0]));
+			_data._move_total = Std.parseInt(Std.string(rset._move_total[0]));
+			_data._won_game = Std.parseInt(Std.string(rset._won_game[0]));
+			var _tournament_started = Std.parseInt(Std.string(rset._tournament_started[0]));
+			if (_tournament_started == 0) _data._tournament_started = false;
+			else _data._tournament_started = true;
 			
-			// player not found so set this to empty.
-			else _data._gid = "";
+			var _reminder_by_mail = Std.parseInt(Std.string(rset._reminder_by_mail[0]));
+			if (_reminder_by_mail == 0) _data._reminder_by_mail = false;
+			else _data._reminder_by_mail = true;
 			
-			var rset2 = _mysqlDB.select_tournament_data();
+			var _move_piece = Std.parseInt(Std.string(rset._move_piece[0]));
+			if (_move_piece == 0) _data._move_piece = false;
+			else _data._move_piece = true;
 			
-			//if (rset2._player_maximum[0] != null)
-				_data._player_maximum = rset2._player_maximum[0];
-						
-			// get current count of players in tournament chess standard 8.
-			var _count = _mysqlDB.select_tournament_chess_standard_8_count();
+			_data._time_remaining_player1 = Std.string(rset._time_remaining_player1[0]);
+			_data._time_remaining_player2 = Std.string(rset._time_remaining_player2[0]);
 			
-			_data._player_current = _count;
-			
-			//##############################
-			
-			_sender.send("Tournament Chess Standard 8 Get", _data);
-		});
+			_data._move_number_current = Std.int(rset._move_number_current[0]);
+			_data._timestamp = Std.parseInt(Std.string(rset._timestamp[0]));
+			_data._game_over = Std.parseInt(Std.string(rset._isGameFinished[0]));
+		}
+		
+		// player not found so set this to empty.
+		else _data._gid = "";
+		
+		var rset2 = _db_select.tournament_data();
+		
+		//if (rset2._player_maximum[0] != null)
+			_data._player_maximum = rset2._player_maximum[0];
+					
+		// get current count of players in tournament chess standard 8.
+		var _count = _db_select.tournament_chess_standard_8_count();
+		
+		_data._player_current = _count;
+		
+		//##############################
+		
+		_server.send_to_handler(_data);
 	}
 	
 	/******************************
@@ -2931,242 +2601,261 @@ class Events
 	* puts the selected tournament data to the mysql database.
 	* _dataTournaments
 	*/
-	private function tournamentChessStandard8Put(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function tournamentChessStandard8Put(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Tournament Chess Standard 8 Put", function (_data, _sender)
+		Functions.userLogs("Tournament Chess Standard 8 Put", _data.id, _data._username, _data); // logs
+		
+		_db_update.tournament_chess_standard_8(_data._player1, _data._player2, _data._time_remaining_player1, _data._time_remaining_player2, _data._move_number_current);
+
+		// if game over, from a checkmate or lost a game from time running out or something, end game for both players.
+		if (_data._game_over == 1) 
 		{
-			Functions.userLogs("Tournament Chess Standard 8 Put", _data.id, _data._username, _data); // logs
-			
-			_mysqlDB.update_tournament_chess_standard_8(_data._player1, _data._player2, _data._time_remaining_player1, _data._time_remaining_player2, _data._move_number_current);
-	
-			// if game over, from a checkmate or lost a game from time running out or something, end game for both players.
-			if (_data._game_over == 1) 
-			{
-				if (_data._won_game == 1)
-					_mysqlDB.update_tournament_chess_standard_8_game_over(_data._player1, _data._player2, 1, 0); // 1:player1 0:player2. the 1 means a win and 0 is a lose.
-				else 
-					_mysqlDB.update_tournament_chess_standard_8_game_over(_data._player1, _data._player2, 0, 1);
-			}
-	
-			_sender.send("Tournament Chess Standard 8 Put", _data);
-		});
+			if (_data._won_game == 1)
+				_db_update.tournament_chess_standard_8_game_over(_data._player1, _data._player2, 1, 0); // 1:player1 0:player2. the 1 means a win and 0 is a lose.
+			else 
+				_db_update.tournament_chess_standard_8_game_over(_data._player1, _data._player2, 0, 1);
+		}
+		
+		// TODO not used.
+		//_server.send_to_handler(_data);
 	}
 	
+	/******************************
+	* EVENT TOURNAMENT REMINDER BY MAIL
+	* 
+	*/
+	private function tournamentReminderByMail(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
+	{
+		Functions.userLogs("Tournament Reminder By Mail", _data.id, _data._username, _data); // logs
+		
+		var _reminder_by_mail:Int = 0;
+		
+		if (_data._reminder_by_mail == true)
+			_data._reminder_by_mail = false;
+			
+		else 
+		{
+			_data._reminder_by_mail = true;
+			_reminder_by_mail = 1;
+		}
+		
+		_db_update.tournament_chess_standard_8_reminder_by_mail(_data._player1, _reminder_by_mail);
+		
+		_server.send_to_handler(_data);
+	}
+	
+	/******************************
+	* EVENT TOURNAMENT PARTICIPATING
+	* 0: removed from tournament. 1: joined.
+	* _dataTournaments
+	*/
+	private function tournamentParticipating(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
+	{
+		Functions.userLogs("Tournament Participating", _data.id, _data._username, _data); // logs
+		
+		if (_data._player1 != "")
+		{
+			_db_delete.tournament_chess_standard_8(_data._player1);
+			_data._player1 = "";
+		}
+		
+		else
+		{
+			var _uid_code = Functions.create_code();
+			
+			_db_insert.tournament_chess_standard_8(_data._username, _uid_code, _data._email_address);
+			
+			_data._player1 = _data._username;
+			_data._game_over = 1;
+		}
+		
+		_server.send_to_handler(_data);
+	}
 
 	/******************************
 	* EVENT PLAYER LEFT GAME
 	* Trigger an event that the player has left the game and then do stuff such as stop the ability to move piece. Note that the player may still be at the game room, waiting for another game to play.
 	* _dataPlayers
 	*/
-	private function playerLeftGameRoom(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function playerLeftGameRoom(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Player Left Game Room", function (_data, _sender)
+		Functions.userLogs("Player Left Game Room", _data.id, _data._username, _data); // logs
+		
+		// save the player's game player state to the database. is the player playing a game or waiting to play.
+		for (i in 0...4)
 		{
-			Functions.userLogs("Player Left Game Room", _data.id, _data._username, _data); // logs
-			
-			// save the player's game player state to the database. is the player playing a game or waiting to play.
-			for (i in 0...4)
+			if (_data._username == _data._usernamesStatic[i] && _data._usernamesStatic[i] != "")
 			{
-				if (_data._username == _data._usernamesStatic[i] && _data._usernamesStatic[i] != "")
+				_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
+			}
+		
+			else
+			{
+				if (_data._gamePlayersValues[i] == 0)
 				{
-					_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
-				}
-			
-				else
-				{
-					if (_data._gamePlayersValues[i] == 0)
-					{
-						_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
-					}
+					_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
 				}
 			}
-			
-			/*
-			for (i in 0...4)
+		}
+		
+		/*
+		for (i in 0...4)
+		{
+			if (_data._username == _data._usernamesStatic[i] && _data._usernamesStatic[i] != "")
 			{
-				if (_data._username == _data._usernamesStatic[i] && _data._usernamesStatic[i] != "")
+				_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
+			}
+		
+			else
+			{
+				if (_data._gamePlayersValues[i] == 0)
 				{
-					_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
-				}
-			
-				else
-				{
-					if (_data._gamePlayersValues[i] == 0)
-					{
-						_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
-					}
+					_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
 				}
 			}
-			
-			
-			// get game playing data from database for the other players in that game room.
-			for (i in 0...4)
+		}
+		
+		
+		// get game playing data from database for the other players in that game room.
+		for (i in 0...4)
+		{
+			if (_data._usernamesStatic[i] != "" && _data._username != _data._usernamesStatic[i])
 			{
-				if (_data._usernamesStatic[i] != "" && _data._username != _data._usernamesStatic[i])
-				{
-					var rset = _mysqlDB.getGamePlayer(_data._usernamesStatic[i]);
-					
-					var _type:Int = rset._gamePlayersValues[0];
-					if (_data._gamePlayersValues[i] != 0) _data._gamePlayersValues[i] = _type;
-				}
+				var rset = _db_select.user_all_from_user_location_at_room_data(_data._usernamesStatic[i]);
+				
+				var _type:Int = rset._gamePlayersValues[0];
+				if (_data._gamePlayersValues[i] != 0) _data._gamePlayersValues[i] = _type;
 			}
-			*/
-			
-			player_game_state_value_update(_data);
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Player Left Game Room", _data);
-				}
-			}
-			
-		});
+		}
+		*/
+		
+		player_game_state_value_update(_data);
+		
+		_server.broadcast_in_room(_data);
+		
 	}
 
 	/*************************************************************************
 	 * this event is called when playing a game and player ran out of time or quit game.
 	 */
-	private function playerLeftGame(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function playerLeftGame(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Player Left Game", function (_data, _sender)
+		Functions.userLogs("Player Left Game", _data.id, _data._username, _data); // logs
+		
+		// save the player's game player state to the database. is the player playing a game or waiting to play.
+		
+		for (i in 0...4)
 		{
-			Functions.userLogs("Player Left Game", _data.id, _data._username, _data); // logs
-			
-			// save the player's game player state to the database. is the player playing a game or waiting to play.
-			
-			for (i in 0...4)
+			if (_data._username == _data._usernamesStatic[i] && _data._usernamesStatic[i] != "")
 			{
-				if (_data._username == _data._usernamesStatic[i] && _data._usernamesStatic[i] != "")
+				_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
+			}
+		
+			else
+			{
+				if (_data._gamePlayersValues[i] == 0)
 				{
-					_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
-				}
-			
-				else
-				{
-					if (_data._gamePlayersValues[i] == 0)
-					{
-						_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
-					}
+					_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
 				}
 			}
-			/*
-			// get game playing data from database for the other players in that game room.
-			for (i in 0...4)
+		}
+		/*
+		// get game playing data from database for the other players in that game room.
+		for (i in 0...4)
+		{
+			if (_data._usernamesStatic[i] != "" && _data._username != _data._usernamesStatic[i])
 			{
-				if (_data._usernamesStatic[i] != "" && _data._username != _data._usernamesStatic[i])
-				{
-					var rset = _mysqlDB.getGamePlayer(_data._usernamesStatic[i]);
-					
-					var _type:Int = rset._gamePlayersValues[0];
-					if (_data._gamePlayersValues[i] != 0) _data._gamePlayersValues[i] = _type;
-				}
+				var rset = _db_select.user_all_from_user_location_at_room_data(_data._usernamesStatic[i]);
+				
+				var _type:Int = rset._gamePlayersValues[0];
+				if (_data._gamePlayersValues[i] != 0) _data._gamePlayersValues[i] = _type;
 			}
-			*/
-			
-			player_game_state_value_update(_data);
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Player Left Game", _data);
-				}
-			}
-			
-		});
+		}
+		*/
+		
+		player_game_state_value_update(_data);
+		
+		_server.broadcast_in_room(_data);
+		
 	}
 
 	/******************************
 	* EVENT LOGGED IN USERS
 	* list of online players with stats. used to invite.
 	*/
-	private function loggedInUsers(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function loggedInUsers(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Logged In Users", function (_data, _sender)
+		Functions.userLogs("Logged In Users", _data.id, _data._username, _data); // logs // do not use
+		
+		for (i in 0...121)
 		{
-			Functions.userLogs("Logged In Users", _data.id, _data._username, _data); // logs // do not use
+			// clear list so that old data will not be displayed. a user may not be online since last update.
+			_onlinePlayersUsernames[i] = "";
+			_onlinePlayersGameWins[i] = 0;
+			_onlinePlayersGameLosses[i] = 0;
+			_onlinePlayersGameDraws[i] = 0;
+			_online_all_elo_ratings[i] = 0;
 			
-			_onlinePlayersState = allDataOnlinePlayers.get(_sender); // INVALED FIELD ACCESS ERROR WITHOUT THIS LINE.
+			_data._chess_elo_rating[i] = Std.parseFloat(Std.string(_data._chess_elo_rating[i]));
+		}
 
-			for (i in 0...121)
+		var _user:Array<String> = [];
+		var rset = _db_select.is_game_finished_at_room_data(); // get all current logged in users.
+
+		for ( i in 0...rset._user.length)
+		{
+			// put all current users in array elements.
+			_user[i] = Std.string(rset._user[i]);
+		}
+
+		var _count:Int = -1;
+
+		// if found a user then length is not zero.
+		if (_user.length > 0)
+		{
+			for ( i in 0..._user.length)
 			{
-				// clear list so that old data will not be displayed. a user may not be online since last update.
-				_onlinePlayersUsernames[i] = "";
-				_onlinePlayersGameWins[i] = 0;
-				_onlinePlayersGameLosses[i] = 0;
-				_onlinePlayersGameDraws[i] = 0;
-				_online_all_elo_ratings[i] = 0;
-				
-				_data._chess_elo_rating[i] = Std.parseFloat(Std.string(_data._chess_elo_rating[i]));
-			}
+				// get the data for this user,
+				var rset3 = _db_select.user_all_at_room_data(_user[i]);
 
-			var _user:Array<String> = [];
-			var rset = _mysqlDB.selectRoomDataIsGameFinished(); // get all current logged in users.
-
-			for ( i in 0...rset._user.length)
-			{
-				// put all current users in array elements.
-				_user[i] = Std.string(rset._user[i]);
-			}
-
-			var _count:Int = -1;
-
-			// if found a user then length is not zero.
-			if (_user.length > 0)
-			{
-				for ( i in 0..._user.length)
+				if (Std.string(rset3._roomState[0]) == "0" && Std.string(rset3._userLocation[0]) == "0")
 				{
-					// get the data for this user,
-					var rset3 = _mysqlDB.selectRoomDataUser(_user[i]);
+					// send that username to mysql to get the stats.
+					var rset2 = _db_select.user_all_at_statistics(_user[i]);
 
-					if (Std.string(rset3._roomState[0]) == "0" && Std.string(rset3._userLocation[0]) == "0")
-					{
-						// send that username to mysql to get the stats.
-						var rset2 = _mysqlDB.getStatsWinLoseDrawFromUsers(_user[i]);
+					_count += 1; // used to push thru array elements.
 
-						_count += 1; // used to push thru array elements.
-
-						// put stats into an array.
-						// these vars was declared at this file.
-						_onlinePlayersUsernames[_count] = _user[i];
-						_onlinePlayersGameWins[_count] = rset2._gamesAllTotalWins[0];
-						_onlinePlayersGameLosses[_count] = rset2._gamesAllTotalLosses[0];
-						_onlinePlayersGameDraws[_count] = rset2._gamesAllTotalDraws[0];
-						_online_all_elo_ratings[_count] = rset2._chess_elo_rating[0];
-
-					}
+					// put stats into an array.
+					// these vars was declared at this file.
+					_onlinePlayersUsernames[_count] = _user[i];
+					_onlinePlayersGameWins[_count] = rset2._gamesAllTotalWins[0];
+					_onlinePlayersGameLosses[_count] = rset2._gamesAllTotalLosses[0];
+					_onlinePlayersGameDraws[_count] = rset2._gamesAllTotalDraws[0];
+					_online_all_elo_ratings[_count] = rset2._chess_elo_rating[0];
 
 				}
-			}
 
-			if (_count == -1) // no data. create data to avoid a client crash.
-			{
-				_onlinePlayersUsernames[0] = "";
-				_onlinePlayersGameWins[0] = 0;
-				_onlinePlayersGameLosses[0] = 0;
-				_onlinePlayersGameDraws[0] = 0;
-				_data._chess_elo_rating[0] = 0;
 			}
+		}
 
-			// Populate the tyoedef var.
-			_data._usernamesOnline = _onlinePlayersUsernames;
-			_data._gamesAllTotalWins = _onlinePlayersGameWins;
-			_data._gamesAllTotalLosses = _onlinePlayersGameLosses;
-			_data._gamesAllTotalDraws = _onlinePlayersGameDraws;
-			_data._chess_elo_rating = _online_all_elo_ratings;
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Logged In Users", _data);
-				}
-			}
+		if (_count == -1) // no data. create data to avoid a client crash.
+		{
+			_onlinePlayersUsernames[0] = "";
+			_onlinePlayersGameWins[0] = 0;
+			_onlinePlayersGameLosses[0] = 0;
+			_onlinePlayersGameDraws[0] = 0;
+			_data._chess_elo_rating[0] = 0;
+		}
 
-		});
+		// Populate the tyoedef var.
+		_data._usernamesOnline = _onlinePlayersUsernames;
+		_data._gamesAllTotalWins = _onlinePlayersGameWins;
+		_data._gamesAllTotalLosses = _onlinePlayersGameLosses;
+		_data._gamesAllTotalDraws = _onlinePlayersGameDraws;
+		_data._chess_elo_rating = _online_all_elo_ratings;
+		
+		_server.broadcast_in_room(_data);
+		
 	}
 
 	/******************************
@@ -3174,110 +2863,88 @@ class Events
 	* this is where player can kick, ban other players.
 	* dataPlayers
 	*/
-	private function actionByPlayer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function actionByPlayer(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Action By Player", function (_data, _sender)
-		{
-			Functions.userLogs("Action By Player", _data.id, _data._username, _data); // logs
-			
-			// if there was not anything to update then there is no row that exists if this returns false.
-			var rset = _mysqlDB.usersSetActionCount(_data._username, _data._actionWho);
-	
-			// if there was no update, row returned false, then insert it. create a new entry into the database.
-			if (rset == false) _mysqlDB.usersSetActionInsert(_data._username, _data._actionWho, _data._actionNumber);
+		Functions.userLogs("Action By Player", _data.id, _data._username, _data); // logs
+		
+		// if there was not anything to update then there is no row that exists if this returns false.
+		var rset = _db_select.count_user_at_user_actions(_data._username, _data._actionWho);
 
-			
-			//_sender.send("Action By Player",_data);
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Action By Player", _data);
-				}
-			}
-			
-		});
+		// if there was no update, row returned false, then insert it. create a new entry into the database.
+		if (rset == false) _db_insert.user_at_user_actions(_data._username, _data._actionWho, _data._actionNumber);
+
+		
+		//_server.send_to_handler(_data);
+		
+		_server.broadcast_in_room(_data);
+		
 	}
 	
 	/******************************
 	* EVENT IS ACTION NEEDED FOR PLAYER.
 	* do action for player event to kick, ban other players.
 	*/
-	private function isActionNeededForPlayer(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function isActionNeededForPlayer(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Is Action Needed For Player", function (_data, _sender)
+		Functions.userLogs("Is Action Needed For Player", _data.id, _data._username, _data); // logs.
+		
+		var _minutesTotal:Int = 0;
+		var _timestamp:String = "";
+
+		// not host and there is more than 1 player in room.
+		if (_data._username != _data._usernamesDynamic[0])
 		{
-			Functions.userLogs("Is Action Needed For Player", _data.id, _data._username, _data); // logs.
+			var rset = _db_select.user_data_from_user_action(_data._usernamesDynamic[0], _data._username);
 			
-			var _minutesTotal:Int = 0;
-			var _timestamp:String = "";
+			if (rset._actionWho[0] != null)
+			{	
+				_minutesTotal = rset._minutesTotal[0];
 
-			// not host and there is more than 1 player in room.
-			if (_data._username != _data._usernamesDynamic[0])
-			{
-				var rset = _mysqlDB.isThereUserAction(_data._usernamesDynamic[0], _data._username);
+				// get the current time.
+				var _currentTime:Int = Std.int(Sys.time());
+
+				var _timeRemaining:Int = 0;
 				
-				if (rset._actionWho[0] != null)
-				{	
-					_minutesTotal = rset._minutesTotal[0];
+				// populate the data to be sent to client.
+				// how much time in seconds is remaining in current timestamp minus users timestamp. convert to minutes.
+				var _timeMinus:Int = _currentTime - Std.parseInt(rset._timestamp[0]);
+				
+				_timeMinus = Std.int(_timeMinus / 60);
 
-					// get the current time.
-					var _currentTime:Int = Std.int(Sys.time());
+				var _currentTimeRemaining:Int = _minutesTotal - _timeMinus;
 
-					var _timeRemaining:Int = 0;
-					
-					// populate the data to be sent to client.
-					// how much time in seconds is remaining in current timestamp minus users timestamp. convert to minutes.
-					var _timeMinus:Int = _currentTime - Std.parseInt(rset._timestamp[0]);
-					
-					_timeMinus = Std.int(_timeMinus / 60);
-
-					var _currentTimeRemaining:Int = _minutesTotal - _timeMinus;
-
-					// a value of 100 is a ban to the user. see this event at client.
-					if (_data._actionNumber == 2)
-					{
-						_data._actionDo = 100;
-					}
-					
-					if (_data._username != "" && _currentTimeRemaining > 0 && _data._actionDo != 100)
-					{
-						_data._actionDo = _currentTimeRemaining;
-					}
-										
-					if (_currentTimeRemaining < 1 && _data._actionDo != 100)
-					{
-						_mysqlDB.delete_user_action(_data._usernamesDynamic[0], _data._username);
-						
-						_data._actionDo = -1;
-						_data._actionNumber = 0;
-						_data._actionWho = "";
-					}
-					
-					else 
-					{
-						_data._actionNumber = Std.parseInt(rset._actionNumber[0]);
-						_data._actionWho = Std.string( rset._actionWho[0]);
-					}
+				// a value of 100 is a ban to the user. see this event at client.
+				if (_data._actionNumber == 2)
+				{
+					_data._actionDo = 100;
 				}
 				
-			} 
-		
-			if (_data._actionDo == -1) _data._actionNumber = 0; //return;
-			
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
+				if (_data._username != "" && _currentTimeRemaining > 0 && _data._actionDo != 100)
 				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Is Action Needed For Player", _data);
+					_data._actionDo = _currentTimeRemaining;
+				}
+									
+				if (_currentTimeRemaining < 1 && _data._actionDo != 100)
+				{
+					_db_delete.user_from_user_action(_data._usernamesDynamic[0], _data._username);
+					
+					_data._actionDo = -1;
+					_data._actionNumber = 0;
+					_data._actionWho = "";
+				}
+				
+				else 
+				{
+					_data._actionNumber = Std.parseInt(rset._actionNumber[0]);
+					_data._actionWho = Std.string( rset._actionWho[0]);
 				}
 			}
 			
-			//_server.broadcast("Is Action Needed For Player", _data);
-		});
+		} 
+	
+		if (_data._actionDo == -1) _data._actionNumber = 0; //return;
+		
+		_server.broadcast_in_room(_data);
 	}
 	
 	/*************************************************************************
@@ -3290,124 +2957,112 @@ class Events
 	* this var is used to display players who are waiting for a game at the game room and to get the _count of how many players are waiting at game room.
 	* _dataPlayers
 	*/
-	private function gamePlayersValues(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gamePlayersValues(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Game Players Values", function (_data, _sender)
+		Functions.userLogs("Game Players Values", _data.id, _data._username, _data); // logs
+	
+		// if spectator watching then populate _gamePlayersValues typedef.
+		if (_data._spectatorWatching == true)
 		{
-			Functions.userLogs("Game Players Values", _data.id, _data._username, _data); // logs
+			for (i in 0...4)
+			{
+				if (Std.string(_data._usernamesStatic[i]) != "")
+				{
+					var rset4 = _db_select.user_all_from_user_location_at_room_data(_data._usernamesStatic[i]);
+					
+					_data._gamePlayersValues[i] = rset4._gamePlayersValues[0]; 			
+				}
+			}
+		}
 		
-			// if spectator watching then populate _gamePlayersValues typedef.
-			if (_data._spectatorWatching == true)
+		// save for player playing game, else load value of other players in room for this player.
+		else
+		{
+			// the reason why we update the spectator playing var here is because this event is first sent since entering the game room by the client when a game starts.
+			_db_update.spectator_playing_at_room_data(_data._username, _data._spectatorPlaying);
+		
+			for (i in 0...4)
 			{
-				for (i in 0...4)
-				{
-					if (Std.string(_data._usernamesStatic[i]) != "")
-					{
-						var rset4 = _mysqlDB.getGamePlayer(_data._usernamesStatic[i]);
-						
-						_data._gamePlayersValues[i] = rset4._gamePlayersValues[0]; 			
-					}
-				}
+				if (_data._usernamesStatic[i] != "")
+					_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
+				else _data._gamePlayersValues[i] = 0;
 			}
 			
-			// save for player playing game, else load value of other players in room for this player.
-			else
-			{
-				// the reason why we update the spectator playing var here is because this event is first sent since entering the game room by the client when a game starts.
-				_mysqlDB.saveSpectator(_data._username, _data._spectatorPlaying);
-			
-				for (i in 0...4)
-				{
-					if (_data._usernamesStatic[i] != "")
-						_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
-					else _data._gamePlayersValues[i] = 0;
-				}
-				
-			}
-			
-			player_game_state_value_update(_data);
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Game Players Values", _data);
-				}
-			}
-			
-		});
+		}
+		
+		player_game_state_value_update(_data);
+		
+		// this is needed for game room. without this code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times.
+		if (_data._triggerEvent == "sender")
+			_server.send_to_handler(_data);
+		
+		else _server.broadcast_in_room(_data);
+		
 	}	
 
 	/******************************
 	* EVENT SAVE A VAR TO MYSQL SO THAT SOMEONE CANNOT INVITE WHEN STILL IN GAME ROOM. ALSO USED TO PASS A VAR TO USER SPECTATOR WATCHING. THAT VAR IS USED TO START A GAME FOR THAT SPECTATOR IF THE _gameIsFinished VALUE IS FALSE.
 	* _dataPlayers
 	*/
-	private function gameIsFinished(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function gameIsFinished(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Game Is Finished", function(_data, _sender)
-		{
-			Functions.userLogs("Game Is Finished", _data.id, _data._username, _data); // logs
-			
-			_mysqlDB.saveIsGameFinishedUser(_data._username, _data._gameIsFinished, _data._spectatorWatching);
+		Functions.userLogs("Game Is Finished", _data.id, _data._username, _data); // logs
 		
-			for (i in 0...25)
+		_db_update.is_game_finished_for_user_at_room_data(_data._username, _data._gameIsFinished, _data._spectatorWatching);
+	
+		for (i in 0...4)
+		{
+			// find the username is this var.
+			if (_data._usernamesStatic[i] != "")
 			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Game Is Finished", _data);
-				}
+				// update the game state for this player.
+				_server.player_game_state_value_username[_data._room][i] = _data._usernamesStatic[i];
+				_server.player_game_state_value_data[_data._room][i] = _data._gamePlayersValues[i];
+				
 			}
-			
-		});
+		}
+		
+		// this is needed for game room. without this code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times.
+		if (_data._triggerEvent == "sender")
+			_server.send_to_handler(_data);
+		
+		else _server.broadcast_in_room(_data);
+		
 	}	
 	
 	/******************************
 	* EVENT IS GAME FINISHED. FALSE IF GAME IS STILL BEING PLAYED. DEFAULTS TO TRUE BECAUSE WHEN ENTERING THE GAME ROOM THE GAME FOR THOSE PLAYERS HAS NOT STARTED YET.
 	* _dataPlayers
 	*/
-	private function isGameFinished(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function isGameFinished(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Is Game Finished", function(_data, _sender)
-		{
-			Functions.userLogs("Is Game Finished", _data.id, _data._username, _data); // logs
-			
-			var rset = _mysqlDB.selectRoomDataUser(_data._usernamesDynamic[0]);
-			_data._isGameFinished = rset._isGameFinished[0];
+		Functions.userLogs("Is Game Finished", _data.id, _data._username, _data); // logs
+		
+		var rset = _db_select.user_all_at_room_data(_data._usernamesDynamic[0]);
+		_data._isGameFinished = rset._isGameFinished[0];
 
-			// this could update the same user with the same value but it could also update the _isGameFinished var for the spectator watching.
-			_mysqlDB.saveIsGameFinishedUser(_data._username, _data._isGameFinished, _data._spectatorWatching);
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Is Game Finished", _data);
-				}
-			}
-			
-		});
+		// this could update the same user with the same value but it could also update the _isGameFinished var for the spectator watching.
+		_db_update.is_game_finished_for_user_at_room_data(_data._username, _data._isGameFinished, _data._spectatorWatching);
+		
+		_server.broadcast_in_room(_data);
+		
 	}	
 	
 	/******************************
 	* EVENT AT LOBBY, SO RETURN ALL VARS TO 0 FOR PLAYER, SO THAT LOBBY DATA CAN BE CALCULATED TO DISPLAY DATA AT LOBBY CORRECTLY.
 	* _dataMisc
 	*/
-	private function returnedToLobby(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function returnedToLobby(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Returned To Lobby", function(_data, _sender)
-		{
-			Functions.userLogs("Returned To Lobby", _data.id, _data._username, _data); // logs
-			
-			// room with a value of 0 is saved to userLocation parameter because cannot pass numbers and cannot save userLocation of value 0 when this condition check for not a valie of 0/
-			//if (Std.string(_data._userLocation) != "0")
-			_mysqlDB.saveRoomData(_data._username, 0, 0, 0, 0, -1, 0, 0);
-							
-			_sender.send("Returned To Lobby", _data);
-		});
+		Functions.userLogs("Returned To Lobby", _data.id, _data._username, _data); // logs
+		
+		// room with a value of 0 is saved to userLocation parameter because cannot pass numbers and cannot save userLocation of value 0 when this condition check for not a value of 0/
+		//if (Std.string(_data._userLocation) != "0")
+		_db_update.all_for_user_at_room_data(_data._username, 0, 0, 0, 0, -1, 0, 0);
+						
+		_server.send_to_handler(_data);
 	}	
-			
+	
 	/******************************
 	* NOTE... GAME WILL NOT UPDATE FOR SPECTATOR UNTIL SECOND MOVE 
 	* EVENT SPECTATOR WATCHING
@@ -3415,22 +3070,12 @@ class Events
 	* only the game host should send to this event.
 	* _dataQuestions.
 	*/
-	private function spectatorWatching(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function spectatorWatching(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Spectator Watching", function(_data, _sender)
-		{
-			Functions.userLogs("Spectator Watching", _data.id, _data._username, _data); // logs
+		Functions.userLogs("Spectator Watching", _data.id, _data._username, _data); // logs
+	
+		_server.broadcast_in_room(_data);
 		
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Spectator Watching", _data);
-				}
-			}
-			
-		});
 	}	
 	
 	/******************************
@@ -3439,22 +3084,12 @@ class Events
 	* send the current move number to the watching spectator so that the timer and white box underneath the P1, P2, P3 or P4 moves, can be updated.
 	* _dataPlayers.
 	*/
-	private function spectatorWatchingGetMoveNumber(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function spectatorWatchingGetMoveNumber(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Spectator Watching Get Move Number", function(_data, _sender)
-		{
-			Functions.userLogs("Spectator Watching Get Move Number", _data.id, _data._username, _data); // logs
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Spectator Watching Get Move Number", _data);
-				}
-			}
-			
-		});
+		Functions.userLogs("Spectator Watching Get Move Number", _data.id, _data._username, _data); // logs
+		
+		_server.broadcast_in_room(_data);
+		
 	}	
 	
 	/******************************
@@ -3462,76 +3097,64 @@ class Events
 	* every player that moves a piece will use the host of the room to call this event so to update the move history at mysql. this is needed so that when a spectator watching enters the room, that person can get all the move history for that game.
 	* _dataMovement.
 	*/
-	private function moveHistoryNextEntry(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function moveHistoryNextEntry(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Move History Next Entry", function(_data, _sender)
-		{
-			Functions.userLogs("Move History Next Entry", _data.id, _data._username, _data); // logs
-				
-			_mysqlDB.updateMoveHistory(_data._gid, _data._username, _data._point_value, _data._unique_value, _data._moveHistoryPieceLocationOld1, _data._moveHistoryPieceLocationNew1, _data._moveHistoryPieceLocationOld2, _data._moveHistoryPieceLocationNew2, _data._moveHistoryPieceValueOld1, _data._moveHistoryPieceValueNew1, _data._moveHistoryPieceValueOld2, _data._moveHistoryPieceValueNew2, _data._moveHistoryPieceValueOld3);
-			
-			var rset = _mysqlDB.getAllMoveHistory(_data.id);//_data._username);
-			
-			
-			// get length of any history var...
-			var _str:String = Std.string(rset._moveHistoryPieceLocationOld1[0]);	
-			//  then _dataMovement._moveHistoryTotalCount at client will equal that vars value. every value of that var from the database is split then put into _strArray and array elements.
-			var _strArray = _str.split(",");
-			_data._moveHistoryTotalCount = _strArray.length - 2;
-			
-			_data._moveHistoryPieceLocationOld1 = _strArray[_data._moveHistoryTotalCount];	
+		Functions.userLogs("Move History Next Entry", _data.id, _data._username, _data); // logs
+		
+		_db_update.gid_at_move_history(_data._gid, _data._username, _data._point_value, _data._unique_value, _data._moveHistoryPieceLocationOld1, _data._moveHistoryPieceLocationNew1, _data._moveHistoryPieceLocationOld2, _data._moveHistoryPieceLocationNew2, _data._moveHistoryPieceValueOld1, _data._moveHistoryPieceValueNew1, _data._moveHistoryPieceValueOld2, _data._moveHistoryPieceValueNew2, _data._moveHistoryPieceValueOld3);
+		
+		var rset = _db_select.all_move_history(_data.id);//_data._username);
+		
+		// get length of any history var...
+		var _str:String = Std.string(rset._moveHistoryPieceLocationOld1[0]);	
+		//  then _dataMovement._moveHistoryTotalCount at client will equal that vars value. every value of that var from the database is split then put into _strArray and array elements.
+		var _strArray = _str.split(",");
+		_data._moveHistoryTotalCount = _strArray.length - 2;
+		
+		_data._moveHistoryPieceLocationOld1 = _strArray[_data._moveHistoryTotalCount];	
 
-			_str = Std.string(rset._moveHistoryPieceLocationNew1[0]);	
-			_strArray = _str.split(",");
-			
-			_data._moveHistoryPieceLocationNew1 = _strArray[_data._moveHistoryTotalCount];	
-			
-			_str = Std.string(rset._moveHistoryPieceLocationOld2[0]);	
-			_strArray = _str.split(",");
-			
-			_data._moveHistoryPieceLocationOld2 = _strArray[_data._moveHistoryTotalCount];	
-			
-			_str = Std.string(rset._moveHistoryPieceLocationNew2[0]);	
-			_strArray = _str.split(",");
-			
-			_data._moveHistoryPieceLocationNew2 = _strArray[_data._moveHistoryTotalCount];	
-			
-			_str = Std.string(rset._moveHistoryPieceValueOld1[0]);	
-			_strArray = _str.split(",");
-			
-			_data._moveHistoryPieceValueOld1 = _strArray[_data._moveHistoryTotalCount];	
-			
-			_str = Std.string(rset._moveHistoryPieceValueNew1[0]);	
-			_strArray = _str.split(",");
-			
-			_data._moveHistoryPieceValueNew1 = _strArray[_data._moveHistoryTotalCount];	
-			
-			_str = Std.string(rset._moveHistoryPieceValueOld2[0]);	
-			_strArray = _str.split(",");
-			
-			_data._moveHistoryPieceValueOld2 = _strArray[_data._moveHistoryTotalCount];	
-			
-			_str = Std.string(rset._moveHistoryPieceValueNew2[0]);	
-			_strArray = _str.split(",");
-			
-			_data._moveHistoryPieceValueNew2 = _strArray[_data._moveHistoryTotalCount];	
-			
-			_str = Std.string(rset._moveHistoryPieceValueOld3[0]);	
-			_strArray = _str.split(",");
-			
-			_data._moveHistoryPieceValueOld3 = _strArray[_data._moveHistoryTotalCount];
-			
-			
-			for (i in 0...25)
-			{
-				if (Std.int(_data._room) == i)
-				{
-					_sender.putInRoom(room[i]);
-					room[i].broadcast("Move History Next Entry", _data);
-				}
-			}
-
-		});
+		_str = Std.string(rset._moveHistoryPieceLocationNew1[0]);	
+		_strArray = _str.split(",");
+		
+		_data._moveHistoryPieceLocationNew1 = _strArray[_data._moveHistoryTotalCount];	
+		
+		_str = Std.string(rset._moveHistoryPieceLocationOld2[0]);	
+		_strArray = _str.split(",");
+		
+		_data._moveHistoryPieceLocationOld2 = _strArray[_data._moveHistoryTotalCount];	
+		
+		_str = Std.string(rset._moveHistoryPieceLocationNew2[0]);	
+		_strArray = _str.split(",");
+		
+		_data._moveHistoryPieceLocationNew2 = _strArray[_data._moveHistoryTotalCount];	
+		
+		_str = Std.string(rset._moveHistoryPieceValueOld1[0]);	
+		_strArray = _str.split(",");
+		
+		_data._moveHistoryPieceValueOld1 = _strArray[_data._moveHistoryTotalCount];	
+		
+		_str = Std.string(rset._moveHistoryPieceValueNew1[0]);	
+		_strArray = _str.split(",");
+		
+		_data._moveHistoryPieceValueNew1 = _strArray[_data._moveHistoryTotalCount];	
+		
+		_str = Std.string(rset._moveHistoryPieceValueOld2[0]);	
+		_strArray = _str.split(",");
+		
+		_data._moveHistoryPieceValueOld2 = _strArray[_data._moveHistoryTotalCount];	
+		
+		_str = Std.string(rset._moveHistoryPieceValueNew2[0]);	
+		_strArray = _str.split(",");
+		
+		_data._moveHistoryPieceValueNew2 = _strArray[_data._moveHistoryTotalCount];	
+		
+		_str = Std.string(rset._moveHistoryPieceValueOld3[0]);	
+		_strArray = _str.split(",");
+		
+		_data._moveHistoryPieceValueOld3 = _strArray[_data._moveHistoryTotalCount];
+		
+		_server.broadcast_in_room(_data);
+		
 	}	
 		
 	/******************************
@@ -3539,50 +3162,46 @@ class Events
 	* the spectator has just joined the game room because there is currently only one move in that users history, do this event to get all the moves in the move history for this game.
 	* _dataMovement.
 	*/
-	private function moveHistoryAllEntry(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function moveHistoryAllEntry(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Move History All Entry", function(_data, _sender)
-		{
-			Functions.userLogs("Move History All Entry", _data.id, _data._username, _data); // logs
-			var rset = _mysqlDB.getAllMoveHistory(_data._gid);// _data._username);
+		Functions.userLogs("Move History All Entry", _data.id, _data._username, _data); // logs
+		var rset = _db_select.all_move_history(_data._gid);// _data._username);
+		
+		// get length of any history var...
+		var _str:String = Std.string(rset._moveHistoryPieceLocationOld1[0]);	
+		//  then _dataMovement._moveHistoryTotalCount at client will equal that vars value. every value of that var from the database is split then put into _strArray and array elements.
+		var _strArray = _str.split(",");
+					
+		_data._history_get_all = 0;
+		
+		if (rset._moveHistoryPieceLocationOld1[0] != null)
+		{		
+			_data._history_get_all = 1;
+			_data._moveHistoryTotalCount = _strArray.length;
+		
+			_data._point_value = Std.string(rset._point_value[0]);	
+			_data._unique_value = Std.string(rset._unique_value[0]);
 			
-			// get length of any history var...
-			var _str:String = Std.string(rset._moveHistoryPieceLocationOld1[0]);	
-			//  then _dataMovement._moveHistoryTotalCount at client will equal that vars value. every value of that var from the database is split then put into _strArray and array elements.
-			var _strArray = _str.split(",");
-						
-			_data._history_get_all = 0;
+			_data._moveHistoryPieceLocationOld1 = Std.string(rset._moveHistoryPieceLocationOld1[0]);	
 			
-			if (rset._moveHistoryPieceLocationOld1[0] != null)
-			{		
-				_data._history_get_all = 1;
-				_data._moveHistoryTotalCount = _strArray.length;
+			_data._moveHistoryPieceLocationNew1 = Std.string(rset._moveHistoryPieceLocationNew1[0]);	
 			
-				_data._point_value = Std.string(rset._point_value[0]);	
-				_data._unique_value = Std.string(rset._unique_value[0]);
-				
-				_data._moveHistoryPieceLocationOld1 = Std.string(rset._moveHistoryPieceLocationOld1[0]);	
-				
-				_data._moveHistoryPieceLocationNew1 = Std.string(rset._moveHistoryPieceLocationNew1[0]);	
-				
-				_data._moveHistoryPieceLocationOld2 = Std.string(rset._moveHistoryPieceLocationOld2[0]);		
-				
-				_data._moveHistoryPieceLocationNew2 = Std.string(rset._moveHistoryPieceLocationNew2[0]);
-				
-				_data._moveHistoryPieceValueOld1 = Std.string(rset._moveHistoryPieceValueOld1[0]);		
-				
-				_data._moveHistoryPieceValueNew1 = Std.string(rset._moveHistoryPieceValueNew1[0]);		
-				
-				_data._moveHistoryPieceValueOld2 = Std.string(rset._moveHistoryPieceValueOld2[0]);
-				
-				_data._moveHistoryPieceValueNew2 = Std.string(rset._moveHistoryPieceValueNew2[0]);
-				
-				_data._moveHistoryPieceValueOld3 = Std.string(rset._moveHistoryPieceValueOld3[0]);
-			}
+			_data._moveHistoryPieceLocationOld2 = Std.string(rset._moveHistoryPieceLocationOld2[0]);		
 			
-			_sender.send("Move History All Entry", _data);
+			_data._moveHistoryPieceLocationNew2 = Std.string(rset._moveHistoryPieceLocationNew2[0]);
 			
-		});
+			_data._moveHistoryPieceValueOld1 = Std.string(rset._moveHistoryPieceValueOld1[0]);		
+			
+			_data._moveHistoryPieceValueNew1 = Std.string(rset._moveHistoryPieceValueNew1[0]);		
+			
+			_data._moveHistoryPieceValueOld2 = Std.string(rset._moveHistoryPieceValueOld2[0]);
+			
+			_data._moveHistoryPieceValueNew2 = Std.string(rset._moveHistoryPieceValueNew2[0]);
+			
+			_data._moveHistoryPieceValueOld3 = Std.string(rset._moveHistoryPieceValueOld3[0]);
+		}
+		
+		_server.send_to_handler(_data);
 	}		
 	
 	/******************************
@@ -3590,33 +3209,30 @@ class Events
 	* display a 50 player list of the players with the top experence points.
 	* _dataLeaderboardXP.
 	*/
-	private function leaderboards(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	private function leaderboards(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Leaderboards", function(_data, _sender)
+		Functions.userLogs("Leaderboards", _data.id, _data._username, _data); // logs
+		
+		var _row = _db_select.top_50_statistics();
+		
+		// clear any old data because data is about to be populated.
+		_data._usernames = "";
+		_data._experiencePoints = "";
+		_data._houseCoins = "";
+		_data._worldFlag = "";
+				
+		for (i in 0...50)
 		{
-			Functions.userLogs("Leaderboards", _data.id, _data._username, _data); // logs
-			
-			var _row = _mysqlDB.getLeaderboards();
-			
-			// clear any old data because data is about to be populated.
-			_data._usernames = "";
-			_data._experiencePoints = "";
-			_data._houseCoins = "";
-			_data._worldFlag = "";
-					
-			for (i in 0...50)
+			if (_row._user[i] != null)
 			{
-				if (_row._user[i] != null)
-				{
-					_data._usernames += Std.string(_row._user[i]) + ",";
-					_data._experiencePoints += Std.string(_row._experiencePoints[i]) + ",";
-					_data._houseCoins += Std.string(_row._houseCoins[i]) + ",";
-					_data._worldFlag += Std.string(_row._worldFlag[i]) + ",";
-				}
+				_data._usernames += Std.string(_row._user[i]) + ",";
+				_data._experiencePoints += Std.string(_row._experiencePoints[i]) + ",";
+				_data._houseCoins += Std.string(_row._houseCoins[i]) + ",";
+				_data._worldFlag += Std.string(_row._worldFlag[i]) + ",";
 			}
-			
-			_sender.send("Leaderboards", _data);			
-		});
+		}
+		
+		_server.send_to_handler(_data);			
 	}	
 	
 	/******************************
@@ -3624,20 +3240,28 @@ class Events
 	* save new user account information. when user first enters online game and chess elo equals zero then the user is new. the user will then be redirected to a new account scene where new user configuration will be set, such as chess skill level. when the save button is pressed, this event is called.
 	* _dataStatistics
 	*/
-	public function saveNewAccountConfigurations(_data:Dynamic, _sender:vendor.mphx.connection.IConnection):Void
+	public function saveNewAccountConfigurations(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_server.events.on("Save New Account Configurations", function (_data, _sender)
-		{
-			Functions.userLogs("Save New Account Configurations", _data.id, _data._username, _data); // logs
-			
-			_mysqlDB.updateChessEloRating(_data._username, _data._chess_elo_rating);
-			
-		});
+		Functions.userLogs("Save New Account Configurations", _data.id, _data._username, _data); // logs
+		_db_update.chess_elo_rating_statistics(_data._username, _data._chess_elo_rating);
 	}			
-			
-	public function onDisconnect(_data:Dynamic, _sender:IConnection) : Void
+	
+	/******************************
+	* you need to set the values below at the game code. see SignatureGameClickMe.hx. at client. makes all clients move the same piece at the same time. this is not automatic.
+	 */
+	private function movement(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
-		_data = allDataPlayers.get(_sender);
+		Functions.userLogs("Movement", _data.id, _data._username, _data); // logs.
+		_server.broadcast_in_room(_data);
+	}
+	
+	public function onDisconnect(_server:Main, _handler:WebSocketHandler):Void
+	{
+		var _data = Reg._dataDisconnect;
+		var _user_location = 0;
+		
+		// -1 because handler value starts at 1.
+		_data._username = _server._username[(_handler.id - 1)];
 		
 		var _playerNumber:Int = 0;		
 		
@@ -3646,77 +3270,60 @@ class Events
 			if (_data._username != null)
 			{
 				// this player that disconnected.
-				var row = _mysqlDB.selectRoomDataUser(_data._username);
-				
-				// this function does not get _playersState correctly, so this is needed or else the next mysql save will give an error.
-				_data._username = row._user[0];
-				_data._username = Std.string(_data._username);
+				var row = _db_select.user_all_at_room_data(_data._username);
 				
 				// remove username from array logs file vars. the logs file stores the user activity. we need to remove the username from these arrays so that the arrays store the correct online user.
 				Functions._logsuserId.remove(_data._username);
 				Functions._logsUsername.remove(_data._username);
 				
 				_data._gamePlayersValues = [0, 0, 0, 0];
-				
-				// if true then we are at the game room.
-				if (_data._username != null
-				&&	_data._gamePlayersValues != null
-				&&	player_game_state_value_username != null)
-				{		
-					for (i in 0...player_game_state_value_username.length+1)
-					{
-						// find the username is this var.
-						if (_data._username == player_game_state_value_username[i])
-						{
-							// update the game state for this player.
-							_data._gamePlayersValues = player_game_state_value_data[i];
-						}
-					}
-				}
-				
+								
 				_data._usernamesDynamic = ["", "", "", ""];
 				_data._usernamesStatic = ["", "", "", ""];
 				_data._spectatorPlaying = row._spectatorPlaying[0];
 				_data._spectatorWatching = row._spectatorWatching[0];
-				_data._userLocation = Std.parseInt(Std.string(row._userLocation[0]));
+				_user_location = Std.parseInt(Std.string(row._userLocation[0]));
 				_data._room = Std.parseInt(Std.string(row._room[0]));
 				_data._gameId = row._gameId[0];
 				
 				if (_data._spectatorWatching == false)
 				{
-					var rowList = _mysqlDB.selectGameRoomDataNoSpectatorWatching(_data._room);
+					var rowList = _db_select.room_not_spectator_watching_at_room_data(_data._room);
 					// get game playing data from database for the players in that game room.
 			
-					// the following four code blocks need to be init this way to avoid a server crash.
-					if (Std.string(_usernames_static[_data._room][0]) != "")
-					{								
-						_data._usernamesStatic[0] = Std.string(_usernames_static[_data._room][0]);
-						_data._usernamesStatic[0] = Std.string(_data._usernamesStatic[0]);
+					// the following four code blocks need to be initiated this way to avoid a server crash.
+					if (Std.string(rowList._user[0]) != "null")
+						_data._usernamesDynamic[0] = Std.string(rowList._user[0]);
+					
+					if (Std.string(rowList._user[1]) != "null")
+						_data._usernamesDynamic[1] = Std.string(rowList._user[1]);
 						
+					if (Std.string(rowList._user[2]) != "null")
+						_data._usernamesDynamic[2] = Std.string(rowList._user[2]);
+						
+					if (Std.string(rowList._user[3]) != "null")
+						_data._usernamesDynamic[3] = Std.string(rowList._user[3]);
+					
+					if (_data._username != null
+					&&	_data._gamePlayersValues != null)
+					{	
+						for (i in 0...4)
+						{
+							// find all users that are not spectator watching at the game room.
+							if (rowList._spectatorWatching[i] 
+						
+							== false
+							&& _server.player_game_state_value_username[_data._room][i] != "")
+							{
+								_data._usernamesStatic[i] = _server.player_game_state_value_username[_data._room][i];
+								
+								// update the game state for this player.
+								_data._gamePlayersValues[i] = _server.player_game_state_value_data[_data._room][i];
+							}
+						}
 					}
 					
-					if (Std.string(_usernames_static[_data._room][1]) != "")
-					{								
-						_data._usernamesStatic[1] = Std.string(_usernames_static[_data._room][1]);
-						_data._usernamesStatic[1] = Std.string(_data._usernamesStatic[1]);
-						
-					}
-					
-					if (Std.string(_usernames_static[_data._room][2]) != "")
-					{								
-						_data._usernamesStatic[2] = Std.string(_usernames_static[_data._room][2]);
-						_data._usernamesStatic[2] = Std.string(_data._usernamesStatic[2]);
-						
-					}
-					
-					if (Std.string(_usernames_static[_data._room][3]) != "")
-					{								
-						_data._usernamesStatic[3] = Std.string(_usernames_static[_data._room][3]);
-						_data._usernamesStatic[3] = Std.string(_data._usernamesStatic[3]);
-						
-					}
-					
-					// get the usernames and the _gamePlayersValues for all non spectators in the game room rather they are playing a game or not.
+					// get the usernames and the _gamePlayersValues for all non spectators in the game room that are playing a game.
 					for (i in 0...4)
 					{
 						if (rowList._user[i] != null)
@@ -3728,13 +3335,11 @@ class Events
 					}
 					
 					// get all users in game room.
-					var rset3 = _mysqlDB.getAllFromUsers(_data._username);	
+					var rset3 = _db_select.user_all_at_room_data(_data._username);	
 					
-					var rset = _mysqlDB.selectPlayersUsernames2(rset3._room[0]);
-					var row = _mysqlDB.selectRoomDataUser(_data._username);
+					var rset = _db_select.user_location_by_timestamp_asc_at_room_data(rset3._room[0]);
+					var row = _db_select.user_all_at_room_data(_data._username);
 				
-					if (_data._usernamesStatic[1] != null)
-						
 					if (_data._room > 0)
 					{
 						for (i in 0...4)
@@ -3765,11 +3370,12 @@ class Events
 							if (row._roomState[0] == 8
 							&& _data._username == Std.string(_data._usernamesStatic[i]))
 							{
-								if (_data._spectatorPlaying == true) _mysqlDB.saveGamePlayer(Std.string(_data._usernamesStatic[i]), Std.parseInt(_data._gamePlayersValues[_playerNumber]));
+								if (_data._spectatorPlaying == true)
+									_db_update.game_players_values_at_room_data(Std.string(_data._usernamesStatic[i]), Std.parseInt(Std.string(_data._gamePlayersValues[_playerNumber])));
 							}
 						}
-								
-						_mysqlDB.saveLoseStats(_data._gameId, _data._username);
+						
+						_db_update.lose_at_statistics(_data._gameId, _data._username);
 						
 						// this checks if there is an event to give on this day.
 						// see the doEvent() function.
@@ -3784,94 +3390,99 @@ class Events
 							||  row._roomState[0] == 8 && _data._gamePlayersValues[_playerNumber] == 4 && _data._username == Std.string(_data._usernamesStatic[i]))
 							{
 								_data._gamePlayersValues[_playerNumber] = 3;
-								if (_data._spectatorPlaying == true) _mysqlDB.saveGamePlayer(Std.string(_data._usernamesStatic[i]), Std.parseInt(_data._gamePlayersValues[_playerNumber]));
+								
+								if (_data._spectatorPlaying == true) _db_update.game_players_values_at_room_data(Std.string(_data._usernamesStatic[i]), Std.parseInt(Std.string(_data._gamePlayersValues[_playerNumber])));
 							}
 						}
 					}
 					
 					// this sends a message to the other player saying that someone left the game. 			
-					if (_data._userLocation >= 2 && _data._room > 0)
+					if (_user_location >= 2 && _data._room > 0)
 					{						
 						// player is leaving room, so make this a value of 3.
 						if (_data._gamePlayersValues[_playerNumber] == 0)
 							_data._gamePlayersValues[_playerNumber] = 3;
 						
-						// save the player's game player state to the database. is the player playing a game or waiting to play.				
+						// determine if this is a two player game. if it is then save a win for other player.
+						var _count:Int = 0; 
 						for (i in 0...4)
 						{
-							if (_data._username == Std.string(_data._usernamesStatic[i]) && Std.string(_data._usernamesStatic[i]) != "")
+							if (Std.string(_data._usernamesStatic[i]) != ""
+							&&	_data._gamePlayersValues[i] == 1)
+								_count += 1;
+							
+						}
+						
+						// end game for other players.
+						for (i in 0...4)
+						{
+							// save a win for this player if a two player game. 
+							//a _count value of 1 means that only one player left remaining in the current game. Remeber this player had left. so its minus 1 count of total players that were playing. 
+							// the next check in this code block is the player who is at this event. if _data._gamePlayersValues is 1, a win for that player should be given and if a win then a lose must be given here for the player in this event.  
+							if (_count == 1)
 							{
-								//if (_data._spectatorPlaying == true) 
-								_mysqlDB.saveGamePlayer(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
+								if (_data._gamePlayersValues[i] == 1)
+								{
+									_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i]);
+								}
+							}
+							
+							if (Std.string(_data._usernamesStatic[i]) != ""
+							&&	_data._gamePlayersValues[i] == 1)
+							{
+								_data._gamePlayersValues[i] = 0;			
 							}
 						}
+							
+						// save the player's game player state to the database. is the player playing a game or waiting to play.				
+						for (i in 0...4)
+						{//_data._username == Std.string(_data._usernamesStatic[i]) && 
+							if (Std.string(_data._usernamesStatic[i]) != "")
+							{
+								//if (_data._spectatorPlaying == true) 
+								_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
+							}
+						}
+						
+						// player_game_state_value_data is read at the beginning of this event and its data is passed to _data._gamePlayersValues.
+						for (i in 0 ...4)
+						{
+							_server.player_game_state_value_data[_data._room][i] = _data._gamePlayersValues[i];
+						}
+
 	/*
+	for (i in 0...4) {trace(_server.player_game_state_value_username[_data._room][i]);}
 	trace(_data._usernamesStatic + " _data._usernamesStatic");
 	trace(_data._usernamesDynamic + " _data._usernamesDynamic");
 	trace(_data._spectatorPlaying + " _data._spectatorPlaying");
 	trace(_data._spectatorWatching + " _data._spectatorWatching");	
 	trace(_data._gamePlayersValues + " _data._gamePlayersValues");
-	trace(_data._userLocation + " _data._userLocation");
-	trace(_data._gamePlayersValues+"_gamePlayersValues");
 	trace(_data._room + " _data._room");
 	trace(_data._gameId + " _data._gameId");
+	trace(_playerNumber + " _playerNumber");
 	trace("--------------------");
-	*/										
-						// TODO maybe do rooms instead of broadcast here.		
-						//_server.broadcast("Player Left Game Room", _data);
-						
-						for (i in 0...25)
-						{
-							if (Std.int(_data._room) == i)
-							{
-								//_sender.putInRoom(room[i]);
-								room[i].broadcast("Player Left Game Room", _data);
-							}
-						}
+	*/	
+						_data._event_name = "Player Left Game Room";
+						_server.broadcast_in_room(_data);
 					}
 				}
 				
+				if (_data._username != null) trace(_data._username + " disconnected.");
 				Functions.userLogs("Disconnected", "", _data._username, _data); // logs
 			}
 			
-			// at every connection an existence of a host file is checked. if the user opens another client at the same computer then that means there is a host file. that user will be disconnected.
-			_miscState = allDataMisc.get(_sender);
-			
-			if (_miscState._username != null && _miscState._alreadyOnlineHost == false)
-			{
-				// deletes these tables when user first logs in and when user is disconnecting.
-				Functions.deleteRowsFromDatabase(_miscState);	 
-			}	
-				
-			allDataGame.remove(_sender);
-			allDataGame0.remove(_sender); // don't delete.
-			allDataGame1.remove(_sender);
-			allDataGame2.remove(_sender);
-			allDataGame3.remove(_sender);
-			allDataGame4.remove(_sender);
-			
-			allDataDailyQuests.remove(_sender);
-			allDataQuestions.remove(_sender);
-			allDataOnlinePlayers.remove(_sender);
-			allDataMisc.remove(_sender);
-			allDataPlayers.remove(_sender);
-			allDataTournaments.remove(_sender);
-			allDataAccount.remove(_sender);
-			allDataGameMessage.remove(_sender);
-			allDataMovement.remove(_sender);
-			allDataStatistics.remove(_sender);
-			allDataHouse.remove(_sender);
-			allDataLeaderboards.remove(_sender);
+			// now that we got the username, remove remove all list data.
+			_server._remove_user_data(_data);
 			
 			// a client has disconnected to this server. Therefore, decrease the amount of clients connected.
-			_serverConnections -= 1;
+			_server._serverConnections -= 1;
 			
-			Sys.println ("Client disconnected. Clients connected: " + _serverConnections);
+			Sys.println ("Client disconnected.");
+			Sys.println ("Clients connected: " + _server._serverConnections);
 			
-			if (_closeServer == true && _serverConnections == 0)
+			if (_closeServer == true && _server._serverConnections == 0)
 			{
 				Sys.println ("Server not active.");
-				_server.close();
 				Sys.exit(0);
 			}
 		}
@@ -3882,11 +3493,11 @@ class Events
 	
 	private function addRowsToDatabase(_data:Dynamic):Void
 	{
-		_mysqlDB.insert_user_at_logged_in_user_table(_data._username, _data._ip, _data._hostname, 0);
-		_mysqlDB.insertRoomData(_data._username, _data.id);
-		_mysqlDB.insertUserToStatisticsTable(_data._username);
-		_mysqlDB.insertUserToHouseTable(_data._username);
+		_db_insert.user_at_logged_in_user(_data._username, _data._ip, _data._hostname, 0);
+		_db_insert.user_and_id_at_room_data(_data._username, _data.id);
+		_db_insert.user_to_statistics(_data._username);
+		_db_insert.user_to_house(_data._username);
 	}
 	
 	
-}//
+}//

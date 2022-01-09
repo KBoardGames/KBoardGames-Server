@@ -31,103 +31,464 @@ package;
 /******************************
 * all game data for all games are here.
 */
-typedef DataGame = {
-	id: String,					// id refers to a particular player.
-	_room: Int					// current room that the user is in. zero 
+typedef DataGame =
+{
+
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
 }
 
-typedef DataGame0 = {
-	id: String,					// id refers to a particular player.
-	_username: String,			// the username of the player.
-	_gameUnitNumberNew: Int,	// unit number. 0-64
-	_gameUnitNumberOld: Int,	// unit number. 0-64
-	_gameXXold:Int,				// unit x coordinate. you have requested this gameboard piece.
-	_gameYYold:Int,				// unit y coordinate. you have requested this gameboard piece.
-	_gameXXnew:Int,				// unit x coordinate. you have requested a piece be moved here.
-	_gameYYnew:Int,				// unit y coordinate. you have requested a piece be moved here.
-	_gameXXold2:Int,			// unit x coordinate. you have requested this gameboard piece.
-	_gameYYold2:Int,			// unit y coordinate. you have requested this gameboard piece.
-	_triggerNextStuffToDo:Int,	// used to determine if the pawn is En Passant.
-	_room: Int,					// current room that the user is in. zero equals no room.
-	_isThisPieceAtBackdoor:Bool,// each board game should use this for only one var.
+typedef DataGame0 = 
+{
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * unit number. 0-64
+	 */
+	_gameUnitNumberNew: Int,
+	
+	/******************************
+	 * unit number. 0-64
+	 */
+	_gameUnitNumberOld: Int,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved from.
+	 */
+	_gameXXold:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved from.
+	 */
+	_gameYYold:Int,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved to.
+	 */
+	_gameXXnew:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved to.
+	 */
+	_gameYYnew:Int,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved from.
+	 */
+	_gameXXold2:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved from.
+	 */
+	_gameYYold2:Int,
+	
+	/******************************
+	 * used to determine if the pawn is En Passant.
+	 */
+	_triggerNextStuffToDo:Int,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
+	/******************************
+	 * each board game should use this for only one var.
+	 */
+	_isThisPieceAtBackdoor:Bool,
 }
 
-typedef DataGame1 = {
-	id: String,					// id refers to a particular player.
-	_username: String,			// the username of the player._username: String,					 // the username of the player.
-	_pieceValue: Int,			// this is the point value of each piece on the standard game board
-	_uniqueValue: Int,			// unique value of a piece.
-	_gameUnitNumberNew: Int,	// unit number. 0-64
-	_gameUnitNumberOld: Int,	// unit number. 0-64
-	_gameUnitNumberNew2: Int,	// unit number. 0-64
-	_gameUnitNumberOld2: Int,	// unit number. 0-64
-	_gameXXold:Int,				// unit x coordinate. you have requested this gameboard piece.
-	_gameYYold:Int,				// unit y coordinate. you have requested this gameboard piece.
-	_gameXXnew:Int,				// unit x coordinate. you have requested a piece be moved here.
-	_gameYYnew:Int,				// unit y coordinate. you have requested a piece be moved here.
-	_gameXXold2:Int,			// unit x coordinate. you have requested this gameboard piece.
-	_gameYYold2:Int,			// unit y coordinate. you have requested this gameboard piece.
-	_gameXXnew2:Int,			// unit x coordinate. you have requested a piece be moved here.
-	_gameYYnew2:Int,			// unit y coordinate. you have requested a piece be moved here.
-	_isEnPassant:Bool,			// is pawn En passant? 
-	_isEnPassantPawnNumber:Array<Int>,// the most recent pawn in En passant.
-	_triggerNextStuffToDo:Int,	// used to determine if the pawn is En Passant.
-	_pointValue2:Int,				// castling vars to move the rook.
-	_uniqueValue2:Int,			// castling vars.
-	_promotePieceLetter:String,// this is the letter used in notation of a promoted piece selected.
-	_doneEnPassant:Bool,		// for notation.
-	_room: Int,					// current room that the user is in. zero equals no room.
+typedef DataGame1 = 
+{
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * this is the point value of each piece on the standard game board
+	 */
+	_pieceValue: Int,
+	
+	/******************************
+	 * unique value of a piece.
+	 */
+	_uniqueValue: Int,
+	
+	/******************************
+	 * unit number. 0-64
+	 */
+	_gameUnitNumberNew: Int,
+	
+	/******************************
+	 * unit number. 0-64
+	 */
+	_gameUnitNumberOld: Int,
+	
+	/******************************
+	 * unit number. 0-64
+	 */
+	_gameUnitNumberNew2: Int,
+	
+	/******************************
+	 * unit number. 0-64
+	 */
+	_gameUnitNumberOld2: Int,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved from.
+	 */
+	_gameXXold:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved from.
+	 */
+	_gameYYold:Int,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved to.
+	 */
+	_gameXXnew:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved to.
+	 */
+	_gameYYnew:Int,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved from.
+	 */
+	_gameXXold2:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved from.
+	 */
+	_gameYYold2:Int,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved to.
+	 */
+	_gameXXnew2:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved to.
+	 */
+	_gameYYnew2:Int,
+	
+	/******************************
+	 * is pawn En passant?
+	 */
+	_isEnPassant:Bool, 
+	
+	/******************************
+	 * the most recent pawn in En passant.
+	 */
+	_isEnPassantPawnNumber:Array<Int>,
+	
+	/******************************
+	 * used to determine if the pawn is En Passant.
+	 */
+	_triggerNextStuffToDo:Int,
+	
+	/******************************
+	 * castling vars to move the rook.
+	 */
+	_pointValue2:Int,
+	
+	/******************************
+	 * castling vars.
+	 */
+	_uniqueValue2:Int,
+	
+	/******************************
+	 * this is the letter used in notation of a promoted piece selected.
+	 */
+	_promotePieceLetter:String,
+	
+	/******************************
+	 * for notation.
+	 */
+	_doneEnPassant:Bool,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
 	/******************************
 	 * capturing unit image value for history when using the backwards button.
 	 */
 	_piece_capturing_image_value: Int,
 }
 
-typedef DataGame2 = {
-	id: String,					// id refers to a particular player.
-	_username: String,			// the username of the player.
-	_gameXXold:Int,				// unit x coordinate. you have requested this gameboard piece.
-	_gameYYold:Int,				// unit y coordinate. you have requested this gameboard piece.
-	_triggerNextStuffToDo:Int,	// used to determine if the pawn is En Passant.
-	_pointValue2:Int,				// castling vars to move the rook.
-	_room: Int,					// current room that the user is in. zero equals no room.
+typedef DataGame2 =
+{
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved from.
+	 */
+	_gameXXold:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved from.
+	 */
+	_gameYYold:Int,
+	
+	/******************************
+	 * used to determine if the pawn is En Passant.
+	 */
+	_triggerNextStuffToDo:Int,
+	
+	/******************************
+	 * castling vars to move the rook.
+	 */
+	_pointValue2:Int,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
 }
 
-typedef DataGame3 = {
+typedef DataGame3 = 
+{
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
 	id: String,	
-	_username: String,				// the username of the player.
-	_gameUnitNumberNew: Int,		// unit number. 0-64
-	_triggerEventForAllPlayers:Bool,// is pawn En passant? 
-	// the most recent pawn in En passant.
-	_triggerNextStuffToDo:Int,		// used to determine if the pawn is En Passant. also in Reversi, if all 4 discs have been placed on the board.
-	_rolledA6:Bool,					// move again.
-	_room: Int,						// current room that the user is in. zero equals no room.
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * unit number. 0-64
+	 */
+	_gameUnitNumberNew: Int,
+	
+	_triggerEventForAllPlayers:Bool, 
+	
+	/******************************
+	 * used to update the other piece on the board. in an online 2 player game, if player 1 moves a piece then this var is used to update that piece at player 2's board.
+	 */
+	_triggerNextStuffToDo:Int,
+	
+	/******************************
+	 * move again if true. 
+	 */
+	_rolledA6:Bool,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
 }
 
-typedef DataGame4 = {
-	id: String,					// id refers to a particular player.
-	_username: String,			// the username of the player.
-	_gameXXold:Int,				// unit x coordinate. you have requested this gameboard piece.
-	_gameYYold:Int,				// unit y coordinate. you have requested this gameboard piece.
-	_gameXXnew:Int,				// unit x coordinate. you have requested a piece be moved here.
-	_gameYYnew:Int,				// unit y coordinate. you have requested a piece be moved here.
-	_gameXXold2:Int,			// used in trade unit. this is the player that is moving piece. player would like to trade this unit.
-	_gameYYold2:Int,			// used in trade unit. this is the player that is moving piece. player would like to trade this unit.
-	_gameXXnew2:Int,			// used in trade unit. this is the other player's unit. player moving would like to trade other player's unit.
-	_gameYYnew2:Int,			// used in trade unit. this is the other player's unit. player moving would like to trade other player's unit.
-	_room: Int,					// current room that the user is in. zero equals no room.
-	_rentBonus:Array<Float>,		// total rent bonus in game.
-	_gameUniqueValueForPiece:Array<Array<Int>>, // -1 = not used. 0 = nobody owns this unit. 1 = player 1's unit. 2:player 2's unit. 3:player 3's unit. 4:player 4's unit.
-	_gameHouseAmountPerPiece:Array<Array<Int>>,	//amount of houses on each unit.
-	_gameUndevelopedValueOfUnit:Array<Int>, // Undeveloped units. no houses, nobody owns this unit when a value for that unit equals not 1.
-	_unitNumberTrade:Array<Int> // used when trading units. this holds the value of a unit number. this var is useful. it can change an ownership of a unit. see Reg._gameUniqueValueForPiece.
+typedef DataGame4 =
+{
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved from.
+	 */
+	_gameXXold:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved from.
+	 */
+	_gameYYold:Int,
+	
+	/******************************
+	 * unit x coordinate. this is the unit that you moved to.
+	 */
+	_gameXXnew:Int,
+	
+	/******************************
+	 * unit y coordinate. this is the unit that you moved to.
+	 */
+	_gameYYnew:Int,
+	
+	/******************************
+	 * used in trade unit. this is the player that is moving piece. player would like to trade this unit.
+	 */
+	_gameXXold2:Int,
+	
+	/******************************
+	 * used in trade unit. this is the player that is moving piece. player would like to trade this unit.
+	 */
+	_gameYYold2:Int,
+	
+	/******************************
+	 * used in trade unit. this is the other player's unit. player moving would like to trade other player's unit.
+	 */
+	_gameXXnew2:Int,
+	
+	/******************************
+	 * used in trade unit. this is the other player's unit. player moving would like to trade other player's unit.
+	 */
+	_gameYYnew2:Int,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
+	/******************************
+	 * total rent bonus in game.
+	 */
+	_rentBonus:Array<Float>,
+	
+	/******************************
+	 * -1 = not used. 0 = nobody owns this unit. 1 = player 1's unit. 2:player 2's unit. 3:player 3's unit. 4:player 4's unit.
+	 */
+	_gameUniqueValueForPiece:Array<Array<Int>>,
+	
+	/******************************
+	 * amount of houses on each unit.
+	 */
+	_gameHouseAmountPerPiece:Array<Array<Int>>,
+	
+	/******************************
+	 * Undeveloped units. no houses, nobody owns this unit when a value for that unit equals not 1.
+	 */
+	_gameUndevelopedValueOfUnit:Array<Int>,
+	
+	/******************************
+	 * used when trading units. this holds the value of a unit number. this var is useful. it can change an ownership of a unit. see Reg._gameUniqueValueForPiece.
+	 */
+	_unitNumberTrade:Array<Int>
 }
 
 // movement.
 typedef DataMovement = 
 {
-	id: String, // player instance. this tells one player from another.
-	_username: String,			// the username of the player.
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+		
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
 	
 	/******************************
 	 * game id. move_history fields are not deleted from the MySQL database. so this id is used so that a user accesses that correct move_history data.
@@ -149,12 +510,24 @@ typedef DataMovement =
 	 */
 	_history_get_all: Int,
 	
-	_gameDiceMaximumIndex: Int, // unit number. 0-64
-	_triggerNextStuffToDo:Int, // used to determine if the pawn is En Passant. also in Reversi, if all 4 discs have been placed on the board.
-	_room: Int, // current room that the user is in. zero equals no room.
 	/******************************
-	 * If events a and b are sent from event c to the server in that order, sometimes the server will send back event b to the client before the server finishes event a.
-	 * to solve that problem, at client, move event b to the bottom of event a and if this var has the name of event b then at that code line event b will be executed.
+	 * unit number. 0-64
+	 */
+	_gameDiceMaximumIndex: Int,
+	
+	/******************************
+	 * used to determine if the pawn is En Passant. also in Reversi, if all 4 discs have been placed on the board.
+	 */
+	_triggerNextStuffToDo:Int,
+		
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
+	/******************************
+	 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+	 * for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used.
 	 */
 	_triggerEvent: String,
 	
@@ -168,32 +541,104 @@ typedef DataMovement =
 	 */
 	_unique_value: String,
 	
-	_moveHistoryPieceLocationOld1: String,		// move history, the selected first piece
-	_moveHistoryPieceLocationNew1: String,		// moved the first piece to selected location.
-	_moveHistoryPieceLocationOld2: String,		// second piece, such as, the rook when castling. the second piece selected for that game move.
-	_moveHistoryPieceLocationNew2: String,		// moved the second piece to selected location.
+	/******************************
+	 * move history, the selected first piece
+	 */
+	_moveHistoryPieceLocationOld1: String,
 	
-	_moveHistoryPieceValueOld1: String,		// image value of the selected first piece. if its a rook that first player selected then its a value of 4 else for second player then its a value of 14. normally this value is 0 because after the move, no piece is at that location.
-	_moveHistoryPieceValueNew1: String,		// this refers to the value of the piece at the new selected moved to location.
-	_moveHistoryPieceValueOld2: String,		// the second piece value, or piece image, normally this unit is empty because the second piece was moved to a new unit.
-	_moveHistoryPieceValueNew2: String,		// this is the second piece moved to value of the image, so that the image can be moved to the new location.
-	_moveHistoryPieceValueOld3: String,		// the captured piece value, its image.
-	_moveHistoryTotalCount: Int,			// the total amount of all moves from all player playing gaming game.
+	/******************************
+	 * moved the first piece to selected location.
+	 */
+	_moveHistoryPieceLocationNew1: String,
+	
+	/******************************
+	 * second piece, such as, the rook when castling. the second piece selected for that game move.
+	 */
+	_moveHistoryPieceLocationOld2: String,
+	
+	/******************************
+	 * moved the second piece to selected location.
+	 */
+	_moveHistoryPieceLocationNew2: String,
+	
+	/******************************
+	 * image value of the selected first piece. if its a rook that first player selected then its a value of 4 else for second player then its a value of 14. normally this value is 0 because after the move, no piece is at that location.
+	 */
+	_moveHistoryPieceValueOld1: String,
+	
+	/******************************
+	 * this refers to the value of the piece at the new selected moved to location.
+	 */
+	_moveHistoryPieceValueNew1: String,
+	
+	/******************************
+	 * the second piece value, or piece image, normally this unit is empty because the second piece was moved to a new unit.
+	 */
+	_moveHistoryPieceValueOld2: String,
+	
+	/******************************
+	 * this is the second piece moved to value of the image, so that the image can be moved to the new location.
+	 */
+	_moveHistoryPieceValueNew2: String,
+	
+	/******************************
+	 * the captured piece value, its image.
+	 */
+	_moveHistoryPieceValueOld3: String,
+	
+	/******************************
+	 * the total amount of all moves from all player playing gaming game.
+	 */
+	_moveHistoryTotalCount: Int,
 }
 
-typedef DataGameMessage = {
-	id: String,	
-	_username: String,			// the username of the player.
-	_room: Int,					// current room that the user is in. zero equals no room.
+typedef DataGameMessage = 
+{
 	/******************************
-	 * If events a and b are sent from event c to the server in that order, sometimes the server will send back event b to the client before the server finishes event a.
-	 * to solve that problem, at client, move event b to the bottom of event a and if this var has the name of event b then at that code line event b will be executed.
+	 * player instance. this tells one player from another.
+	 */
+	id: String,	
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
+	/******************************
+	 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+	 * for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used.
 	 */
 	_triggerEvent: String,
-	_gameMessage:String,		// an example of this would be a chess game where a player just received a message saying that the king is in check. this event sends that same message to the other party.	
+	
+	/******************************
+	 * an example of this would be a chess game where a player just received a message saying that the king is in check. this event sends that same message to the other party.
+	 */
+	_gameMessage:String,
+	
 	_userTo: String,
+	
 	_userFrom: String,
-	_questionAnsweredAs: Bool, // this var can hold any message.
+	
+	/******************************
+	 * this var can hold any message.
+	 */
+	_questionAnsweredAs: Bool,
 }
 
 /******************************
@@ -201,8 +646,26 @@ typedef DataGameMessage = {
  */
 typedef DataDailyQuests = 
 {
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
 	id: String,	
-	_username: String,			// the username of the player.
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
 	
 	/******************************
 	 * Win three board games in a row.
@@ -260,39 +723,132 @@ typedef DataDailyQuests =
 /******************************
  * all game buttons, chat, restart, etc.
  */
-typedef DataQuestions = {
-	id: String,						// id refers to a particular player.
-	_username: String,			// the username of the player.
-	_gameMessage:String,			// an example of this would be a chess game where a player just received a message saying that the king is in check.
-	_drawOffer:Bool,				// chess draw offer. false=not yet asked. true=yes.
-	_drawAnsweredAs:Bool,			// chess draw was answered as, false:no, true:yes 
-	_restartGameOffer:Bool,			// restart game offer. false=not yet asked. true=yes.
-	_restartGameAnsweredAs:Bool,	// restart game was answered as, false:no, true:yes.
-	_room: Int,						// current room that the user is in. zero equals no room.
+typedef DataQuestions = 
+{
 	/******************************
-	 * If events a and b are sent from event c to the server in that order, sometimes the server will send back event b to the client before the server finishes event a.
-	 * to solve that problem, at client, move event b to the bottom of event a and if this var has the name of event b then at that code line event b will be executed.
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * an example of this would be a chess game where a player just received a message saying that the king is in check.
+	 */
+	_gameMessage:String,
+	
+	/******************************
+	 * chess draw offer. false:not yet asked. true:yes.
+	 */
+	_drawOffer:Bool,
+	
+	/******************************
+	 * chess draw was answered as, false:no, true:yes 
+	 */
+	_drawAnsweredAs:Bool,
+	
+	/******************************
+	 * restart game offer. false:not yet asked. true:yes.
+	 */
+	_restartGameOffer:Bool,
+	
+	/******************************
+	 * restart game was answered as, false:no, true:yes.
+	 */
+	_restartGameAnsweredAs:Bool,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
+	/******************************
+	 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+	 * for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used.
 	 */
 	_triggerEvent: String,
-	_gameOver: Bool,				// is the game over?
+	
+	/******************************
+	 * is the game over?
+	 */
+	_gameOver: Bool,
 }
 
-// every player's name, win, lose, draw, etc.
+/******************************
+ * every player's name, win, lose, draw, etc.
+ */
 typedef DataOnlinePlayers = 
 {
-	id:String,
-	_username: String,			// the username of the player.
-	_room: Int,					// current room that the user is in. zero equals no room.
 	/******************************
-	 * If events a and b are sent from event c to the server in that order, sometimes the server will send back event b to the client before the server finishes event a.
-	 * to solve that problem, at client, move event b to the bottom of event a and if this var has the name of event b then at that code line event b will be executed.
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
+	/******************************
+	 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+	 * for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used.
 	 */
 	_triggerEvent: String,
-	_usernamesOnline:Array<String>,	// players names that are online.
-	_gameAllTotalWins:Array<Int>,			// any game played. players game wins of players online.
-	_gameAllTotalLosses:Array<Int>,			// any game played. players game losses of players online.
-	_gameAllTotalDraws:Array<Int>,			// any game played. players game draws of players online.	
-	_chess_elo_rating:Array<Float>			// chess Elo rating for every player online.
+	
+	/******************************
+	 * players names that are online.
+	 */
+	_usernamesOnline:Array<String>,
+	
+	/******************************
+	 * any game played. players game wins of players online.
+	 */
+	_gameAllTotalWins:Array<Int>,
+	
+	/******************************
+	 * any game played. players game losses of players online.
+	 */
+	_gameAllTotalLosses:Array<Int>,
+	
+	/******************************
+	 * any game played. players game draws of players online.
+	 */
+	_gameAllTotalDraws:Array<Int>,
+	
+	/******************************
+	 * chess Elo rating for every player online.
+	 */
+	_chess_elo_rating:Array<Float>
 }
 
 typedef DataTournaments =
@@ -303,9 +859,25 @@ typedef DataTournaments =
 	id:String,
 	
 	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
 	 * the username of the player.
 	 */
 	_username: String,
+	
+	/******************************
+	 * the email address of player 1 if set. it is used for tournament.
+	 */
+	_email_address: String,
 	
 	/******************************
 	 * if this name is not empty then its the name of the user in the tournament.
@@ -338,7 +910,7 @@ typedef DataTournaments =
 	_player_current: Int,
 	
 	/******************************
-	 * current room that the user is in. zero equals no room.
+	 * current room that the user is in. zero equals lobby.
 	 */
 	_room: Int,
 	
@@ -347,9 +919,15 @@ typedef DataTournaments =
 	 */
 	_game_id: Int,
 	
-	_round_current: Int,		// current round of the tournament. 16 player tournament = this value of 0. 8 players has this value set at 1.
-
-	_rounds_total: Int,			// when the round_current equals this value then the tournament is at its last round.
+	/******************************
+	 * current round of the tournament. 16 player tournament = this value of 0. 8 players has this value set at 1.
+	 */
+	_round_current: Int,
+	
+	/******************************
+	 * when the round_current equals this value then the tournament is at its last round.
+	 */
+	_rounds_total: Int,
 	
 	/******************************
 	 * game move total for player
@@ -378,28 +956,92 @@ typedef DataTournaments =
 	_time_remaining_player1: String,
 	_time_remaining_player2: String,
 	
-	// is it the players turn to move. a value of 1 = player1, 2=player2, etc.
+	/******************************
+	 * is it the players turn to move. a value of 1 = player1, 2=player2, etc.
+	 */
 	_move_number_current: Int,
-	
+		
 	/******************************
 	 * timestamp for player 1. 
 	 * player 2 is not needed. the time might not be actuate when working with another players timestamp. the reason might be that a few seconds might be off from the time it takes to get and display the time. within that time, a player might have moved piece when instead we forfeit the game based on no activity from the user.
 	 * for player 1, we use a lock so that the mailer knows that the player is in the process of moving a piece.
 	 */
 	_timestamp: Int,
+	
+	/******************************
+	 * is the player subscribed to tournament mail. every game board peice moved will be sent by email to the player.
+	 */
+	_reminder_by_mail: Bool,
 }
 
 // anything account related us here.
 typedef DataAccount = 
 {
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
 	id: String,
-	_username: String,				// the username of the player.
-	_password_hash: String, 		// password hash encrypted with md5.
-	_popupMessage: String, 		// the current message to be displayed as a dialog or popup box.
-	_hostname: String,					// used to return the this local hosts name.
-	_ip:String,					// IP address of player.
-	_alreadyOnlineHost: Bool,		// is there two computers with the same host name connected to server?
-	_alreadyOnlineUser: Bool,		// is there already a user with that username online?
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * if this field is not empty then the username has matched one of the names from the bad list. the user cannot login with a bad word.
+	 */
+	_username_restricted: String,
+	
+	/******************************
+	 * password hash encrypted with md5.
+	 */
+	_password_hash: String,
+	
+	/******************************
+	 * user's email address.
+	 */
+	_email_address: String,
+	
+	/******************************
+	 * code sent to email address. validated email addresses receive tournament email if subscribed. 
+	 */
+	_send_email_address_validation_code: Bool,
+	
+	/******************************
+	 * the current message to be displayed as a dialog or popup box.
+	 */
+	_popupMessage: String,
+	
+	/******************************
+	 * used to return the this local hosts name.
+	 */
+	_hostname: String,
+	
+	/******************************
+	 * IP address of player.
+	 */
+	_ip:String,
+	
+	/******************************
+	 * is there two computers with the same host name connected to server?
+	 */
+	_alreadyOnlineHost: Bool,
+	
+	/******************************
+	 * is there already a user with that username online?
+	 */
+	_alreadyOnlineUser: Bool,
 	
 	/******************************
 	 * outputs if server is blocking
@@ -428,87 +1070,301 @@ typedef DataAccount =
 }
 
 // what sets this typedef apart is the room data. here is room, roomState, _roomPlayerLimit, etc.
-typedef DataMisc = {
-	id: String,
-	_username: String,					// the username of the player.
-	_room: Int,							// current room that the user is in. zero equals no room.
+typedef DataMisc =
+{
 	/******************************
-	 * If events a and b are sent from event c to the server in that order, sometimes the server will send back event b to the client before the server finishes event a.
-	 * to solve that problem, at client, move event b to the bottom of event a and if this var has the name of event b then at that code line event b will be executed.
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
+	/******************************
+	 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+	 * for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used.
 	 */
 	_triggerEvent: String,
-	_spectatorWatching:Bool,			// this user entered the game from the lobby when clicking the "watch game" button. this user can only watch the game. this player cannot play the game even when game ends.
-	_roomState: Array<Int>,				// 0 = empty, 1 computer game, 2 creating room, 3 = firth player waiting to play game. 4 = second player in waiting room. 5 third player in waiting room if any. 6 - forth player in waiting room if any. 7 - room full, 8 - game room.
-	_roomPlayerLimit: Array<Int>,		// maximum number of players that can play the selected game.
-	_roomPlayerCurrentTotal: Array<Int>,// current total of players in a room.
+	
+	/******************************
+	 * this user entered the game from the lobby when clicking the "watch game" button. this user can only watch the game. this player cannot play the game even when game ends.
+	 */
+	_spectatorWatching:Bool, 
+	
+	/******************************
+	 * 0 = empty, 1 computer game, 2 creating room, 3 = firth player waiting to play game. 4 = second player in waiting room. 5 third player in waiting room if any. 6 - forth player in waiting room if any. 7 - room full, 8 - game room.
+	 */
+	_roomState: Array<Int>,
+	
+	/******************************
+	 * maximum number of players that can play the selected game.
+	 */
+	_roomPlayerLimit: Array<Int>,
+	
+	/******************************
+	 * current total of players in a room.
 	// used to list the games at lobby. see Reg.gameName(). also, for not a host player, the data from here will populate _miscState._data._gameId for that player. 
 	//-1: no data, 0:checkers, 1:chess, etc.
+	 */
+	_roomPlayerCurrentTotal: Array<Int>,
+	
+	/******************************
+	 * 0:checkers, 1:chess, 2:reversi, 3:snakes and ladders, 4: wheel estate.
+	 */
 	_roomGameIds: Array<Int>,
-	_roomHostUsername: Array<String>,	// a list of every username that is a host of a room.
+	
+	/******************************
+	 * a list of every username that is a host of a room.
+	 */
+	_roomHostUsername: Array<String>,
 	
 	/******************************
 	 * game id. move_history fields are not deleted from the MySQL database. so this id is used so that a user accesses that correct move_history data.
 	 */
 	_gid: Array<String>,
 	
-	_roomIsLocked: Array<Int>,			// if this vars value is true then a different player will not be able change the room state until the player has finished the "Greater RoomState Value" event at "Get Room Data" event. Note: that when a player leaves the game room, since that userLocation will always be a value of zero, a _roomIsLocked is not needed.
-	_roomCheckForLock: Array<Int>, 	// If vars value is true then a check for a room lock will be made. This is used only when entering a room. If mouse clicked the "refresh room" button or leaving a game room then a check will not be made because in these cases a check is not needed. See Note: at _roomIsLocked for the reason why.
-	_roomLockMessage: String,			// When a room lock is true then this room cannot be entered by the current player and this is the message saying that someone is already accessing the room so try again shortly.
-	_vsComputer: Array<Int>, 		// if this value is true than the host is playing against the computer.
-	_allowSpectators: Array<Int>, 	// if true then this room allows spectators.
-	_userLocation: Int,					// currently where the user is at. 0:lobby, 1:creating room, 2:scene_waiting_room, 3:room game playing.
-	_chat: String,						// chat text of the player.
-	_gameRoom: Bool,					// should player enter the game room?
-	_clientCommandMessage: String,		// kick, ban or some message. player blocked other player for some time or from playing again at that room for that session.
+	/******************************
+	 * if this vars value is true then a different player will not be able change the room state until the player has finished the "Greater RoomState Value" event at "Get Room Data" event. Note: that when a player leaves the game room, since that userLocation will always be a value of zero, a _roomIsLocked is not needed.
+	 */
+	_roomIsLocked: Array<Int>,
+	
+	/******************************
+	 * If vars value is true then a check for a room lock will be made. This is used only when entering a room. If mouse clicked the "refresh room" button or leaving a game room then a check will not be made because in these cases a check is not needed. See Note: at _roomIsLocked for the reason why.
+	 */
+	_roomCheckForLock: Array<Int>,
+	
+	/******************************
+	 * When a room lock is true then this room cannot be entered by the current player and this is the message saying that someone is already accessing the room so try again shortly.
+	 */
+	_roomLockMessage: String,
+	
+	/******************************
+	 * if this value is true than the host is playing against the computer.
+	 */
+	_vsComputer: Array<Int>,
+	
+	/******************************
+	 * if true then this room allows spectators.
+	 */
+	_allowSpectators: Array<Int>,
+	
+	/******************************
+	 * currently where the user is at. 0:lobby, 1:creating room, 2:scene_waiting_room, 3:room game playing.
+	 */
+	_userLocation: Int,
+	
+	/******************************
+	 * chat text of the player.
+	 */
+	_chat: String,
+	
+	/******************************
+	 * should player enter the game room?
+	 */
+	_gameRoom: Bool,
+	
+	/******************************
+	 * kick, ban or some message. player blocked other player for some time or from playing again at that room for that session.
+	 */
+	_clientCommandMessage: String,
+	
 	_clientCommandUsers: String,
+	
 	_clientCommandIPs: String,
 	
 	
 }
 
-	// if a playersState event is sending data to the server then remember that the server broadcasts to a room depending on the value of _room. therefore, before that event is sent from client, at client the _playersState room must equal _gameState._data._room.
-	
-	// note that id and room vars exists at each of these typedef containers. room var value must be taken from the _gameState. so if you are passing _miscState, remember to get the room state from _miscState first or _miscState if that was the last typedef used. by default, the id's are all the same value. you do not need to be concerned with typedef ID's.
-	
-	// if you forget to get the value of a room before sending to the client, the server will not return the data to the client at the correct room. either no data will be sent to the client event or a different player will get the data.
-typedef DataPlayers = {
-	id: String,
-	_username: String,				// username of the client.
-	_usernamesDynamic:Array<String>,		// one to four usernames of the players in the waiting room or game room.
-	_usernamesStatic:Array<String>, // the difference between _usernamesDynamic and _usernamesStatic is that a username can get removed from the list of _usernames, but the _usernamesStatic will always have the same names through the actions within the game room.
-	_usernamesTotalDynamic:Int, // current total of players playing the game.
-	_usernamesTotalStatic:Int, // total players that can play a game in that game room.
-	_spectatorPlaying:Bool,			// user watching the game being played. quit game or time ran out for this player. this player was once playing a game. when doing spectators for anyone to watch, that must be a different name.
-	_spectatorWatching:Bool,		// this user entered the game from the lobby when clicking the "watch game" button. this user can only watch the game. this player cannot play the game even when game ends.
-	_gamePlayersValues:Int,			// 0: = not playing but still at game room. 1: playing a game. 2: left game room while still playing it. 3: left game or game room when game was over.4: quit game.
-	// is it the players turn to move. a value of 1 = player1, 2=player2, etc.
-	_moveNumberDynamic:Array<Int>,
-	_room: Int,						// current room that the user is in. zero equals no room.
-	_avatarNumber:Array<String>, 	// This is the profile avatar image number used to display the image.
+/******************************
+ * if a playersState event is sending data to the server then remember that the server broadcasts to a room depending on the value of _room. therefore, before that event is sent from client, at client the _playersState room must equal _gameState._data._room.
+ * note that id and room vars exists at each of these typedef containers. room var value must be taken from the _gameState. so if you are passing _miscState, remember to get the room state from _miscState first or _miscState if that was the last typedef used. by default, the id's are all the same value. you do not need to be concerned with typedef ID's.
+ * if you forget to get the value of a room before sending to the client, the server will not return the data to the client at the correct room. either no data will be sent to the client event or a different player will get the data.
+ */
+typedef DataPlayers = 
+{
 	/******************************
-	 * If events a and b are sent from event c to the server in that order, sometimes the server will send back event b to the client before the server finishes event a.
-	 * to solve that problem, at client, move event b to the bottom of event a and if this var has the name of event b then at that code line event b will be executed.
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	* one to four usernames of the players in the waiting room or game room.
+	*/
+	_usernamesDynamic:Array<String>,
+	
+	/******************************
+	* one to four usernames of the players in the waiting room or game room.
+	*/
+	_usernamesStatic:Array<String>,
+	
+	/******************************
+	* current total of players playing the game.
+	*/
+	_usernamesTotalDynamic:Int,
+	
+	/******************************
+	* total players that can play a game in that game room.
+	*/
+	_usernamesTotalStatic:Int,
+	
+	/******************************
+	* user watching the game being played. quit game or time ran out for this player. this player was once playing a game. when doing spectators for anyone to watch, that must be a different name.
+	*/
+	_spectatorPlaying:Bool,
+	
+	/******************************
+	* this user entered the game from the lobby when clicking the "watch game" button. this user can only watch the game. this player cannot play the game even when game ends.
+	*/
+	_spectatorWatching:Bool,
+	
+	/******************************
+	* 0: = not playing but still at game room. 1: playing a game. 2: left game room while still playing it. 3: left game or game room when game was over.4: quit game.
+	// is it the players turn to move. a value of 1 = player1, 2=player2, etc.
+	*/
+	_gamePlayersValues:Array<Int>,
+	
+	_moveNumberDynamic:Array<Int>,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
+	/******************************
+	 * This is the profile avatar image number used to display the image.
+	 */
+	_avatarNumber:Array<String>,
+	
+	/******************************
+	 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+	 * for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used.
 	 */
 	_triggerEvent: String,
-	// this is needed to save a game win to the game being played. if chess is being played and player won that game then this var will be used to save a win to chess, not just the overall wins of any game played.
+	
+	/******************************
+	* 
+	*/// this is needed to save a game win to the game being played. if chess is being played and player won that game then this var will be used to save a win to chess, not just the overall wins of any game played.
 	_gameId: Int,
-	_gameAllTotalWins:Array<Int>,			// total game wins of host player.
-	_gameAllTotalLosses:Array<Int>,			// total game losses of host player.
-	_gameAllTotalDraws:Array<Int>,			// total game draws of host player.
-	_gameName:String,				// the game being played.
-	_usernameInvite:String,			// username of the sent room invite.
-	_gameMessage:String,			// an example of this would be a chess game where a player just received a message saying that the king is in check. 
-	_actionWho:String,				// player that you want something done to.
-	_actionNumber:Int,				// refers to an action, eg, 1 = kick. see the "Action By Player" event at server.
-	_actionDo:Int,					// targeted player must do an action of _actionNumber. this var can be a time remaining var or whatever is needed for an Int.
-	_moveTimeRemaining:Array<Int>,	// time remaining to make a move. when time reaches 0, the game ends and that player losses.
-	_score:Array<Int>,				// total score in game.
-	_cash:Array<Float>,				// total cash in game.
-	_quitGame:Bool,					// while playing the game, a player has clicked the quit game button if true.
-	_isGameFinished: Bool,			// false if game is still being played. defaults to true because when entering the game room the game for those players has not started yet.
-	_gameIsFinished: Bool, 			// SAVE A VAR TO MYSQL SO THAT SOMEONE CANNOT INVITE WHEN STILL IN GAME ROOM. ALSO USED TO PASS A VAR TO USER SPECTATOR WATCHING. THAT VAR IS USED TO START A GAME FOR THAT SPECTATOR IF THE _gameIsFinished VALUE IS FALSE.
-	_spectatorWatchingGetMoveNumber: Int, // send the current move number to the watching spectator so that the timer and white box underneath the P1, P2, P3 or P4 moves, can be updated.
-	_moveTotal: Int, // how many times a player moved a piece.
+	
+	/******************************
+	* total game wins of host player.
+	*/
+	_gameAllTotalWins:Array<Int>,
+	
+	/******************************
+	* total game losses of host player.
+	*/
+	_gameAllTotalLosses:Array<Int>,
+	
+	/******************************
+	* total game draws of host player.
+	*/
+	_gameAllTotalDraws:Array<Int>,
+	
+	/******************************
+	* the game being played.
+	*/
+	_gameName:String,
+	
+	/******************************
+	* username of the sent room invite.
+	*/
+	_usernameInvite:String,
+	
+	/******************************
+	* an example of this would be a chess game where a player just received a message saying that the king is in check. 
+	*/
+	_gameMessage:String,
+	
+	/******************************
+	* player that you want something done to.
+	*/
+	_actionWho:String,
+	
+	/******************************
+	* refers to an action, eg, 1 = kick. see the "Action By Player" event at server.
+	*/
+	_actionNumber:Int,
+	
+	/******************************
+	* targeted player must do an action of _actionNumber. this var can be a time remaining var or whatever is needed for an Int.
+	*/
+	_actionDo:Int,
+	
+	/******************************
+	* time remaining to make a move. when time reaches 0, the game ends and that player losses.
+	*/
+	_moveTimeRemaining:Array<Int>,
+	
+	/******************************
+	* total score in game.
+	*/
+	_score:Array<Int>,
+	
+	/******************************
+	* total cash in game.
+	*/
+	_cash:Array<Float>,
+	
+	/******************************
+	* while playing the game, a player has clicked the quit game button if true.
+	*/
+	_quitGame:Bool,
+	
+	/******************************
+	* false if game is still being played. defaults to true because when entering the game room the game for those players has not started yet.
+	*/
+	_isGameFinished: Bool,
+	
+	/******************************
+	* SAVE A VAR TO MYSQL SO THAT SOMEONE CANNOT INVITE WHEN STILL IN GAME ROOM. ALSO USED TO PASS A VAR TO USER SPECTATOR WATCHING. THAT VAR IS USED TO START A GAME FOR THAT SPECTATOR IF THE _gameIsFinished VALUE IS FALSE.
+	*/
+	_gameIsFinished: Bool,
+	
+	/******************************
+	* send the current move number to the watching spectator so that the timer and white box underneath the P1, P2, P3 or P4 moves, can be updated.
+	*/
+	_spectatorWatchingGetMoveNumber: Int,
+	
+	/******************************
+	* how many times a player moved a piece.
+	*/
+	_moveTotal: Int,
+	
 	/******************************
 	* this is the time when game is started.
 	*/
@@ -531,7 +1387,7 @@ typedef DataPlayers = {
 	_checkers_king_total: Int,
 	
 	/******************************
-	 * this is a daily quest var. when a game is won, at server main.hx, at the saveWinStats() function, a value of 1 will be given to that array element for that board game played. so if playing a Reversi game then the array element of 2 will be set to a value of 1. when all array elements in this var has a value of 1 then all board games has been played.
+	 * this is a daily quest var. when a game is won, at server main.hx, at the update_win_at_statistics() function, a value of 1 will be given to that array element for that board game played. so if playing a Reversi game then the array element of 2 will be set to a value of 1. when all array elements in this var has a value of 1 then all board games has been played.
 	 */
 	_all_boardgames_played_total: Array<Int>,
 }
@@ -540,19 +1396,50 @@ typedef DataPlayers = {
 // credits, experience points, wins, losses, draws. all player statistics.
 typedef DataStatistics = 
 {
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
 	id: String,
-	_username: String,					// the username of the player.
-	_room: Int,	
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * current room that the user is in. zero equals lobby.
+	 */
+	_room: Int,
+	
 	/******************************
 	* this is the time when game is started.
 	*/
 	_timeTotal: Int,
-	_moveTimeRemaining: Array<Int>, // time since game has started.
-	_chess_elo_rating:Float, // current chess Elo rating a player has.
 	
 	/******************************
-	 * If events a and b are sent from event c to the server in that order, sometimes the server will send back event b to the client before the server finishes event a.
-	 * to solve that problem, at client, move event b to the bottom of event a and if this var has the name of event b then at that code line event b will be executed.
+	* time since game has started.
+	*/
+	_moveTimeRemaining: Array<Int>,
+	
+	/******************************
+	* current chess Elo rating a player has.
+	*/
+	_chess_elo_rating:Float,
+	
+	/******************************
+	 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+	 * for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used.
 	 */
 	_triggerEvent: String,
 	
@@ -563,18 +1450,46 @@ typedef DataStatistics =
 	_shortest_time_game_played:Int,
 	_longest_time_game_played:Int,
 	_longest_current_winning_streak:Int,
+	
 	/******************************
-	 * from any games played.
+	 * any games played.
 	 */
 	_highest_winning_streak:Int,
+	
+	/******************************
+	 * any games played.
+	 */
 	_longest_current_losing_streak:Int,
+	
+	/******************************
+	 * any games played.
+	 */
 	_highest_losing_streak:Int,
+	
+	/******************************
+	 * any games played.
+	 */
 	_longest_current_draw_streak:Int,
+	
+	/******************************
+	 * any games played.
+	 */
 	_highest_draw_streak:Int,	
 	
-	_gamesAllTotalWins: Int,			// all game wins for player.
-	_gamesAllTotalLosses: Int,			// all game losses for player.
-	_gamesAllTotalDraws: Int,			// all game draws for player.
+	/******************************
+	 * all game wins for player.
+	 */
+	_gamesAllTotalWins: Int,
+	
+	/******************************
+	 * all game losses for player.
+	 */
+	_gamesAllTotalLosses: Int,
+	
+	/******************************
+	 * all game draws for player.
+	 */
+	_gamesAllTotalDraws: Int,
 	
 	_checkersWins: Int,
 	_checkersLosses: Int,
@@ -592,10 +1507,25 @@ typedef DataStatistics =
 	_signatureGameLosses: Int,
 	_signatureGameDraws: Int,
 	
-	_creditsToday: Int,					// credits given on event day. credits can be redeemed for a month of paid membership. Maximum of 5 credits per event day.
-	_creditsTotal: Int,					// each credit_today value is written to this value. this value only decreases when credits are used to redeem something, such as 1 month of membership.
-	_experiencePoints: Int,				// each game played gives some XP points. get enough XP point to increase players level.	
-	_houseCoins: Int,					// at the house event, after a game is played, some coins will be given. Use those coins to buy house furniture. Access your house from the house button at lobby.
+	/******************************
+	 * credits given on event day. credits can be redeemed for a month of paid membership. Maximum of 5 credits per event day.
+	 */
+	_creditsToday: Int,
+	
+	/******************************
+	 * each credit_today value is written to this value. this value only decreases when credits are used to redeem something, such as 1 month of membership.
+	 */
+	_creditsTotal: Int,
+	
+	/******************************
+	 * each game played gives some XP points. get enough XP point to increase players level.
+	 */
+	_experiencePoints: Int,
+	
+	/******************************
+	 * at the house event, after a game is played, some coins will be given. Use those coins to buy house furniture. Access your house from the house button at lobby.
+	 */
+	_houseCoins: Int,
 }
 
 /******************************
@@ -607,6 +1537,17 @@ typedef DataHouse =
 	 * player instance. this tells one player from another.
 	 */
 	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
 	
 	/******************************
 	 * the username of the player.
@@ -712,19 +1653,432 @@ typedef DataHouse =
 // string is needed for all fields because at client this data will be .split(",")
 typedef Leaderboards = 
 {
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
 	id: String,
-	_username: String,					// the username of the player.
-	_usernames: String,					// this holds all players in a top leaderboard list. the usernames in the list is separated with a comma.
-	_experiencePoints: String,			// total XP for all players. each XP is separated by a comma.
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * the username of the player.
+	 */
+	_username: String,
+	
+	/******************************
+	 * this holds all players in a top leaderboard list. the usernames in the list is separated with a comma.
+
+	 */
+	_usernames: String, 	
+	/******************************
+	 * total XP for all players. each XP is separated by a comma.
+	 */
+	_experiencePoints: String,
+	
 	_houseCoins: String,
+	
 	_worldFlag: String,
+}
+
+typedef DataDisconnect = 
+{
+	/******************************
+	 * 
+	 */
+	var id: String;
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	var tid: Int;
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	var _event_name: String;
+	
+	/******************************
+	 * the username of the player.
+	 */
+	var _username:String;
+	
+	/******************************
+	 * one to four usernames of the players in the waiting room or game room.
+	 */
+	var _usernamesDynamic:Array<String>;	
+		
+	/******************************
+	 * the difference between _usernamesDynamic and _usernamesStatic is that a username can get removed from the list of _usernamesDynamic, but the _usernamesStatic will always have the same names through the actions within the game room.
+	 */
+	var	_usernamesStatic:Array<String>;
+	
+	/******************************
+	 * current total of players playing the game.
+	 */
+	var _usernamesTotalDynamic:Int;
+	
+	/******************************
+	 * total players that can play a game in that game room.
+	 */
+	var _usernamesTotalStatic:Int;
+	
+	/******************************
+	 * user who was once playing but is now watching the game being played. 
+	 */
+	var _spectatorPlaying:Bool;
+	
+	/******************************
+	 * this user entered the game from the lobby when clicking the "watch game" button. this user can only watch the game. this player cannot play the game even when game ends.
+	 */
+	var _spectatorWatching:Bool; 	
+	
+	/******************************
+	 * send the current move number to the watching spectator so that the timer and white box underneath the P1, P2, P3 or P4 moves, can be updated.
+	 */
+	var _spectatorWatchingGetMoveNumber: Int;
+	
+	/******************************
+	 * This is the profile avatar image number used to display the image.
+	 */
+	var _avatarNumber:Array<String>;
+		 
+	/******************************
+	 * save the player's game player state to the database. is the player playing a game or waiting to play. 
+	 * 0: = not playing but still at game room. 
+	 * 1: playing a game. 
+	 * 2: left game room while still playing it. 
+	 * 3: left game room when game was over. 
+	 * 4: quit game.
+	 * this var is used to display players who are waiting for a game at the game room and to get the _count of how many players are waiting at game room.
+	*/
+	var _gamePlayersValues:Array<Int>;
+	
+	/******************************
+	 * is it the players turn to move. a value of 1 = player1, 2=player2, etc.
+	 */
+	var _moveNumberDynamic:Array<Int>;
+	
+	/******************************
+	 * current room that the user is in. zero equals no room.
+	 */
+	var _room: Int;
+	
+	/******************************
+	 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+	 * for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used. 
+	 */
+	var _triggerEvent: String;
+	
+	/******************************
+	 * this is needed to save a game win to the game being played. if chess is being played and player won that game then this var will be used to save a win to chess, not just the overall wins of any game played.
+	 */
+	var _gameId: Int;
+	
+	/******************************
+	 * any game played. total game wins.
+	 */
+	var _gamesAllTotalWins:Array<Int>;
+	
+	/******************************
+	 * any game played. total game losses.
+	 */
+	var _gamesAllTotalLosses:Array<Int>;
+	
+	/******************************
+	 * any game played. total game draws.
+	 */
+	var _gamesAllTotalDraws:Array<Int>;
+	
+	/******************************
+	 * the game being played.
+	 */
+	var _gameName:String;
+	
+	/******************************
+	 * username of the sent room invite.
+	 */
+	var _usernameInvite:String;
+	
+	/******************************
+	 * game win, lose or draw messages.
+	 */
+	var _gameMessage:String;
+	
+	/******************************
+	 * player that you want something done to.
+	 */
+	var _actionWho:String;
+	
+	/******************************
+	 * refers to an action, eg, 1 = kick. see the "Action By Player" event at server.
+	 */
+	var _actionNumber:Int;
+	
+	/******************************
+	 * targeted player must do an action of _actionNumber. this var can be a time remaining var or whatever is needed for an Int.
+	 */
+	var _actionDo:Int;
+	
+	/******************************
+	 * time remaining to make a move. when time reaches 0, the game ends and that player losses.
+	 */
+	var _moveTimeRemaining:Array<Int>;
+	
+	/******************************
+	 * total score in game.
+	 */
+	var _score:Array<Int>;
+	
+	/******************************
+	* total cash in game.
+	*/
+	var _cash:Array<Float>;				
+
+	/******************************
+	 * while playing the game, a player has clicked the quit game button if true.
+	 */
+	var _quitGame:Bool;
+		
+	/******************************
+	 * false if game is still being played. defaults to true because when entering the game room the game for those players has not started yet.
+	 */
+	var _isGameFinished: Bool;
+	
+	/******************************
+	 * SAVE A VAR TO MYSQL SO THAT SOMEONE CANNOT INVITE WHEN STILL IN GAME ROOM. ALSO USED TO PASS A VAR TO USER SPECTATOR WATCHING. THAT VAR IS USED TO START A GAME FOR THAT SPECTATOR IF THE _gameIsFinished VALUE IS FALSE.
+	 */
+	var _gameIsFinished: Bool;
+	
+	/******************************
+	 * how many times a player moved a piece.
+	 */
+	var _moveTotal: Int;
+	
+	/******************************
+	 * this is the time when game is started.
+	 */
+	var _timeTotal: Int;
+	
+	/******************************
+	 * total house items bought within 24 houses. this var is for the daily quest. see _buy_four_house_items
+	 */
+	var _house_items_daily_total: Int;
+	
+	/******************************
+	 * this is the piece total for the winner at the end of a game.
+	 * currently only used in Reversi.
+	 */
+	var _piece_total_for_winner: Int;
+	
+	/******************************
+	 *	this is a daily quest var. This is the amount of kings that a player has while playing a game. this var is used at DailyQuests.hx to determine if a reward should be given to player.
+	 */
+	var _checkers_king_total: Int;
+	
+	/******************************
+	 * this is a daily quest var. when a game is won, at server main.hx, at the saveWinStats() function, a value of 1 will be given to that array element for that board game played. so if playing a Reversi game then the array element of 2 will be set to a value of 1. when all array elements in this var has a value of 1 then all board games has been played.
+	 */
+	var _all_boardgames_played_total: Array<Int>;
+	
 }
 
 class Reg
 {
-	// these vars are populated from the config.bat file at /subs. All but the last var are used by the paid member to set the server up so that the server can connect to a port to go online. 
+	public static var _dataDisconnect:DataDisconnect = 
+	{
+		id: "100000000999999999100000000999999999",
 	
-	// the last var is used along with a password to load the version. if the username or password is not correct then the server will not start. a paid member is needed. the MySQL database that is connected to kg's website is used to get the password.
+		tid: 48,
+			
+		/******************************
+		 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+		 */
+		_event_name: "",
+		
+		/******************************
+		 * the username of the player.
+		 */
+		_username: "",
+		
+		_usernamesDynamic: ["", "", "", ""],
+				
+		_usernamesStatic: ["", "", "", ""], 
+		
+		/******************************
+		 * current total of players playing the game.
+		 */
+		_usernamesTotalDynamic: 0,
+		
+		/******************************
+		 * total players that can play a game in that game room.
+		 */
+		_usernamesTotalStatic: 0,
+		
+		/******************************
+		 * user who was once playing but is now watching the game being played.
+		 */
+		_spectatorPlaying: false,
+		
+		/******************************
+		 * this user entered the game from the lobby when clicking the "watch game" button. this user can only watch the game. this player cannot play the game even when game ends.
+		 */
+		_spectatorWatching: false,
+		
+		/******************************
+		 * send the current move number to the watching spectator so that the timer and white box underneath the P1, P2, P3 or P4 moves, can be updated.
+		 */
+		_spectatorWatchingGetMoveNumber: 0,		
+		
+		/******************************
+		 * This is the profile avatar image number used to display the image.
+		 */
+		_avatarNumber: ["0.png", "0.png", "0.png", "0.png"],
+		
+		/******************************
+		 * save the player's game player state to the database. is the player playing a game or waiting to play. 
+		 * 0: = not playing but still at game room. 
+		 * 1: playing a game. 
+		 * 2: left game room while still playing it. 
+		 * 3: left room when game was over. 
+		 * 4: quit game.
+		 * this var is used to display players who are waiting for a game at the game room and to get the _count of how many players are waiting at game room.
+		 */		
+		_gamePlayersValues: [0, 0, 0, 0],		
+		
+		_moveNumberDynamic: [0, 0, 0, 0],
+		
+		/******************************
+		 * current room that the user is in. zero equals lobby.
+		 */
+		_room: 0,
+		
+		/******************************
+		 * you can pass any text here. The text is sent to server and at server if text matches then do something. clear the text after sending the event to server.
+		* for example, this is needed for game room. without a "sender" code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times. however, at server, if this var text is "sender" then instead of a broadcast to room, _sender.send is used.
+		 */
+		_triggerEvent: "",
+		
+		_gameId: -1,		
+		
+		/******************************
+		 * any game played. total game wins for player.
+		 */
+		_gamesAllTotalWins: [0, 0, 0, 0],
+		
+		/******************************
+		 * any game played. total game losses for player.
+		 */
+		_gamesAllTotalLosses: [0, 0, 0, 0],
+		
+		/******************************
+		 * any game played. total game draws for player.
+		 */
+		_gamesAllTotalDraws: [0, 0, 0, 0],
+		
+		/******************************
+		 * the game being played.
+		 */
+		_gameName: "",
+		
+		/******************************
+		 * username of the sent room invite.
+		 */
+		_usernameInvite: "",
+		
+		/******************************
+		 * game win, lose or draw messages.
+		 */
+		_gameMessage: "",
+		
+		/******************************
+		 * player that you want something done to.
+		 */
+		_actionWho: "",
+		
+		/******************************
+		 * refers to an action, eg, 1 = kick. see the "Action By Player" event at server.
+		 */
+		_actionNumber: 0,
+		
+		/******************************
+		 * targeted player must do an action of _actionNumber. this var can be a time remaining var or whatever is needed for an Int.
+		 */
+		_actionDo: -1,
+		
+		/******************************
+		 * time remaining to make a move. when time reaches 0, the game ends and that player losses.
+		 */
+		_moveTimeRemaining: [0, 0, 0, 0],
+		
+		/******************************
+		 * total score in game.
+		 */
+		_score: [0, 0, 0, 0],
+		
+		/******************************
+		 * total cash in game.
+		 */
+		_cash: [0, 0, 0, 0],
+		
+		/******************************
+		 * player had quit game.
+		 */
+		_quitGame: false,
+		
+		/******************************
+		 * false if game is still being played. defaults to true because when entering the game room the game for those players has not started yet.
+		 */
+		_isGameFinished: true,
+		
+		/******************************
+		 * SAVE A VAR TO MYSQL SO THAT SOMEONE CANNOT INVITE WHEN STILL IN GAME ROOM. ALSO USED TO PASS A VAR TO USER SPECTATOR WATCHING. THAT VAR IS USED TO START A GAME FOR THAT SPECTATOR IF THE _gameIsFinished VALUE IS FALSE.
+		 */
+		_gameIsFinished: false,
+		
+		/******************************
+		 * how many times a player moved a piece.
+		 */
+		_moveTotal: 0,
+		
+		/******************************
+		* this is the time when game is started.
+		*/
+		_timeTotal: 0,
+		
+		/******************************
+		* this is a daily quest var. total house items bought within 24 houses. see _buy_four_house_items
+		*/
+		_house_items_daily_total: 0,
+		
+		/******************************
+		 * this is the piece total for the winner at the end of a game.
+		 * currently only used in Reversi.
+		 */
+		_piece_total_for_winner: 0,		
+		
+		/******************************
+		 *	this is a daily quest var. This is the amount of kings that a player has while playing a game. this var is used at DailyQuests.hx to determine if a reward should be given to player.
+		 */
+		_checkers_king_total: 0,
+				 
+		/******************************
+		 * this is a daily quest var. when a game is won, at server main.hx, at the saveWinStats() function, a value of 1 will be given to that array element for that board game played. so if playing a Reversi game then the array element of 2 will be set to a value of 1. when all array elements in this var has a value of 1 then all board games has been played.
+		 */
+		_all_boardgames_played_total: [0, 0, 0, 0, 0],
+	}
+	/******************************
+	 * these vars are populated from the config.bat file at /subs. 
+	 */
 	public static var _dbHost:String = "";
 	public static var _dbPort:Int = 0;
 	public static var _dbUser:String = "";
@@ -733,7 +2087,12 @@ class Reg
 	public static var _username:String = "";
 	public static var _domain:String = "";
 	public static var _domain_path:String = "";
-	
+	public static var _smtpFrom:String = "";
+	public static var _smtpHost:String = "";
+	public static var _smtpPort:Int = 0;
+	public static var _smtpUsername:String = "";
+	public static var _smtpPassword:String = "";
+
 	/******************************
 	 * this is needed at mphx/server/connection.hx to display an error if any for the last known user that entered a server event. remember that at the top of most server events there is a call to the userLogs function. so when an error message is displayed, we know where the error came from and also know what user triggered the error.
 	 */
@@ -807,8 +2166,10 @@ class Reg
 	public static var _eventBackgroundColour:Array<Int> =  
 	[for (p in 0...40) 0 ];
 	
-	
-	public static var _ip:String; // the IP address of the client connecting to the server.
+	/******************************
+	 * the IP address of the client connecting to the server.
+	 */
+	public static var _ip:String;
 	
 	public static function resetRegVarsOnce():Void
 	{

@@ -47,8 +47,6 @@ class MysqlDB
 	private function tryMysqlConnectDatabase():Void
 	{
 		try {
-				clearMysqlData();
-
 				var cnx2 = Mysql.connect(
 				{ 
 					host : Reg._dbHost,
@@ -70,7 +68,7 @@ class MysqlDB
 			}	
 	}
 	
-	public function serverNowOffline(id:Int):Void
+	public function server_now_offline_at_servers_status (id:Int):Void
 	{
 		tryMysqlConnectDatabase();
 		
@@ -119,11 +117,4 @@ class MysqlDB
 		
 		cnx.close();
 	}
-	
-	private function clearMysqlData():Void
-	{
-		
-	}
-	
-	
 }
