@@ -181,7 +181,6 @@ typedef MysqlData = {
 	_signatureGameLosses:Array<Int>,
 	_signatureGameDraws:Array<Int>,
 
-	_vsComputer:Array<Int>, 		// if this value is true than the host is playing against the computer.
 	_allowSpectators:Array<Int>, 	// if true then this room allows spectators.
 	
 	_spriteNumber: Array<String>,	// refers to a sprite that was bought to display at house. eg, 1.png	
@@ -471,11 +470,8 @@ class DB_Parent
 			_snakesAndLaddersDraws: [],
 			_signatureGameWins: [],
 			_signatureGameLosses: [],
-			_signatureGameDraws: [],
-			
-			_vsComputer: [],
-			_allowSpectators: [],
-			
+			_signatureGameDraws: [],			
+			_allowSpectators: [],			
 			_spriteNumber: [],
 			_spriteName: [],
 			_itemsX: [],
@@ -722,7 +718,6 @@ class DB_Parent
 		_mysqlData._signatureGameLosses.splice(0, _mysqlData._signatureGameLosses.length);
 		_mysqlData._signatureGameDraws.splice(0, _mysqlData._signatureGameDraws.length);
 		
-		_mysqlData._vsComputer.splice(0, _mysqlData._vsComputer.length);
 		_mysqlData._allowSpectators.splice(0, _mysqlData._allowSpectators.length);
 		
 		// house data.

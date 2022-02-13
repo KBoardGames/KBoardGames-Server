@@ -1,3 +1,25 @@
+Version 1.21.3 2021-2-13
+
+New Features.
+
+	Word filter now used at chatter.
+
+	Now cannot login with an empty IP address, empty hostname, empty username, empty id, null IP address, null hostname, null username or null id.
+
+	User can now choose to not have a rated game.
+
+Feature changed.
+
+	Renamed BadWords.hx to RestrictedWords.hx
+	
+Bugs fixed.
+
+	Pinging a port stopped a user from logging in.
+
+	When user enters the waiting room from creating room the waiting room was given a room state value of 4 when it should have been a value of 3.
+
+	Only the first player that created a room then entered the waiting room had correct room values. At lobby all other rooms showed incorrect values for hosted rooms.
+
 Version 1.20.2 2021-1-9
 
 New Features.

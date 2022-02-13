@@ -125,45 +125,6 @@ class Functions
 		}*/
 	}
 	
-	
-	// here we use the ip address to find the username of the user logged into the website. if found, the user will be sent to the lobby.
-	public static function getUsername(_ip:String):String
-	{
-		_ip = "&ip=" + _ip;
-		
-		// DO NOT USE SPECIAL CHARACTERS IN THIS TOKEN IT MAY BREAK LOGINS.
-		var _token = "token=fi37cvPFq5ce78";
-		var _str = Reg._websiteHomeUrl + "server/getUsername.php?" + _token + _ip;		
-		var _http = new haxe.Http(_str);		
-		var _data:String = "";
-		
-		_http.onData = function (data:String) 
-		{
-			if (data.substr(0, 1) == "<") 
-			{
-				// display error message.
-			}
-			
-			else 
-			{
-				// we found the file if we are here.
-				if (data == "")
-				{
-					_data = "";
-				}
-				
-				else _data = data;
-			}
-		}
-
-		_http.onError = function (_error)
-		{			
-		}
-		
-		_http.request();
-		return _data;
-	}
-	
 	//############################## START OF CHESS ELO CALCULATIONS.
 	/**
 	 * Function to calculate the chess elo Probability

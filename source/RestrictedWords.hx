@@ -23,14 +23,13 @@ package;
  * @author kboardgames.com
  */
  
-class BadWords
+class RestrictedWords
 {
 	/******************************
 	* this list is placed in to an array list. therefore, do not change this list with tabs. doing so will display a text with lots of padding at its beginning. also, this list must maintain its line breaks.
 	* https://github.com/zacanger/profane-words/blob/master/words.json
 	*/
-	public static var list:Array<String> = ["nobody",
-  "2 girls 1 cup",
+	public static var list:Array<String> = ["2 girls 1 cup",
   "2g1c",
   "4r5e",
   "5h1t",

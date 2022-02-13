@@ -34,6 +34,13 @@ import vendor.ws.Log;
 
 class Main 
 {	
+	public var _rated_game:Array<Int> =
+		[1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+						 
 	/******************************
 	 * this var is populated from events and at the disconnect event it is passed to the other users. This var is needed because static usernames of the room cannot be taken from the database since a player might have left the room before a request to get the static players values.
 	 * is the player playing a game or waiting to play.
@@ -92,6 +99,13 @@ class Main
 	 */
 	public var _serverConnections:Int = 0;
 	
+	/******************************
+	 * room total displayed at client lobby.
+	 * NOTE: remember to change player_game_state_value_username and player_game_state_value_data to this value.
+	 */
+	public var _room_total:Int = 24;	
+	public var _maximum_server_connections:Int = 119;
+	
 	private var _ticksServerStatus:Int = 0; // when this is of a set value, mysql servers_status table will be read.
 	
 	/******************************
@@ -119,7 +133,13 @@ class Main
 			
 		Reg.resetRegVarsOnce();
 		
-				
+		_rated_game =
+		[1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+			
 		// get version number file from internet and compare it with this server's offline file, to determine if this server should shutdown for a software update.
 		webFileExist();
 		
@@ -150,7 +170,7 @@ class Main
 		
 		Log.mask = Log.INFO;
 		
-		_server = new WebSocketServer<WebSocketHandler>(_ip, _port, 80);
+		_server = new WebSocketServer<WebSocketHandler>(_ip, _port, _maximum_server_connections);
 		if (Sys.args()[2] != null) Reg._dbHost 			= Sys.args()[2];
 		if (Std.parseInt(Sys.args()[3]) != null) 
 			Reg._dbPort = Std.parseInt(Sys.args()[3]);
@@ -180,13 +200,30 @@ class Main
 		{
 			_handler.onopen = function() 
 			{
+				_username.push("nobody");
+				_room.push(9000); // 9000 is used only for joining server. disconnect uses 10000 and entering the looby uses 0. 9000 is used so that a "is port open" service cannot stop a regular user from logging in.
+				
 				trace(_handler.id + ". OPEN");
 			}
 			
 			_handler.onclose = function() 
 			{
-				_events.onDisconnect(this, _handler);
-				trace(_handler.id + ". CLOSE");
+				if (_username[_handler.id - 1] != null)
+				{
+					_events.onDisconnect(this, _handler);
+					trace(_handler.id + ". CLOSE");
+				}
+				
+				else
+				{
+					trace ("Unknown user.");
+					_username.push("nobody");
+					_room.push(10000);
+					_logged_in_twice.push(false);
+			
+					_events.onDisconnect(this, _handler);
+					trace(_handler.id + ". CLOSE");
+				}
 			}
 			
 			_handler.onmessage = function(_message: MessageType)
@@ -208,7 +245,7 @@ class Main
 							var unserializer = new Unserializer(_str);
 							var _data:DataMisc = unserializer.unserialize();
 							
-							_events.name(_data);							
+							_events.name(_data);
 						}
 						
 						else
@@ -226,7 +263,6 @@ class Main
 				trace(_handler.id + ". ERROR: " + error);
 			}
 			
-			//############################# server events.
 			_events = new Events(_data, this, _handler);
 		
 		}
@@ -852,8 +888,14 @@ class Main
 		// username not found in list so add username and room to the lists.
 		if (_found == false)
 		{
-			_username.push(_data._username);
-			_room.push(0);
+			for (i in 0... _room.length + 1)
+			{
+				if (_room[i] == 9000)
+				{
+					_username[i] = _data._username;
+					_room[i] = 0;
+				}
+			}
 		}
 	}
 	
@@ -916,8 +958,9 @@ class Main
 		{
 			if (_username[i] == _data._username)
 			{
+				if (_room[i] != 9000) _room[i] = 10000;
+				
 				_username[i] = "nobody";
-				_room[i] = 1000;
 				_logged_in_twice[i] = false;
 				
 				// deletes these tables when user first logs in and when user is disconnecting.
@@ -927,7 +970,7 @@ class Main
 	}
 	
 	/******************************
-	 * send back to the client that sent to event to server.
+	 * send back to the client that had sent the event to server.
 	 */
 	public function send_to_handler(_data:Dynamic):Void
 	{
@@ -941,7 +984,8 @@ class Main
 		for (i in 0 ... _username.length + 1)
 		{
 			if (_data._username == _username[i]
-			&&	_username[i] != "nobody")
+			&&	_username[i] != "nobody"
+			||	_room[i] == 9000)
 			{
 				ii = i;
 			}

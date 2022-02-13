@@ -71,7 +71,21 @@ class DB_Update extends DB_Parent
 		
 		cnx.close();
 	}
-
+	
+	/******************************
+	 * this is needed for html5. when logging in as Guest1, if hostname is found at a row that is not a guest then that username will be used.
+	 * now update the logged_in_hostname table so that a Guest account is not used. without this code, then logging into html5 the second time, there will be a message saying that user cannot log in twice because that user first logged into html5 as guest.
+	 */
+	public function logged_in_hostname(_user_new:String, _user_old:String):Void
+	{
+		tryMysqlConnectDatabase();
+		
+		var rset = cnx.request("UPDATE logged_in_hostname SET 
+		user = " + cnx.quote(_user_new) + " WHERE user = " + cnx.quote(_user_old) );
+		
+		cnx.close();
+	}
+	
 	/******************************
 	 * update the move history.
 	 */
@@ -1036,7 +1050,7 @@ class DB_Update extends DB_Parent
 	
 	}
 	
-	public function all_for_user_at_room_data(_user:String, _roomState:Int, _userlocation:Int, _room:Int, _roomPlayerLimit:Int, _gameId:Int, _vsComputer:Int, _allowSpectators:Int):Void
+	public function all_for_user_at_room_data(_user:String, _roomState:Int, _userlocation:Int, _room:Int, _roomPlayerLimit:Int, _gameId:Int, _allowSpectators:Int):Void
 	{
 		tryMysqlConnectDatabase();		
 		
@@ -1045,7 +1059,6 @@ class DB_Update extends DB_Parent
 		user_location = " + _userlocation + ", 
 		game_id = " + _gameId + ",
 		room = " + _room + ",
-		vs_computer = " + _vsComputer + ",
 		allow_spectators = " + _allowSpectators + ",
 		timestamp = UNIX_TIMESTAMP(),
 		player_limit = " + _roomPlayerLimit + " WHERE user = " + cnx.quote(_user) );
@@ -1054,7 +1067,7 @@ class DB_Update extends DB_Parent
 	
 	}
 	
-	public function user_at_room_data(_user:String, _roomState:Int, _userlocation:Int, _room:Int, _roomPlayerLimit:Int, _gameId:Int, _vsComputer:Int, _allowSpectators:Int):Void
+	public function user_at_room_data(_user:String, _roomState:Int, _userlocation:Int, _room:Int, _roomPlayerLimit:Int, _gameId:Int, _allowSpectators:Int):Void
 	{
 		tryMysqlConnectDatabase();		
 		
@@ -1063,7 +1076,6 @@ class DB_Update extends DB_Parent
 		user_location = " + _userlocation + ", 
 		game_id = " + _gameId + ",
 		room = " + _room + ",
-		vs_computer = " + _vsComputer + ",
 		allow_spectators = " + _allowSpectators + ",
 		timestamp = UNIX_TIMESTAMP(),
 		player_limit = " + _roomPlayerLimit + ",

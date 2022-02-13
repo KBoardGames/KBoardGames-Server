@@ -73,6 +73,15 @@ class DB_Delete extends DB_Parent
 		cnx.close();
 	}
 	
+	public function user_at_front_door_queue(_user:String):Void
+	{
+		tryMysqlConnectDatabase();
+		
+		var rset = cnx.request("DELETE FROM front_door_queue WHERE user = " + cnx.quote(_user));
+		
+		cnx.close();
+	}
+	
 	public function user_no_kicked_or_banned(_user:String):Void
 	{
 		tryMysqlConnectDatabase();

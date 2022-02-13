@@ -19,7 +19,7 @@
 package;
 
 import Reg;
-import BadWords;
+import RestrictedWords;
 import Functions;
 import sys.FileSystem;
 import sys.net.Host;
@@ -74,14 +74,7 @@ class Events
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-						 
-	private var _vsComputer:Array<Int> =
-						[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-	
+						 	
 	// if true then this room allows spectators.
 	private var _allowSpectators:Array<Int> =
 						[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -200,12 +193,6 @@ class Events
 	
 	// each element refers to the id of a game. the first element is checkers then chess, etc. the player that wins the game gets the experience points value of this vars element. a game lose is half that of a win. so if playing chess and the player lost the game then the experience points gained will be half of 70 rounded to the whole number because we are using Int.
 	private var _experiencePointsGiven:Array<Int> = [70, 70, 50, 50, 90]; 
-	
-	/******************************
-	 * button total displayed at client lobby.
-	 * NOTE: remember to change _server.player_game_state_value_username and player_game_state_value_data to this value.
-	 */
-	public var _button_total:Int = 24;	
 	
 	/******************************
 	* closes the server if true. there will be an error if closing within an event because the event code cannot continue if not connected so this var is called in the event and this var "if true" is needed outside the event to close it.
@@ -712,17 +699,28 @@ class Events
 		trace(_data._username);
 		trace(_data._hostname);
 		trace(_data._password_hash);
-		trace(_data._ip);*/
+		trace(_data._ip);
+		*/
 		
 		try 
 		{
 			Functions.userLogs("Join", "", "", ""); // logs.
 			
-			if (_data.id.length > 80) return;
-			if (_data._username.length > 80) return;
-			if (_data._hostname.length > 150) return;
-			if (_data._password_hash.length > 150) return;
-			if (_data._email_address.length > 100) return;
+			if (_data.id == null
+			||	_data._username == null
+			||	_data._hostname == null
+			||	_data._password_hash == null) return;
+			
+			if (_data.id == ""
+			||	_data._username == ""
+			||	_data._hostname == ""
+			||	_data._password_hash == "") return;
+			
+			if (_data.id.length > 80
+			||	_data._username.length > 80
+			||	_data._hostname.length > 150
+			||	_data._password_hash.length > 150
+			||	_data._email_address.length > 100) return;
 			
 			// a client has connected to this server. Therefore, increase the amount of clients connected.
 			_server._serverConnections += 1;
@@ -747,7 +745,7 @@ class Events
 			/*_miscState._roomState = _roomState;
 			_miscState._roomPlayerLimit = _roomPlayerLimit;
 			_miscState._roomPlayerCurrentTotal = _roomPlayerCurrentTotal;
-			_miscState._vsComputer = _vsComputer;
+			_miscState._rated_game = _rated_game;
 			_miscState._allowSpectators = _allowSpectators;
 			_miscState._roomGameIds = _roomGameIds;
 			_miscState._roomHostUsername = _roomHostUsername;
@@ -784,10 +782,15 @@ class Events
 				}
 			}
 			
+			// determine if the hostname is not a guest account. meaning that the player created an account at desktop client.
 			else if (_data._username == "Guest1")
 			{
 				var _row3 = _db_select.data_from_hostname_at_users(_data._hostname);
-				_data._username = Std.string(_row3._user[0]);
+				
+				var _user_new = Std.string(_row3._user[0]);
+				_db_update.logged_in_hostname(_user_new, _data._username);
+				
+				_data._username = _user_new;
 			}
 			
 			else
@@ -800,13 +803,15 @@ class Events
 				// no longer using a guest account. save players name to the row that has the hostname.
 				if (_user != _data._username
 				&&	_hostname == _data._hostname)
+				{
 					_db_update.rename_user_from_guest_at_users(_data._username, _user, _data._password_hash, _data._hostname);
+				}
 			}
 			
-			for (i in 0... BadWords.list.length)
+			for (i in 0... RestrictedWords.list.length)
 			{
-				if (_data._username.toLowerCase() == BadWords.list[i].toLowerCase())
-					_data._username_restricted = BadWords.list[i];
+				if (_data._username.toLowerCase() == RestrictedWords.list[i].toLowerCase())
+					_data._username_restricted = RestrictedWords.list[i];
 			}
 			
 			_server._is_logged_in_twice(_data);
@@ -842,7 +847,7 @@ class Events
 			
 			_hash = _data._password_hash;
 		}
-
+		
 		if (_data._username != "" // old account
 		&&	_hash == _data._password_hash
 		||	_data._username.toLowerCase() != "nobody"
@@ -892,7 +897,8 @@ class Events
 		{
 			_data._popupMessage = "Login failed."; // if you change the value of this string then you need to change it also at client.
 		}
-		
+	
+		_db_delete.user_at_front_door_queue(_data._username);
 		_server.send_to_handler(_data);
 		
 	}
@@ -1360,7 +1366,6 @@ class Events
 		Functions.userLogs("Greater RoomState Value", _data.id, _data._username, _data); // logs.
 		
 		_data._roomState = _roomState;
-		_vsComputer[_data._room] = _data._vsComputer[_data._room];
 		
 		// roomState was added to this line to stop a bug where leaving a game and reentering the room would set the button to playing game while the user would stay at lobby.
 		if (_data._gameRoom == true && _data._userLocation >= 2)
@@ -1390,13 +1395,19 @@ class Events
 					_found = true;
 				}
 				
+				// set rated game value for room if user is not in game room.
+				if (_data._roomHostUsername[_data._room] == _data._username
+				&&	_data._userLocation < 3)
+					_server._rated_game[_data._room] = _data._rated_game[_data._room];
+				
 				if (rset._userLocation[i] == 2
 				 && Std.string(rset._user[i].toString) != 
 					Std.string(_data._username)
 				)
 				{
 					// for all other users in the room...
-					_data._roomPlayerLimit[_data._room] = rset._playerLimit[i];					
+					_data._roomPlayerLimit[_data._room] = rset._playerLimit[i];
+					_data._rated_game[_data._room] = _server._rated_game[_data._room];
 				}
 				
 			}
@@ -1411,10 +1422,10 @@ class Events
 			
 			// if false, then a user is entering a room. determine if user should enter a room.
 			
-			// roomState value of 2 = creating a room. value of 3 means player is in the room. if max player limit is 2 and there is 1 player in the room. that means we need to plus 1 to this code so that the code condition works.
+			// roomState value of 2
 			else if (_data._roomState[_data._room] < 3 || _data._roomPlayerLimit[_data._room] == 0) // roomState of 2 and a limit of 2 does not work so we plus 1 to the limit.
 			{
-				_data._roomState[_data._room] += 1;								
+				//_data._roomState[_data._room] += 1;								
 				
 				var rset2 = _db_select.user_all_at_room_data(_data._username);
 								
@@ -1440,7 +1451,7 @@ class Events
 		
 		else
 		{
-			_db_update.user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
+			_db_update.user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._allowSpectators[_data._room]);
 		}
 		
 		// when entering the game room, get all usernames from the database. this is needed for the server on disconnect event, so that correct data can be sent to the rest of the players at game room at the time the player disconnects.
@@ -1501,7 +1512,6 @@ class Events
 					
 		}
 		
-		//_vsComputer[_data._room] = _data._vsComputer[_data._room];
 		//_data._roomState = _roomState;
 		
 		if (_data._spectatorWatching == false)
@@ -1576,7 +1586,7 @@ class Events
 					_data._userLocation = 0;
 											
 					// saves room state to MySQL which is used for online players list.
-					_db_update.all_for_user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
+					_db_update.all_for_user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._allowSpectators[_data._room]);
 					_data._room = 0;
 				}
 				
@@ -1657,7 +1667,7 @@ class Events
 				_db_insert.room_and_user_at_who_is_host(_data._username, _data._gid[_data._room], _data._room);
 			}
 				
-			if (_data._roomState[_data._room] > 0 && _data._roomState[_data._room] < 8) _db_update.all_for_user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._vsComputer[_data._room], _data._allowSpectators[_data._room]);
+			if (_data._roomState[_data._room] > 0 && _data._roomState[_data._room] < 8) _db_update.all_for_user_at_room_data(_data._username, _data._roomState[_data._room], _data._userLocation, _data._room, _data._roomPlayerLimit[_data._room], _data._roomGameIds[_data._room], _data._allowSpectators[_data._room]);
 			
 			// update this user's online list that has IP, host, room state information for this user.
 			_db_update.user_at_logged_in_users(_data._username, _data._roomState[_data._room]);
@@ -1665,7 +1675,6 @@ class Events
 			// set room values to be used at the "Get Room Data" event at client.
 			_roomState[_data._room] = _data._roomState[_data._room];
 			_roomGameIds[_data._room] = _data._roomGameIds[_data._room];
-			//_vsComputer[_data._room] = _data._vsComputer[_data._room];
 			_allowSpectators[_data._room] = _data._allowSpectators[_data._room];
 			_roomHostUsername[_data._room] = _data._roomHostUsername[_data._room];
 			if (_data._username == _data._roomHostUsername[_data._room])
@@ -1710,13 +1719,6 @@ class Events
 			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-			 
-			_vsComputer =
-			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 			
 			_allowSpectators =
 			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1746,43 +1748,22 @@ class Events
 			"", "", "", "", "", "", "", "", "", "",
 			"", "", "", "", "", "", "", "", "", ""];
 				
-			var _stop = false;
+			var ii:Int = 0;
 			
-			// populate roomState and _roomPlayerCurrentTotal with the correct data.
-			// this is the total rows in the mysql database table.
-			var _room_number = rows._room.length;
-			
-			while (_room_number-- > 0)
+			while (rows._room[ii] != null)
 			{
-				// button total is the total rooms at lobby.
-				var _room_desc = _button_total;
+				_roomState[rows._room[ii]] = rows._roomState[ii];
 				
-				// search backwards, starting from the last room.
-				while (-- _room_desc > 0)
-				{
-					// count backwards, search for the first occurrence of a room value. for example, if there are 3 players in room then the last player's _roomState value will be compared.
-					if (_room_desc == rows._room[_room_number])
-					{
-						_roomState[_room_desc] = rows._roomState[_room_number];
-						
-						// set the room limit text for lobby.
-						_roomPlayerLimit[_room_desc] = rows._playerLimit[_room_number];
-						
-						// set the text of the game currently set to room.
-						_roomGameIds[_room_desc] = rows._gameId[_room_number];
-						_vsComputer[_room_desc] = rows._vsComputer[_room_number];
-						_allowSpectators[_room_desc] = rows._allowSpectators[_room_number];
+				// set the room limit text for lobby.
+				_roomPlayerLimit[rows._room[ii]] = rows._playerLimit[ii];
+				
+				// set the text of the game currently set to room.
+				_roomGameIds[rows._room[ii]] = rows._gameId[ii];
+				_allowSpectators[rows._room[ii]] = rows._allowSpectators[ii];
 		
-						_stop = true;
-						break;
-					}
-					
-					if (_stop == true) break;
-				}	
+				ii += 1;
 			}
-			
-			_vsComputer[_data._room] = _data._vsComputer[_data._room];
-			
+		
 			// get every host of rooms.
 			var erows = _db_select.all_at_who_is_host();
 			
@@ -1795,11 +1776,11 @@ class Events
 			_data._roomState = _roomState;
 			_data._roomGameIds = _roomGameIds;			
 			_data._roomPlayerLimit = _roomPlayerLimit;
-			_data._vsComputer = _vsComputer;
 			_data._allowSpectators = _allowSpectators;
 			_data._roomHostUsername = _roomHostUsername;
 			_data._gid = _gid;
-							
+			_data._rated_game = _server._rated_game;
+			
 			// get all players in room but not playing a game. the list is used to determine if player can join room.
 			var rset = _db_select.waiting_room_by_timestamp_at_room_data();		
 			
@@ -1837,7 +1818,6 @@ class Events
 		_data._roomState[1] = _roomState[1] = 2;
 		_data._roomGameIds[1] = _roomGameIds[1] = 4;
 		_data._roomPlayerLimit[1] = _roomPlayerLimit[1] = 2;
-		_data._vsComputer[1] = _vsComputer[1] = 1;
 		_data._allowSpectators[1] = _allowSpectators[1] = 0;
 		_data._roomHostUsername[1] = _roomHostUsername[1] = Reg._cpu_host_name1;
 		_data._roomPlayerCurrentTotal[1] = 1;
@@ -1846,7 +1826,6 @@ class Events
 		_data._roomState[2] = _roomState[2] = 2;	
 		_data._roomGameIds[2] = _roomGameIds[2] = 1;
 		_data._roomPlayerLimit[2] = _roomPlayerLimit[2] = 2;
-		_data._vsComputer[2] = _vsComputer[2] = 1;
 		_data._allowSpectators[2] = _allowSpectators[2] = 0;
 		_data._roomHostUsername[2] = _roomHostUsername[2] = Reg._cpu_host_name2;
 		_data._roomPlayerCurrentTotal[2] = 1;
@@ -1897,6 +1876,20 @@ class Events
 	private function chatSend(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
 		Functions.userLogs("Chat Send", _data.id, _data._username, _data); // logs.
+		
+		var _asterisk = "*************************************************************";
+		
+		// this is needed so that words that ends with " " are searched. without this code, part of a word could contain a restricted word.
+		_data._chat += " "; // add this to the end of the string.
+			
+		for (i in 0 ... RestrictedWords.list.length)
+		{			
+			_data._chat = StringTools.replace(_data._chat, RestrictedWords.list[i] + " ", _asterisk.substr(0, RestrictedWords.list[i].length));
+			
+		}
+		
+		// remove " " from the end of the string.
+		_data._chat.substr(0, _data._chat.length - 1);
 		
 		_server.broadcast_in_room(_data);		
 	}
@@ -2231,10 +2224,7 @@ class Events
 			{
 				if (_data._username == _data._usernamesStatic[i] 
 				&&  _data._gamePlayersValues[i] == 1
-				&&  _data._spectatorPlaying == false
-				||  _data._username == _data._usernamesStatic[i]
-				&&  _data._gamePlayersValues[i] == 1
-				&&  _vsComputer[_data._room] == 1)
+				&&  _data._spectatorPlaying == false)
 				{
 					_data._gamesAllTotalWins[i] += 1;
 										
@@ -2242,15 +2232,14 @@ class Events
 					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 					
 					// send that username to mysql to save the stats.
-					_db_update.win_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds)); 
+					if (_server._rated_game[_data._room] == 1)
+						_db_update.win_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds)); 
+					
 					_db_update.game_players_values_at_room_data(_data._username, 0);
 					
 					// this checks if there is an event to give on this day.
 					// see the doEvent() function. 
 					eventsWin(_data, _data._username);
-					
-					_vsComputer[_data._room] = 0;
-					
 				} 
 			}
 		}
@@ -2279,9 +2268,7 @@ class Events
 			for (i in 0...4)
 			{
 				if (_data._username == _data._usernamesDynamic[i]
-				&&  _data._spectatorPlaying == false
-				||  _data._username == _data._usernamesDynamic[i]
-				&&  _vsComputer[_data._room] == 1)
+				&&  _data._spectatorPlaying == false)
 				{			
 					_data._gamesAllTotalLosses[i] += 1;
 					
@@ -2289,14 +2276,14 @@ class Events
 					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 					
 					// send that username to mysql to get the stats.
-					_db_update.lose_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds));
+					if (_server._rated_game[_data._room] == 1)
+						_db_update.lose_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds));
+					
 					_db_update.game_players_values_at_room_data(_data._username, 0);
-										
+					
 					// this checks if there is an event to give on this day.
 					// see the doEvent() function.
 					eventsLose(_data, _data._username);
-					
-					_vsComputer[_data._room] = 0;
 				} 
 			}
 		}
@@ -2316,7 +2303,6 @@ class Events
 	{
 		Functions.userLogs("Save Win Stats For Both", _data.id, _data._username, _data); // logs 
 		
-		// _playersState.
 		// put those stats into the _data to send to client.
 		if (_data._spectatorWatching == false)
 		{
@@ -2329,10 +2315,10 @@ class Events
 					// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
 					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 					
-					_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
-					_db_update.game_players_values_at_room_data(_data._username, 0);					
-					_vsComputer[_data._room] = 0;
+					if (_server._rated_game[_data._room] == 1)
+						_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
 					
+					_db_update.game_players_values_at_room_data(_data._username, 0);					
 					_data._username = _data._usernamesStatic[i];
 					eventsWin(_data, _data._usernamesStatic[i]);
 				} 
@@ -2357,10 +2343,10 @@ class Events
 						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 						
 						// send that username to mysql to get the stats.
-						_db_update.lose_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
-						_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], 0);
+						if (_server._rated_game[_data._room] == 1)
+							_db_update.lose_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
 						
-						_vsComputer[_data._room] = 0;
+						_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], 0);
 						
 						eventsLose(_data, _data._usernamesStatic[i]);
 						
@@ -2412,10 +2398,10 @@ class Events
 					// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
 					var _game_time_played_in_seconds = _data._timeTotal - Std.int(_data._moveTimeRemaining[i]); 	
 					
-					_db_update.lose_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds));
-					_db_update.game_players_values_at_room_data(_data._username, 0);
+					if (_server._rated_game[_data._room] == 1)
+						_db_update.lose_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds));
 					
-					_vsComputer[_data._room] = 0;
+					_db_update.game_players_values_at_room_data(_data._username, 0);
 					
 					eventsLose(_data, _data._username);
 					
@@ -2451,10 +2437,10 @@ class Events
 						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 
 						
 						// send that username to mysql to get the stats.
-						_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
-						_db_update.game_players_values_at_room_data(_data._usernamesStaic[i], 0);
+						if (_server._rated_game[_data._room] == 1)
+							_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
 						
-						_vsComputer[_data._room] = 0;
+						_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], 0); 
 						
 						eventsWin(_data, _data._usernamesStatic[i]);
 						
@@ -2521,10 +2507,10 @@ class Events
 				{
 					_data._gamesAllTotalDraws[i] += 1;
 					// send that username to mysql to get the stats.
-					_db_update.draw_at_statistics(_data._gameId, _data._username);
-					_db_update.game_players_values_at_room_data(_data._username, 0);
+					if (_server._rated_game[_data._room] == 1)
+						_db_update.draw_at_statistics(_data._gameId, _data._username);
 					
-					_vsComputer[_data._room] = 0;
+					_db_update.game_players_values_at_room_data(_data._username, 0);
 				}
 			}
 		}
@@ -2787,7 +2773,7 @@ class Events
 	{
 		Functions.userLogs("Logged In Users", _data.id, _data._username, _data); // logs // do not use
 		
-		for (i in 0...121)
+		for (i in 0... _server._maximum_server_connections)
 		{
 			// clear list so that old data will not be displayed. a user may not be online since last update.
 			_onlinePlayersUsernames[i] = "";
@@ -3058,7 +3044,7 @@ class Events
 		
 		// room with a value of 0 is saved to userLocation parameter because cannot pass numbers and cannot save userLocation of value 0 when this condition check for not a value of 0/
 		//if (Std.string(_data._userLocation) != "0")
-		_db_update.all_for_user_at_room_data(_data._username, 0, 0, 0, 0, -1, 0, 0);
+		_db_update.all_for_user_at_room_data(_data._username, 0, 0, 0, 0, -1, 0);
 						
 		_server.send_to_handler(_data);
 	}	
@@ -3467,15 +3453,20 @@ class Events
 					}
 				}
 				
-				if (_data._username != null) trace(_data._username + " disconnected.");
-				Functions.userLogs("Disconnected", "", _data._username, _data); // logs
+				if (_data._username != null && _data._username != "nobody")
+				{
+					trace(_data._username + " disconnected.");
+					Functions.userLogs("Disconnected", "", _data._username, _data); // logs
+					
+					// a client has disconnected to this server. Therefore, decrease the amount of clients connected.
+					_server._serverConnections -= 1;
+				}
 			}
+			
+			_db_delete.user_at_front_door_queue(_data._username);
 			
 			// now that we got the username, remove remove all list data.
 			_server._remove_user_data(_data);
-			
-			// a client has disconnected to this server. Therefore, decrease the amount of clients connected.
-			_server._serverConnections -= 1;
 			
 			Sys.println ("Client disconnected.");
 			Sys.println ("Clients connected: " + _server._serverConnections);
@@ -3500,4 +3491,4 @@ class Events
 	}
 	
 	
-}//
+}//

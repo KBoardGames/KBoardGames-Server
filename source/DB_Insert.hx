@@ -87,7 +87,7 @@ class DB_Insert extends DB_Parent
 		
 		var rset = cnx.request("SELECT COUNT(*) FROM logged_in_hostname WHERE hostname = " + cnx.quote(_hostname));
 		
-		var rset2 = cnx.request("INSERT IGNORE INTO logged_in_hostname (user, hostname) VALUES (" + cnx.quote(_user) + " , " + cnx.quote(_hostname) + ")"); 
+		var rset2 = cnx.request("INSERT IGNORE INTO logged_in_hostname (user, hostname, timestamp) VALUES (" + cnx.quote(_user) + " , " + cnx.quote(_hostname) + ", UNIX_TIMESTAMP())" ); 
 		
 		
 		cnx.close();
@@ -103,7 +103,7 @@ class DB_Insert extends DB_Parent
 	{
 		tryMysqlConnectDatabase();
 
-		var rset = cnx.request("INSERT IGNORE INTO logged_in_users (user, ip, host, room_state) VALUES (" + cnx.quote(_user) + ", " + cnx.quote(_ip) + ", " + cnx.quote(_hostname) + ", " + _roomState + ")");
+		var rset = cnx.request("INSERT IGNORE INTO logged_in_users (user, ip, hostname, room_state) VALUES (" + cnx.quote(_user) + ", " + cnx.quote(_ip) + ", " + cnx.quote(_hostname) + ", " + _roomState + ")");
 		
 		cnx.close();
 	}

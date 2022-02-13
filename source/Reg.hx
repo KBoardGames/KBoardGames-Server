@@ -1157,9 +1157,9 @@ typedef DataMisc =
 	_roomLockMessage: String,
 	
 	/******************************
-	 * if this value is true than the host is playing against the computer.
+	 * if this value is true than player is in a rated game.
 	 */
-	_vsComputer: Array<Int>,
+	_rated_game: Array<Int>,
 	
 	/******************************
 	 * if true then this room allows spectators.
@@ -2112,7 +2112,7 @@ class Reg
 	 * only change the version number here. this value must be changed every time this complete program with dll's are copied to the localhost/files/windows folder.
 	 * no need to copy this var then paste to the bottom of this class because this value does not change while client is running.
 	 */
-	public static var _version:String = "1.19.0";
+	public static var _version:String = "1.21.3";
 	
 	/******************************
 	 * these are the computer player names for room a and b. those rooms are reserved for playing a game against the computer. these names are displayed at the hub.

@@ -326,7 +326,7 @@ class DB_Select extends DB_Parent
 		tryMysqlConnectDatabase();		
 	
 		var rset = cnx.request("SELECT * FROM room_data
-		ORDER BY room DESC");
+		ORDER BY room ASC");
 		
 		for ( row in rset )
 		{			
@@ -336,7 +336,6 @@ class DB_Select extends DB_Parent
 			_mysqlData._userLocation.push(row.user_location);
 			_mysqlData._room.push(row.room);
 			_mysqlData._playerLimit.push(row.player_limit);
-			_mysqlData._vsComputer.push(row.vs_computer);
 			_mysqlData._allowSpectators.push(row.allow_spectators);
 			_mysqlData._gameId.push(row.game_id);
 			_mysqlData._timestamp.push(row.timestamp);
