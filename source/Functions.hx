@@ -53,6 +53,8 @@ class Functions
 	 */
 	public static function userLogs(_event:String, _id:String = "", _user:String = "", _dataDump:Dynamic = null):Void
 	{
+		ping(_user); // user pings the server.
+		
 		_logDate = DateTools.format(Date.now(), "%Y-%m-%d"); // year, month, day
 		_logTime = DateTools.format(Date.now(), "%H:%M:%S"); // hour, minute, sec
 		
@@ -74,9 +76,6 @@ class Functions
 				}
 			}
 		}
-		
-		Reg._usernameLastLogged = "";
-		if (_user != null && _user != "") Reg._usernameLastLogged = _user; // this is needed at server connectiom.hx to display an error if any for the last known user that entered a server event. remember that at the top of most server events there is a call to the userLogs function. so when an error message is displayed, we know where the error came from and also know what user triggered the error.
 		
 		// if true then user has logged in. store both the _id of the user and the users name then every other time that this log is called, the id will be passed here from the events the user called. the username will be found here using the id value. the reason for this method is that at client, most typedefs do not have a username field but they all have a player id.
 		if (_event != "" && _user != "")
@@ -282,6 +281,18 @@ class Functions
 		var _code:String = _code1 + _code2 + _code3 + _code4;
 		
 		return _code;
+	}
+	
+	/******************************
+	* EVENT PING
+	* when client fails to call this event, at server Main.hx, the ticker for that client will increment. when ticker reaches a set value, client will be forced to disconnect and then the onDisconnect function at server Event.hx class will be called.
+	*/
+	private static function ping(_user:String):Void
+	{
+		for (i in 0... Main._ping.length)
+		{
+			Main._ping[i] = 0;
+		}
 	}
 	
 }

@@ -20,14 +20,11 @@
 
 // author kboardgames.com
 
-// gets the ip address of the user signing in to the server.
-
-// this file is used at the server to get the users ip address.
-// if match is found then the user is auto logged into the game. Therefore, no username field or password field is needed in the game for online play.
+// check is user is already logged in. if true then user will be disconnected because only 1 user with the same username is allowed to be online. if two or more users were allowed to be online, data would be corrupted and lobby rooms would stop working.
 
 // the $_get is sent from server. continue only if these two codes match.
 $token = $_GET["token"];
-$token2 = "fi37cv%PFq5*ce78";
+$token2 = "H77Wox53m7syw6Ng";
 
 if ($token != $token2)
 {
@@ -36,25 +33,7 @@ if ($token != $token2)
 }
 
 // get username from the server.
-$username = $_GET["user"];
-
-// an external website is the only way to get an public ip address. php cannot do it.
-$url= 'http://ipecho.net/plain';
-
-if (!function_exists('curl_init')){ 
-        die('CURL is not installed!');
-}
-
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-$output = curl_exec($ch);
-curl_close($ch);
-
-// alternatively, you can use this website.
-//$url = 'http://checkip.dyndns.com/');
-//preg_match('/Current IP Address: \[?([:.0-9a-fA-F]+)\]?/', $externalContent, $m);
-//$externalIp = $m[1];
+$user = $_GET["user"];
 
 //------------------------
 // connect to the db.
@@ -76,26 +55,23 @@ ini_set('display_errors', 1);
 
 // use security on the strings that were populated from the $_GET.
 $token = secure($dbh, $token);
-$username = secure($dbh, $username);
+$user = secure($dbh, $user);
 
-// used to get the user's id.
-$_stmt = selectUser($dbh, $username);
+// used to get the username.
+$_stmt = selectUser($dbh, $user);
 $_row = $_stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($_row['group_id'] == 1 || $_row['group_id'] == 6) die();
-
-// the ip in the users table is not updated when user relogged in but this table does get updated. get the ip from the user's id.
-$_stmt2 = selectIP($dbh, $_row['user_id']);
+$_stmt2 = selectHostname($dbh, $user);
 $_row2 = $_stmt2->fetch(PDO::FETCH_ASSOC);
 
-// if ip output from external website equals ip output from table. the server will grab this output.
-if ($output == $_row2['last_ip']) echo $_row2['last_ip'];
+if ($_row['user'] != "" && $_row['user'] != null && $_row2['user'] != null) echo $_row['user'];
+else echo "nobody";
 
-function selectUser($dbh, $username)
+function selectUser($dbh, $user)
 {			
 	try {
-		$stmt = $dbh->prepare("SELECT * FROM xyz_users WHERE username=:username");
-		$stmt->bindParam(':username', $username);
+		$stmt = $dbh->prepare("SELECT * FROM logged_in_users WHERE user=:user");
+		$stmt->bindParam(':user', $user);
 		$stmt->execute();
 		
 		return $stmt;
@@ -105,14 +81,14 @@ function selectUser($dbh, $username)
 	}
 }
 
-function selectIP($dbh, $user_id)
-{
+function selectHostname($dbh, $user)
+{			
 	try {
-		$stmt = $dbh->prepare("SELECT * FROM xyz_sessions_keys WHERE user_id=:user_id");
-		$stmt->bindParam(':user_id', $user_id);
-		$stmt->execute();
+		$stmt2 = $dbh->prepare("SELECT * FROM logged_in_hostname WHERE user=:user");
+		$stmt2->bindParam(':user', $user);
+		$stmt2->execute();
 		
-		return $stmt;
+		return $stmt2;
 	} catch (PDOException $e) {
 		echo $e->getMessage().' in '.$e->getFile().' on line '.$e->getLine();
 		exit;
@@ -120,7 +96,6 @@ function selectIP($dbh, $user_id)
 }
 
 //----------------------------
-
 
 function secure($dbh, $value) {
 

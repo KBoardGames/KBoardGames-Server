@@ -53,7 +53,7 @@ class Events
 	// THE FOLLOWiNG ARRAY ARE USED TO POPULATE THE TYPEDEF ARRAY AT REG.HX. WITHOUT THESE VARS, THE TYPEDEFS AT REG.HX WOULD CREATE AN ARRAY NOT DEFINED ERROR.
 
 	// 0 = empty, 1 computer game, 2 creating room, 3 = firth player waiting to play game. 4 = second player in waiting room. 5 third player in waiting room if any. 6 - forth player in waiting room if any. 7 - room full, 8 - playing game / wating game.
-	private var _roomState:Array<Int> =
+	public static var _roomState:Array<Int> =
 						[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -61,14 +61,14 @@ class Events
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 	// max players in room.
-	private var _roomPlayerLimit:Array<Int> =
+	public static var _roomPlayerLimit:Array<Int> =
 						[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 						 
-	private var _roomPlayerCurrentTotal:Array<Int> =
+	public static var _roomPlayerCurrentTotal:Array<Int> =
 						[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -76,7 +76,7 @@ class Events
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 						 	
 	// if true then this room allows spectators.
-	private var _allowSpectators:Array<Int> =
+	public static var _allowSpectators:Array<Int> =
 						[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -85,7 +85,7 @@ class Events
 		
 	// used to list the games at lobby. see Reg.gameName(). also, for not a host player, the data from here will populate _miscState._data._gameId for that player.
 	//-1: no data, 0:checkers, 1:chess, etc.
-	private var _roomGameIds:Array<Int> =
+	public static var _roomGameIds:Array<Int> =
 					[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 					 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 					 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -95,7 +95,7 @@ class Events
 	
 	// a list of every username that is a host of a room.
 	// at client.SceneWaitingRoom.hx, there is a list of all user at the lobby. only the host can invite a user.
-	private var _roomHostUsername:Array<String> =
+	public static var _roomHostUsername:Array<String> =
 					["", "", "", "", "", "", "", "", "", "",
 					"", "", "", "", "", "", "", "", "", "",
 					"", "", "", "", "", "", "", "", "", "",
@@ -103,17 +103,14 @@ class Events
 					"", "", "", "", "", "", "", "", "", ""];
 		
 	// game id. move_history fields are not deleted from the mysql database. so this id is used so that a user accesses that correct move_history data.
-	private var _gid:Array<String> =
+	public static var _gid:Array<String> =
 					["", "", "", "", "", "", "", "", "", "",
 					"", "", "", "", "", "", "", "", "", "",
 					"", "", "", "", "", "", "", "", "", "",
 					"", "", "", "", "", "", "", "", "", "",
 					"", "", "", "", "", "", "", "", "", ""];
 					
-	private var _usernames_static:Array<Array<String>> =
-	[for (p in 0...51) [for (i in 0...4) ""]];
-						
-	private var _onlinePlayersUsernames:Array<String>
+	public static var _onlinePlayersUsernames:Array<String>
 					=	["", "", "", "", "", "", "", "", "", "",
 						"", "", "", "", "", "", "", "", "", "",
 						"", "", "", "", "", "", "", "", "", "",
@@ -128,7 +125,7 @@ class Events
 						"", "", "", "", "", "", "", "", "", "", ""];
 
 	// if player is logged in at element 2 of the _onlinePlayersUsernames var then here at element 2 will be that players data. 
-	private var _onlinePlayersGameWins:Array<Int>
+	public static var _onlinePlayersGameWins:Array<Int>
 					=	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -143,7 +140,7 @@ class Events
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 	// total losses of every player logged in.
-	private var _onlinePlayersGameLosses:Array<Int>
+	public static var _onlinePlayersGameLosses:Array<Int>
 					=	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -158,7 +155,7 @@ class Events
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 	// total draws of every player logged in
-	private var _onlinePlayersGameDraws:Array<Int>
+	public static var _onlinePlayersGameDraws:Array<Int>
 					=	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -172,7 +169,7 @@ class Events
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-	private var _online_all_elo_ratings:Array<Float>
+	public static var _online_all_elo_ratings:Array<Float>
 					=	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 	 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -185,7 +182,10 @@ class Events
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
+	
+	private var _usernames_static:Array<Array<String>> =
+	[for (p in 0...51) [for (i in 0...4) ""]];
+	
 	/******************************
 	 * read the mysql servers_status table every so many ticks. When the do_once field at that table has a value of true, this var will be set to true so that a block of code is is no longer read.
 	 */
@@ -511,6 +511,10 @@ class Events
 			// you need to set the values below at the game code. see SignatureGameClickMe.hx. at client. makes all clients move the same piece at the same time. this is not automatic.
 			case "Movement":
 				movement(_data, _server, _handler);
+				
+			case "Disconnect All By Server":
+				disconnectAllByServer(_data, _server);
+			
 		}
 	}
 	
@@ -730,12 +734,9 @@ class Events
 			// a client has connected to this server. Therefore, increase the amount of clients connected.
 
 			Sys.println ("Clients connected: " + _server._serverConnections);
-
+			
 			var host = _db_insert.hostname_to_logged_in_hostname(_data._username, _data._hostname);
-
-			if (host == true) _data._alreadyOnlineHost = true;
-			else _data._alreadyOnlineHost = false;
-
+			
 			// TODO if removing this block then remember to remove _db_select.user_all_at_users() function.
 			//var rset = _db_select.user_all_at_users(_data._username);
 			//var _resolve_ip = new Host(Std.string(rset._ip[0]));
@@ -808,13 +809,20 @@ class Events
 				}
 			}
 			
+			// these words are reserved words. this list contains the dummy data names and words such as sysop or bot.
+			for (i in 0... ReservedWords.list.length)
+			{
+				if (_data._username.toLowerCase() == ReservedWords.list[i].toLowerCase())
+					_data._username_banned = ReservedWords.list[i];
+			}
+			
+			// these are words that are filtered out of the chatter. Since these are unwanted words, if one of these words match this users selected username then set _data._username_banned. that person will not be able to login using that name.
 			for (i in 0... RestrictedWords.list.length)
 			{
 				if (_data._username.toLowerCase() == RestrictedWords.list[i].toLowerCase())
-					_data._username_restricted = RestrictedWords.list[i];
+					_data._username_banned = RestrictedWords.list[i];
 			}
 			
-			_server._is_logged_in_twice(_data);
 			_server.put_in_room(_data);
 			_server.send_to_handler(_data);
 			
@@ -863,24 +871,12 @@ class Events
 			_db_delete.user_no_kicked_or_banned(_data._username);
 			_db_delete.user_at_who_is_host(_data._username); 
 			
-			// check if user is already online.				
-			var _found = _db_select.count_from_logged_in_users(_data._username);
-
-			if (_found == true) 
-			{
-				_data._alreadyOnlineUser = true; // username is already online. this var will be sent to client at that time the user will be disconnected.
-			}
-			else
-			{
-				// create room_data mysql fields. when user logs off, the mysql username rows will be deleted.
-				addRowsToDatabase(_data);
-				
-			}
+			// create room_data mysql fields. when user logs off, the mysql username rows will be deleted.
+			addRowsToDatabase(_data);
 			
 			if (_data._username.substr(0, 5) == "Guest")	
 				_db_update.hostname_at_users(_data._username, _data._hostname);
 			
-			_data._alreadyOnlineHost = false;
 			_data._popupMessage = "Login successful."; // if you change the value of this string then you need to change it also at client.
 			
 			_db_update.avatar_at_login(_data._username, _data._avatarNumber);
@@ -1306,12 +1302,8 @@ class Events
 			_data._moveNumberDynamic[i] = _num;
 		}
 		
-		// this is needed for game room. without this code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times.
-		if (_data._triggerEvent == "sender")
-			_server.send_to_handler(_data);
-		
 		// chat, score and stuff that is not a win, lose or draw data is passed to the server.
-		else _server.broadcast_in_room(_data);
+		_server.broadcast_in_room(_data);
 		
 	}
 
@@ -1398,7 +1390,7 @@ class Events
 				// set rated game value for room if user is not in game room.
 				if (_data._roomHostUsername[_data._room] == _data._username
 				&&	_data._userLocation < 3)
-					_server._rated_game[_data._room] = _data._rated_game[_data._room];
+					Main._rated_game[_data._room] = _data._rated_game[_data._room];
 				
 				if (rset._userLocation[i] == 2
 				 && Std.string(rset._user[i].toString) != 
@@ -1407,7 +1399,7 @@ class Events
 				{
 					// for all other users in the room...
 					_data._roomPlayerLimit[_data._room] = rset._playerLimit[i];
-					_data._rated_game[_data._room] = _server._rated_game[_data._room];
+					_data._rated_game[_data._room] = Main._rated_game[_data._room];
 				}
 				
 			}
@@ -1528,7 +1520,7 @@ class Events
 					
 					_db_delete.room_at_who_is_host(_data._room);
 				}
-									
+				
 				// if player is hosting a room then remove player because the remove deleteIsHostRoom might fail.
 				_db_delete.user_at_who_is_host(_data._username);
 				
@@ -1662,7 +1654,7 @@ class Events
 			
 			var _bool = _db_select.count_for_room_at_who_is_host(_data._room);
 			
-			if (_bool == false && _data._userLocation == 2) // this value will be changed to 2 later down below. remember, this event plus 1 to userLocation. when entering room, which is true here, then save the host of the room to database.
+			if (_bool == false && _data._userLocation == 1) // this value will be changed to 2 later down below. remember, this event plus 1 to userLocation. when entering room, which is true here, then save the host of the room to database.
 			{
 				_db_insert.room_and_user_at_who_is_host(_data._username, _data._gid[_data._room], _data._room);
 			}
@@ -1779,7 +1771,7 @@ class Events
 			_data._allowSpectators = _allowSpectators;
 			_data._roomHostUsername = _roomHostUsername;
 			_data._gid = _gid;
-			_data._rated_game = _server._rated_game;
+			_data._rated_game = Main._rated_game;
 			
 			// get all players in room but not playing a game. the list is used to determine if player can join room.
 			var rset = _db_select.waiting_room_by_timestamp_at_room_data();		
@@ -1790,7 +1782,7 @@ class Events
 				_roomPlayerCurrentTotal[i] = 0;
 			}
 			
-			for (i in 0...25) // rooms
+			for (i in 0... _server._room_total) // rooms
 			{
 				var _count = _db_select.count_room_at_room_data(i);
 					
@@ -1830,6 +1822,13 @@ class Events
 		_data._roomHostUsername[2] = _roomHostUsername[2] = Reg._cpu_host_name2;
 		_data._roomPlayerCurrentTotal[2] = 1;
 		*/
+		
+		
+		if (Reg._dummyData == true
+		&&	_roomState[0] == 0)
+		{
+			DummyData.server_data();
+		}
 		
 		_server.send_to_handler(_data);
 
@@ -2117,7 +2116,7 @@ class Events
 			_data._username = _user;
 			_data._clientCommandMessage = _message;
 			_data._clientCommandIPs = _ip;
-							
+			
 			if (_message != "")
 			{
 				_server.broadcast_in_room(_data);
@@ -2232,7 +2231,7 @@ class Events
 					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 					
 					// send that username to mysql to save the stats.
-					if (_server._rated_game[_data._room] == 1)
+					if (Main._rated_game[_data._room] == 1)
 						_db_update.win_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds)); 
 					
 					_db_update.game_players_values_at_room_data(_data._username, 0);
@@ -2276,7 +2275,7 @@ class Events
 					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 					
 					// send that username to mysql to get the stats.
-					if (_server._rated_game[_data._room] == 1)
+					if (Main._rated_game[_data._room] == 1)
 						_db_update.lose_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds));
 					
 					_db_update.game_players_values_at_room_data(_data._username, 0);
@@ -2315,7 +2314,7 @@ class Events
 					// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
 					var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 					
-					if (_server._rated_game[_data._room] == 1)
+					if (Main._rated_game[_data._room] == 1)
 						_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
 					
 					_db_update.game_players_values_at_room_data(_data._username, 0);					
@@ -2343,7 +2342,7 @@ class Events
 						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 	
 						
 						// send that username to mysql to get the stats.
-						if (_server._rated_game[_data._room] == 1)
+						if (Main._rated_game[_data._room] == 1)
 							_db_update.lose_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
 						
 						_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], 0);
@@ -2398,7 +2397,7 @@ class Events
 					// this is the time that the player played for. This var is passed to mysql so that the shortest_time_game_played and longest_time_game_played stats can be saved but only if conditions are met.
 					var _game_time_played_in_seconds = _data._timeTotal - Std.int(_data._moveTimeRemaining[i]); 	
 					
-					if (_server._rated_game[_data._room] == 1)
+					if (Main._rated_game[_data._room] == 1)
 						_db_update.lose_at_statistics(_data._gameId, _data._username, Std.int(_game_time_played_in_seconds));
 					
 					_db_update.game_players_values_at_room_data(_data._username, 0);
@@ -2437,7 +2436,7 @@ class Events
 						var _game_time_played_in_seconds = _data._timeTotal - _data._moveTimeRemaining[i]; 
 						
 						// send that username to mysql to get the stats.
-						if (_server._rated_game[_data._room] == 1)
+						if (Main._rated_game[_data._room] == 1)
 							_db_update.win_at_statistics(_data._gameId, _data._usernamesStatic[i], Std.int(_game_time_played_in_seconds));
 						
 						_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], 0); 
@@ -2507,7 +2506,7 @@ class Events
 				{
 					_data._gamesAllTotalDraws[i] += 1;
 					// send that username to mysql to get the stats.
-					if (_server._rated_game[_data._room] == 1)
+					if (Main._rated_game[_data._room] == 1)
 						_db_update.draw_at_statistics(_data._gameId, _data._username);
 					
 					_db_update.game_players_values_at_room_data(_data._username, 0);
@@ -2893,7 +2892,7 @@ class Events
 				
 				// populate the data to be sent to client.
 				// how much time in seconds is remaining in current timestamp minus users timestamp. convert to minutes.
-				var _timeMinus:Int = _currentTime - Std.parseInt(rset._timestamp[0]);
+				var _timeMinus:Int = _currentTime - rset._timestamp[0];
 				
 				_timeMinus = Std.int(_timeMinus / 60);
 
@@ -2964,13 +2963,17 @@ class Events
 		// save for player playing game, else load value of other players in room for this player.
 		else
 		{
-			// the reason why we update the spectator playing var here is because this event is first sent since entering the game room by the client when a game starts.
-			_db_update.spectator_playing_at_room_data(_data._username, _data._spectatorPlaying);
-		
 			for (i in 0...4)
 			{
 				if (_data._usernamesStatic[i] != "")
+				{
 					_db_update.game_players_values_at_room_data(_data._usernamesStatic[i], _data._gamePlayersValues[i]);
+				
+					// the reason why we update the spectator playing var here is because this event is first sent since entering the game room by the client when a game starts.
+					if (_data._gamePlayersValues[i] == 1)
+						_db_update.spectator_playing_at_room_data(_data._usernamesStatic[i], _data._spectatorPlaying);
+				}
+				
 				else _data._gamePlayersValues[i] = 0;
 			}
 			
@@ -2978,11 +2981,7 @@ class Events
 		
 		player_game_state_value_update(_data);
 		
-		// this is needed for game room. without this code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times.
-		if (_data._triggerEvent == "sender")
-			_server.send_to_handler(_data);
-		
-		else _server.broadcast_in_room(_data);
+		_server.broadcast_in_room(_data);
 		
 	}	
 
@@ -2994,7 +2993,7 @@ class Events
 	{
 		Functions.userLogs("Game Is Finished", _data.id, _data._username, _data); // logs
 		
-		_db_update.is_game_finished_for_user_at_room_data(_data._username, _data._gameIsFinished, _data._spectatorWatching);
+	_db_update.is_game_finished_for_user_at_room_data(_data._username, _data._gameIsFinished, _data._spectatorWatching);
 	
 		for (i in 0...4)
 		{
@@ -3008,11 +3007,7 @@ class Events
 			}
 		}
 		
-		// this is needed for game room. without this code, each player will go to this event at client the total amount of users in this room. so if there are two players and one spectator watching, each player will go to this event, at client, three times.
-		if (_data._triggerEvent == "sender")
-			_server.send_to_handler(_data);
-		
-		else _server.broadcast_in_room(_data);
+		_server.send_to_handler(_data);
 		
 	}	
 	
@@ -3022,6 +3017,9 @@ class Events
 	*/
 	private function isGameFinished(_data:Dynamic, _server:Main, _handler:WebSocketHandler):Void
 	{
+		// TODO this event seems to create mysql and neko thread errors. with this return statement the code seems to work great.
+		return; // TODO is this event needed?
+	
 		Functions.userLogs("Is Game Finished", _data.id, _data._username, _data); // logs
 		
 		var rset = _db_select.user_all_at_room_data(_data._usernamesDynamic[0]);
@@ -3240,6 +3238,17 @@ class Events
 		Functions.userLogs("Movement", _data.id, _data._username, _data); // logs.
 		_server.broadcast_in_room(_data);
 	}
+		
+	/******************************
+	* EVENT DISCONNECT ALL PLAYERS BY SERVER
+	*/
+	public function disconnectAllByServer(_data:Dynamic, _server:Main):Void
+	{
+		Functions.userLogs("Disconnect All By Server", _data.id, _data._username, _data); // logs.
+		
+		_closeServer = true;
+		_server.broadcast_everyone(_data);
+	}
 	
 	public function onDisconnect(_server:Main, _handler:WebSocketHandler):Void
 	{
@@ -3248,6 +3257,8 @@ class Events
 		
 		// -1 because handler value starts at 1.
 		_data._username = _server._username[(_handler.id - 1)];
+		
+		if (_data._username == "nobody") return;
 		
 		var _playerNumber:Int = 0;		
 		
@@ -3465,8 +3476,8 @@ class Events
 			
 			_db_delete.user_at_front_door_queue(_data._username);
 			
-			// now that we got the username, remove remove all list data.
-			_server._remove_user_data(_data);
+			// now that we got the username, remove all list data.
+			_server.remove_from_room(_data);
 			
 			Sys.println ("Client disconnected.");
 			Sys.println ("Clients connected: " + _server._serverConnections);
@@ -3480,6 +3491,8 @@ class Events
 		catch (e:Dynamic)
 		{
 		}
+		
+		trace ("onDisconnect from " + _data._username); 
 	}
 	
 	private function addRowsToDatabase(_data:Dynamic):Void
@@ -3491,4 +3504,4 @@ class Events
 	}
 	
 	
-}//
+}//

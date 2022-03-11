@@ -1001,7 +1001,7 @@ typedef DataAccount =
 	/******************************
 	 * if this field is not empty then the username has matched one of the names from the bad list. the user cannot login with a bad word.
 	 */
-	_username_restricted: String,
+	_username_banned: String,
 	
 	/******************************
 	 * password hash encrypted with md5.
@@ -1032,16 +1032,6 @@ typedef DataAccount =
 	 * IP address of player.
 	 */
 	_ip:String,
-	
-	/******************************
-	 * is there two computers with the same host name connected to server?
-	 */
-	_alreadyOnlineHost: Bool,
-	
-	/******************************
-	 * is there already a user with that username online?
-	 */
-	_alreadyOnlineUser: Bool,
 	
 	/******************************
 	 * outputs if server is blocking
@@ -1187,10 +1177,7 @@ typedef DataMisc =
 	_clientCommandMessage: String,
 	
 	_clientCommandUsers: String,
-	
 	_clientCommandIPs: String,
-	
-	
 }
 
 /******************************
@@ -1689,6 +1676,35 @@ typedef Leaderboards =
 	_worldFlag: String,
 }
 
+typedef DataServerMessage = 
+{
+	/******************************
+	 * player instance. this tells one player from another.
+	 */
+	id: String,
+	
+	/******************************
+	 * typedef id.
+	 * when server sends a message to client, client needs to know what typedef it is. so when creating a typedef at this class, go to PlayState _websocket.onmessage and add the typedef there. tid starts at 10 and ends at 99. 10 to 40 is reserved for games.
+	 */
+	tid: Int,
+	
+	/******************************
+	 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+	 */
+	_event_name: String,
+	
+	/******************************
+	 * a message about the server will go offline.
+	 */
+	_message_offline: String,
+	
+	/******************************
+	 * send a message to all clients.
+	 */
+	_message_online: String,
+}
+
 typedef DataDisconnect = 
 {
 	/******************************
@@ -1894,6 +1910,20 @@ typedef DataDisconnect =
 
 class Reg
 {
+	public static var _dataServerMessage:DataServerMessage = 
+	{
+		id: "1", // TODO this should be server id.
+		
+		tid: 52,
+		
+		/******************************
+		 * the name of the event at server -> Events.hx or client -> NetworkEventsMain.hx that this typedef can be sent to.
+		 */
+		_event_name: "Disconnect All By Server",
+		_message_offline: "",
+		_message_online: "",
+	}
+	
 	public static var _dataDisconnect:DataDisconnect = 
 	{
 		id: "100000000999999999100000000999999999",
@@ -2092,12 +2122,8 @@ class Reg
 	public static var _smtpPort:Int = 0;
 	public static var _smtpUsername:String = "";
 	public static var _smtpPassword:String = "";
+	public static var _dummyData:Bool = false;
 
-	/******************************
-	 * this is needed at mphx/server/connection.hx to display an error if any for the last known user that entered a server event. remember that at the top of most server events there is a call to the userLogs function. so when an error message is displayed, we know where the error came from and also know what user triggered the error.
-	 */
-	public static var _usernameLastLogged:String = "";
-	
 	/******************************
 	 * is the server connected to the MySQL database?
 	 */
@@ -2112,7 +2138,7 @@ class Reg
 	 * only change the version number here. this value must be changed every time this complete program with dll's are copied to the localhost/files/windows folder.
 	 * no need to copy this var then paste to the bottom of this class because this value does not change while client is running.
 	 */
-	public static var _version:String = "1.21.3";
+	public static var _version:String = "2.0.5";
 	
 	/******************************
 	 * these are the computer player names for room a and b. those rooms are reserved for playing a game against the computer. these names are displayed at the hub.

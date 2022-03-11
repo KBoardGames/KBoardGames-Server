@@ -22,19 +22,36 @@
  */
 
 import Reg;
-import sys.FileSystem;
-import haxe.rtti.CType.Typedef;
-import vendor.ws.SocketImpl;
-import vendor.ws.WebSocketHandler;
-import vendor.ws.WebSocketServer;
-import vendor.ws.Types;
+import haxe.MainLoop;
 import haxe.Serializer;
 import haxe.Unserializer;
+import sys.FileSystem;
+import vendor.ws.Types;
 import vendor.ws.Log;
+import vendor.ws.WebSocketHandler;
+import vendor.ws.WebSocketServer;
 
 class Main 
-{	
-	public var _rated_game:Array<Int> =
+{
+	//***************************** CONFIG.
+		// populate the lobby with users. Useful for taking screenshots to show a busy server.
+		private var _dummyData:Bool = false;
+		
+		/******************************
+		 * room total displayed at client lobby.
+		 * NOTE: remember to change player_game_state_value_username and player_game_state_value_data to this value.
+		 */
+		public var _room_total:Int = 24;
+		
+		/******************************
+		 * the total server that can go online.
+		 */
+		public var _total_servers:Int = 30;
+		public var _maximum_server_connections:Int = 119;
+		
+	//*****************************
+	
+	public static var _rated_game:Array<Int> =
 		[1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -42,7 +59,7 @@ class Main
 		 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 						 
 	/******************************
-	 * this var is populated from events and at the disconnect event it is passed to the other users. This var is needed because static usernames of the room cannot be taken from the database since a player might have left the room before a request to get the static players values.
+	* this var is populated from events and at the disconnect event it is passed to the other users. This var is needed because static usernames of the room cannot be taken from the database since a player might have left the room before a request to get the static players values.
 	 * is the player playing a game or waiting to play.
 	 * this holds the username.
 	 * 0: = not playing but still at game room. 
@@ -68,6 +85,8 @@ class Main
 	public var player_game_state_value_data:Array<Array<Int>> = 
 	[for (y in 0...24) [for (x in 0...4) 0]];
 	
+	private var _handler:WebSocketHandler;
+	
 	/******************************
 	 * these are the usernames currently logged in.
 	 * if the second element has a value of "bot ben" then the second element of variable _room have that players room value.
@@ -80,18 +99,30 @@ class Main
 	 */
 	public var _room:Array<Int> = [];
 	
-	/******************************
-	 * this is used to not delete database table or not update important variables if user is logged in twice.
-	 */
-	public var _logged_in_twice:Array<Bool> = [];
 	
+	/******************************
+	* when client fails to call this event, at server Main.hx, the ticker for that client will increment. when ticker reaches a set value, client will be forced to disconnect and then the onDisconnect function at server Event.hx class will be called.
+	*/
+	public static var _ping:Array<Int> = [];
+	
+	/******************************
+	 * when the user's ping reaches this value then the user will be forced to disconnect from server and the onDisconnect function will be called.
+	 */
+	private var _ping_needed_to_disconnect:Int = 20000;
+	
+	/******************************
+	 * client sends and receives data at this class.
+	 */
 	public var _events:Events;
 	
 	/******************************
-	 * to access the _data of the _gameState, miscstate, etc.
+	 * to access typedef_data sucg as _gameState, miscstate, etc.
 	 */
 	private var _data:Dynamic;
 	
+	/******************************
+	 * _handler var is here. handler is the client connected.
+	 */
 	private var _server:WebSocketServer<WebSocketHandler>;
 	
 	/******************************
@@ -100,13 +131,14 @@ class Main
 	public var _serverConnections:Int = 0;
 	
 	/******************************
-	 * room total displayed at client lobby.
-	 * NOTE: remember to change player_game_state_value_username and player_game_state_value_data to this value.
+	 * mysql servers_status table will be read when this is of a set value.
 	 */
-	public var _room_total:Int = 24;	
-	public var _maximum_server_connections:Int = 119;
+	private var _ticksServerStatus:Int = 0;
 	
-	private var _ticksServerStatus:Int = 0; // when this is of a set value, mysql servers_status table will be read.
+	/******************************
+	 * do not remove. this var is passed to client. at client messageBan() see paragraph2.
+	 */
+	public var _clientCommandIPs:Array<String> = [ for (i in 0...120) "" ];
 	
 	/******************************
 	 * An Internet Protocol address (IP address) is a numerical label assigned to each device connected to a computer network that uses the Internet Protocol for communication.
@@ -118,15 +150,29 @@ class Main
 	 */
 	private var _serverId:Int = 0;
 	
-	public var _clientCommandIPs:Array<String> = [ for (i in 0...120) "" ];
-		
+	/******************************
+	 * mysql database functions. delete table.
+	 */
 	private var _db_delete:DB_Delete;
+	
+	/******************************
+	 * mysql database functions. insert data to table.
+	 */
 	private var _db_insert:DB_Insert;
+	
+	/******************************
+	 * mysql database functions. select data from table.
+	 */
 	private var _db_select:DB_Select;
+	
+	/******************************
+	 * mysql database functions. update table.
+	 */
 	private var _db_update:DB_Update;
 		
 	function new() 
 	{
+	
 		// create a logs folder if logs folder does not exist.
 		if (FileSystem.exists(FileSystem.absolutePath("C:/Users/suppo/Desktop/serverDev/logs/")) == false)
 			FileSystem.createDirectory(FileSystem.absolutePath("C:/Users/suppo/Desktop/serverDev/logs/"));
@@ -191,16 +237,26 @@ class Main
 		if (Sys.args()[13] != null) Reg._smtpUsername	= Sys.args()[13];
 		if (Sys.args()[14] != null) Reg._smtpPassword	= Sys.args()[14];
 		
+		// this looks wrong but it works.
+		var _bool:String = "false";
+		
+		if (Sys.args()[15] != null) _bool = Std.string(Sys.args()[15]);
+		if (_bool == "false") Reg._dummyData = false;
+		else Reg._dummyData = true;
+		
+		if (_dummyData == true) Reg._dummyData = true;
 		
 		Sys.println("Version " + _ver);
 		Sys.println ("Your domain is " + Reg._domain);
-		Sys.println ("");
 		
+		_events = new Events(_data, this, _handler);
+				
 		_server.onClientAdded = function(_handler:WebSocketHandler) 
 		{
 			_handler.onopen = function() 
 			{
 				_username.push("nobody");
+				_ping.push(0);
 				_room.push(9000); // 9000 is used only for joining server. disconnect uses 10000 and entering the looby uses 0. 9000 is used so that a "is port open" service cannot stop a regular user from logging in.
 				
 				trace(_handler.id + ". OPEN");
@@ -211,7 +267,6 @@ class Main
 				if (_username[_handler.id - 1] != null)
 				{
 					_events.onDisconnect(this, _handler);
-					trace(_handler.id + ". CLOSE");
 				}
 				
 				else
@@ -219,8 +274,7 @@ class Main
 					trace ("Unknown user.");
 					_username.push("nobody");
 					_room.push(10000);
-					_logged_in_twice.push(false);
-			
+					
 					_events.onDisconnect(this, _handler);
 					trace(_handler.id + ". CLOSE");
 				}
@@ -232,19 +286,14 @@ class Main
 				{
 					case BytesMessage(content):
 						var _str = "echo: " + content.readAllAvailableBytes();
-						
-						//_handler.send(_str);
 					
 					case StrMessage(content):
 						var _str = content;
 						
 						if (_str != "Client connected." && _str != "")
 						{
-							//_handler.send(_str);
-							
 							var unserializer = new Unserializer(_str);
 							var _data:DataMisc = unserializer.unserialize();
-							
 							_events.name(_data);
 						}
 						
@@ -262,9 +311,6 @@ class Main
 			{
 				trace(_handler.id + ". ERROR: " + error);
 			}
-			
-			_events = new Events(_data, this, _handler);
-		
 		}
 		
 		_db_delete = new DB_Delete(); // no add() needed.
@@ -275,84 +321,33 @@ class Main
 		var _countServersConnected:Int = 0;
 		var rset = _db_select.server_data_at_servers_status();		
 		// if true then server is online and can be disconnected at the admin section of the website. make sure this _serversOnline var at the database starts at 1.
-		// currently set for total of 20 servers online.
+		// currently set for total of 5 servers online.
+		// this gets the total count of the servers online.
+		for (i in 0... _total_servers)
 		{
-			// this gets the total count of the servers online.
-			if (rset._connected1[0] == true) _countServersConnected += 1;
-			if (rset._connected2[0] == true) _countServersConnected += 1;
-			if (rset._connected3[0] == true) _countServersConnected += 1;
-			if (rset._connected4[0] == true) _countServersConnected += 1;
-			if (rset._connected5[0] == true) _countServersConnected += 1;
-			if (rset._connected6[0] == true) _countServersConnected += 1;
-			if (rset._connected7[0] == true) _countServersConnected += 1;
-			if (rset._connected8[0] == true) _countServersConnected += 1;
-			if (rset._connected9[0] == true) _countServersConnected += 1;
-			if (rset._connected10[0] == true) _countServersConnected += 1;
-			if (rset._connected11[0] == true) _countServersConnected += 1;
-			if (rset._connected12[0] == true) _countServersConnected += 1;
-			if (rset._connected13[0] == true) _countServersConnected += 1;
-			if (rset._connected14[0] == true) _countServersConnected += 1;
-			if (rset._connected15[0] == true) _countServersConnected += 1;
-			if (rset._connected16[0] == true) _countServersConnected += 1;
-			if (rset._connected17[0] == true) _countServersConnected += 1;
-			if (rset._connected18[0] == true) _countServersConnected += 1;
-			if (rset._connected19[0] == true) _countServersConnected += 1;
-			if (rset._connected20[0] == true) _countServersConnected += 1;
-			
-			// assign the _serverID to the first available connected_ID. fpr example, At localhost/admin maintenance.php, the checkbox for server with an id of 1 will be displayed when server is online and that server will be online when a conencted_1 has a value of 1. this code set a connected_# to a value of 1.			
-			if (rset._connected1[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(1);			
-			else if (rset._connected2[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(2);
-			else if (rset._connected3[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(3);
-			else if (rset._connected4[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(4);
-			else if (rset._connected5[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(5);
-			else if (rset._connected6[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(6);
-			else if (rset._connected7[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(7);
-			else if (rset._connected8[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(8);
-			else if (rset._connected9[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(9);
-			else if (rset._connected10[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(10);
-			else if (rset._connected11[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(11);
-			else if (rset._connected12[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(12);
-			else if (rset._connected13[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(13);
-			else if (rset._connected14[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(14);
-			else if (rset._connected15[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(15);
-			else if (rset._connected16[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(16);
-			else if (rset._connected17[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(17);
-			else if (rset._connected18[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(18);
-			else if (rset._connected19[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(19);
-			else if (rset._connected20[0] == false) 
-				_serverId = _db_update.server_now_online_at_servers_status(20);
-			else 
+			if (rset._connected[i] == true) _countServersConnected += 1;
+		}
+		
+		if (_countServersConnected == _total_servers)
+		{
+			Sys.println("");
+			Sys.println("too many servers online. Exiting.");
+			Sys.exit(0);
+		}
+		
+		// assign the _serverID to the first available connected_ID. fpr example, At localhost/admin maintenance.php, the checkbox for server with an id of 1 will be displayed when server is online and that server will be online when a conencted[0] has a value of 1.
+		for (i in 0... _total_servers)
+		{
+			if (rset._connected[i] == false) 
 			{
-				Sys.println ("too many servers online. Exiting.");
-				Sys.exit(0);
+				_serverId = _db_update.server_now_online_at_servers_status(i + 1);
+				break;
 			}
 		}
 		
 		// only search the internet once, when event data is not populated.
 		if (Reg._eventName[0] == "") getAllEvents();
 		
-		// update table servers_status, the field servers_online. that will then display the correct total servers online.
-		_db_update.server_online_at_servers_status(_countServersConnected+1); // we need a +1 because this server just when online. the _db_select.server_data_at_servers_status() code from above only checked for existing online servers.
-
 		// reset server data because we do not want a message saying this server is has been cancelled when we did not receive a message about server going offline. reset back to default, the disconnect_id, timestamp_id and do_once_id vars.
 		_db_update.server_id_at_servers_status(_serverId);		
 		
@@ -366,6 +361,8 @@ class Main
 		var _charCode = 0;
 		var _charFrom = "";
 		
+		Sys.println("Server " + _serverId);
+		Sys.println("");
 		Sys.println("1: A paid account is needed.");
 		Sys.println("2: Your IP address must be identical to your IP address last used at the forum.");
 		Sys.println("3: The username from the forum must match the username at server sub.");
@@ -377,7 +374,7 @@ class Main
 		var _set_ip:String = Functions.getIP(Reg._username);			
 		if (_set_ip != "" && _paid == "true") 
 		{
-			Sys.println("Welcome " + Reg._username);
+			Sys.println("Welcome " + Reg._username + ".");
 		}
 		else 
 		{
@@ -422,314 +419,76 @@ class Main
 
 		_server.start();
 		
-		/*
-		// TODO. anything outside of the event loops can be done here. for example, if a room has not been pinged for awhile then remove all users from that room.
-		while (true)
-		{			
+		MainLoop.add(function()
+		{
+			// TODO. anything outside of the event loops can be done here. for example, if a room has not been pinged for awhile then remove all users from that room.
 			var _currentTimestamp:Int = Std.int(Sys.time());
 			_ticksServerStatus += 1;
 						
-			if (_ticksServerStatus == 2000) 
+			if (_ticksServerStatus == 1400) 
 			{
-				var rset = _db_select.server_data_at_servers_status();
-				
-				_ticksServerStatus = 0;
-
-				
-				if (_serverId == 1 && _currentTimestamp > Std.parseInt(rset._timestamp1[0]) && Std.parseInt(rset._timestamp1[0]) > 0) 
-				Sys.exit(0);
-				
-				if (_serverId == 2 && _currentTimestamp > Std.parseInt(rset._timestamp2[0]) && Std.parseInt(rset._timestamp2[0]) > 0) 
+				for (i in 0... _serverId)
 				{
-					Sys.println ('Server disconnected normally.');
-					Sys.exit(0);
-				}	
-				
-				if (rset._doOnce1[0] == true && _serverId == 1)
-				{
-					// server number 1.					
-					if (rset._disconnect1[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp1[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
+					var _msg = _db_select.all_server_messages();
+					var _server_status = _db_select.server_data_at_servers_status();
 					
-					if (rset._disconnect1[0] == false && Std.parseInt(rset._timestamp1[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce2[0] == true && _serverId == 2)
-				{
-					// server number 2.					
-					if (rset._disconnect2[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp2[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
+					_ticksServerStatus = 0;				
 					
-					if (rset._disconnect2[0] == false && Std.parseInt(rset._timestamp2[0]) == 0)
+					if (_currentTimestamp > _server_status._timestamp[i] && _server_status._timestamp[i] > 0) 
 					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce3[0] == true && _serverId == 3)
-				{
-					// server number 3.					
-					if (rset._disconnect3[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp3[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
+						Sys.println ('Server disconnected normally.');
+						Sys.exit(0);
+					}	
 					
-					if (rset._disconnect3[0] == false && Std.parseInt(rset._timestamp3[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce4[0] == true && _serverId == 4)
-				{
-					// server number 4.					
-					if (rset._disconnect4[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp4[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
+					if (_server_status._doOnce[i] == true && _serverId == 1)
+					{		
+						if (_server_status._disconnect[i] == true && _currentTimestamp < _server_status._timestamp[i])
+						{
+							if (Reg._dataServerMessage._message_offline == "")
+							{
+								Reg._dataServerMessage._message_offline = _msg._messageOffline[0];
+								Reg._dataServerMessage._message_online = "";
+								broadcast_everyone(Reg._dataServerMessage);
+							}
+						}
 					
-					if (rset._disconnect4[0] == false && Std.parseInt(rset._timestamp4[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
+						if (_server_status._disconnect[i] == false && _server_status._timestamp[i] == 0)
+						{
+							if (Reg._dataServerMessage._message_online == "")
+							{
+								Reg._dataServerMessage._message_online = _msg._messageOnline[0];
+								Reg._dataServerMessage._message_offline = "";
+								broadcast_everyone(Reg._dataServerMessage);
+							}
+						}
 					}
+						
+					_db_update.do_once_at_servers_status(i);
 				}
-				
-				if (rset._doOnce5[0] == true && _serverId == 5)
-				{
-					// server number 5.					
-					if (rset._disconnect5[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp5[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect5[0] == false && Std.parseInt(rset._timestamp5[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce6[0] == true && _serverId == 6)
-				{
-					// server number 6.					
-					if (rset._disconnect6[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp6[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect6[0] == false && Std.parseInt(rset._timestamp6[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce7[0] == true && _serverId == 7)
-				{
-					// server number 7.					
-					if (rset._disconnect7[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp7[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect7[0] == false && Std.parseInt(rset._timestamp7[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce8[0] == true && _serverId == 8)
-				{
-					// server number 8.					
-					if (rset._disconnect8[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp8[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect8[0] == false && Std.parseInt(rset._timestamp8[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce9[0] == true && _serverId == 9)
-				{
-					// server number 9.					
-					if (rset._disconnect9[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp9[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect9[0] == false && Std.parseInt(rset._timestamp9[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce10[0] == true && _serverId == 10)
-				{
-					// server number 10.					
-					if (rset._disconnect10[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp10[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect10[0] == false && Std.parseInt(rset._timestamp10[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce11[0] == true && _serverId == 11)
-				{
-					// server number 11.					
-					if (rset._disconnect11[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp11[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect11[0] == false && Std.parseInt(rset._timestamp11[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce12[0] == true && _serverId == 12)
-				{
-					// server number 12.					
-					if (rset._disconnect12[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp12[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect12[0] == false && Std.parseInt(rset._timestamp12[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce13[0] == true && _serverId == 13)
-				{
-					// server number 13.					
-					if (rset._disconnect13[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp13[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect13[0] == false && Std.parseInt(rset._timestamp13[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce14[0] == true && _serverId == 14)
-				{
-					// server number 14.					
-					if (rset._disconnect14[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp14[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect14[0] == false && Std.parseInt(rset._timestamp14[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce15[0] == true && _serverId == 15)
-				{
-					// server number 15.					
-					if (rset._disconnect15[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp15[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect15[0] == false && Std.parseInt(rset._timestamp15[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce16[0] == true && _serverId == 16)
-				{
-					// server number 16.					
-					if (rset._disconnect16[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp16[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect16[0] == false && Std.parseInt(rset._timestamp16[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce17[0] == true && _serverId == 17)
-				{
-					// server number 17.					
-					if (rset._disconnect17[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp17[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect17[0] == false && Std.parseInt(rset._timestamp17[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce18[0] == true && _serverId == 18)
-				{
-					// server number 18.					
-					if (rset._disconnect18[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp18[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect18[0] == false && Std.parseInt(rset._timestamp18[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce19[0] == true && _serverId == 19)
-				{
-					// server number 19.					
-					if (rset._disconnect19[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp19[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect19[0] == false && Std.parseInt(rset._timestamp19[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				if (rset._doOnce20[0] == true && _serverId == 20)
-				{
-					// server number 20.					
-					if (rset._disconnect20[0] == true && _currentTimestamp <= Std.parseInt(rset._timestamp20[0]))
-					{
-						broadcast("Message All By Server", rset._messageOffline[0]);
-					}
-					
-					if (rset._disconnect20[0] == false && Std.parseInt(rset._timestamp20[0]) == 0)
-					{
-						broadcast("Message All By Server", rset._messageOnline[0]);
-					}
-				}
-				
-				_db_update.do_once_at_servers_status();
 			}		
-	
+			
+			for (i in 0... _ping.length)
+			{
+				// increment ping for each user.
+				_ping[i] += 1;
+				
+				// ping for the user is set back to zero when an event is sent to server. if ping reaches too high a value then user is not active and must be disconnected.
+				if (_ping[i] > _ping_needed_to_disconnect)
+				{
+					for (h in _server.handlers)
+					{
+						if (h.id == (i + 1)) // h.id starts at 1.
+						{
+							// disconnect the client.
+							h.close();
+							trace(h.id + ". had lack of activity. Disconnection was forced.");
+						}
+					}
+				}
+			}
+			
 			Sys.sleep(0.01); // wait for 1 ms to prevent full cpu usage. (0.01)	
-		}*/
+		});
 	}
 
 	/****************************************************************************
@@ -899,59 +658,6 @@ class Main
 		}
 	}
 	
-	public function _is_logged_in_twice(_data:Dynamic)
-	{
-		var _found:Bool = false;
-		
-		for (i in 0 ... _username.length + 1)
-		{
-			// username found so update this _logged_in_twice var.
-			// _logged_in_twice var is checked at disconnect function and if its value is true than some database tables will not be deleted.
-			if (_username[i] == _data._username)
-			{
-				_found = true;
-				_logged_in_twice[i] = true;
-			}
-		}
-		
-		// username not found in list so add username and room to the lists.
-		if (_found == false)
-		{
-			_logged_in_twice.push(false);
-		}
-	}
-	
-	/******************************
-	 * if logged in twice then only some data will be removed.
-	 * if not logged in twice than _logged_in_twice, _username and _room data will be deleted.
-	 */
-	public function _remove_user_data(_data:Dynamic)
-	{
-		var _found:Bool = false;
-		var ii = -1;
-		
-		for (i in 0 ... _username.length + 1)
-		{
-			if (_data._username == _username[i])
-			{
-				ii = i;
-				
-				if (_logged_in_twice[i] == true
-				&&	_data._username == _username[i])
-				{
-					_found = true;
-					_logged_in_twice[i] = false;
-				}
-			}	
-		}
-		
-		if (_found == false && ii > -1)
-		{
-			_logged_in_twice[ii] = false;
-			remove_from_room(_data);
-		}
-	}
-	
 	public function remove_from_room(_data:Dynamic)
 	{
 		for (i in 0 ... _username.length + 1)
@@ -961,7 +667,6 @@ class Main
 				if (_room[i] != 9000) _room[i] = 10000;
 				
 				_username[i] = "nobody";
-				_logged_in_twice[i] = false;
 				
 				// deletes these tables when user first logs in and when user is disconnecting.
 				Functions.deleteRowsFromDatabase(_data);
@@ -984,8 +689,7 @@ class Main
 		for (i in 0 ... _username.length + 1)
 		{
 			if (_data._username == _username[i]
-			&&	_username[i] != "nobody"
-			||	_room[i] == 9000)
+			&&	_username[i] != "nobody")
 			{
 				ii = i;
 			}

@@ -32,27 +32,7 @@ class DB_Update extends DB_Parent
 	{
 		tryMysqlConnectDatabase();
 		
-		if (id == 1) cnx.request("UPDATE servers_status set connected_1 = 1");
-		if (id == 2) cnx.request("UPDATE servers_status set connected_2 = 1");
-		if (id == 3) cnx.request("UPDATE servers_status set connected_3 = 1");
-		if (id == 4) cnx.request("UPDATE servers_status set connected_4 = 1");
-		if (id == 5) cnx.request("UPDATE servers_status set connected_5 = 1");
-		if (id == 6) cnx.request("UPDATE servers_status set connected_6 = 1");
-		if (id == 7) cnx.request("UPDATE servers_status set connected_7 = 1");
-		if (id == 8) cnx.request("UPDATE servers_status set connected_8 = 1");
-		if (id == 9) cnx.request("UPDATE servers_status set connected_9 = 1");
-		if (id == 10) cnx.request("UPDATE servers_status set connected_10 = 1");
-		if (id == 11) cnx.request("UPDATE servers_status set connected_11 = 1");
-		if (id == 12) cnx.request("UPDATE servers_status set connected_12 = 1");
-		if (id == 13) cnx.request("UPDATE servers_status set connected_13 = 1");
-		if (id == 14) cnx.request("UPDATE servers_status set connected_14 = 1");
-		if (id == 15) cnx.request("UPDATE servers_status set connected_15 = 1");
-		if (id == 16) cnx.request("UPDATE servers_status set connected_16 = 1");
-		if (id == 17) cnx.request("UPDATE servers_status set connected_17 = 1");
-		if (id == 18) cnx.request("UPDATE servers_status set connected_18 = 1");
-		if (id == 19) cnx.request("UPDATE servers_status set connected_19 = 1");
-		if (id == 20) cnx.request("UPDATE servers_status set connected_20 = 1");
-		
+		cnx.request("UPDATE servers_status set connected = " + id + " WHERE id = " + id);
 		
 		cnx.close();
 		return id;
@@ -166,16 +146,7 @@ class DB_Update extends DB_Parent
 		cnx.close();
 		
 	}
-	
-	public function server_online_at_servers_status(id:Int):Void
-	{
-		tryMysqlConnectDatabase();
 		
-		var rset = cnx.request("UPDATE servers_status set servers_online = " + id);
-		
-		cnx.close();
-	}
-	
 	public function hostname_at_users(_user:String, _hostname:String):Void
 	{
 		tryMysqlConnectDatabase();
@@ -199,196 +170,20 @@ class DB_Update extends DB_Parent
 	{
 		tryMysqlConnectDatabase();
 		
-		if (id == 1)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_1 = 0,
-			timestamp_1 = 0,
-			do_once_1 = 0");			
-		}
-		
-		if (id == 2)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_2 = 0,
-			timestamp_2 = 0,
-			do_once_2 = 0");			
-		}
-		
-		if (id == 3)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_3 = 0,
-			timestamp_3 = 0,
-			do_once_3 = 0");			
-		}
-		
-		if (id == 4)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_4 = 0,
-			timestamp_4 = 0,
-			do_once_4 = 0");			
-		}
-		
-		if (id == 5)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_5 = 0,
-			timestamp_5 = 0,
-			do_once_5 = 0");			
-		}
-		
-		if (id == 6)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_6 = 0,
-			timestamp_6 = 0,
-			do_once_6 = 0");			
-		}
-		
-		if (id == 7)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_7 = 0,
-			timestamp_7 = 0,
-			do_once_7 = 0");			
-		}
-		
-		if (id == 8)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_8 = 0,
-			timestamp_8 = 0,
-			do_once_8 = 0");			
-		}
-		
-		if (id == 9)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_9 = 0,
-			timestamp_9 = 0,
-			do_once_9 = 0");			
-		}
-		
-		if (id == 10)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_10 = 0,
-			timestamp_10 = 0,
-			do_once_10 = 0");			
-		}
-				
-		if (id == 11)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_11 = 0,
-			timestamp_11 = 0,
-			do_once_11 = 0");			
-		}
-		
-		if (id == 12)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_12 = 0,
-			timestamp_12 = 0,
-			do_once_12 = 0");			
-		}
-		
-		if (id == 13)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_13 = 0,
-			timestamp_13 = 0,
-			do_once_13 = 0");			
-		}
-		
-		if (id == 14)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_14 = 0,
-			timestamp_14 = 0,
-			do_once_14 = 0");			
-		}
-		
-		if (id == 15)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_15 = 0,
-			timestamp_15 = 0,
-			do_once_15 = 0");			
-		}
-		
-		if (id == 16)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_16 = 0,
-			timestamp_16 = 0,
-			do_once_16 = 0");			
-		}
-		
-		if (id == 17)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_17 = 0,
-			timestamp_17 = 0,
-			do_once_17 = 0");			
-		}
-		
-		if (id == 18)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_18 = 0,
-			timestamp_18 = 0,
-			do_once_18 = 0");			
-		}
-		
-		if (id == 19)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_19 = 0,
-			timestamp_19 = 0,
-			do_once_19 = 0");			
-		}
-		
-		if (id == 20)
-		{
-			cnx.request("UPDATE servers_status set 
-			disconnect_20 = 0,
-			timestamp_20 = 0,
-			do_once_20 = 0");			
-		}
+		cnx.request("UPDATE servers_status set 
+		disconnect = 0,	timestamp = 0, do_once = 0
+		WHERE id = " + id);			
 		
 		cnx.close();
 	}
 	
 	// the total amount of servers online.
-	public function do_once_at_servers_status():Void
+	public function do_once_at_servers_status(id:Int):Void
 	{
 		tryMysqlConnectDatabase();
 		
 		var rset = cnx.request("UPDATE servers_status set 
-		do_once_1 = 0,
-		do_once_2 = 0,
-		do_once_3 = 0,
-		do_once_4 = 0,
-		do_once_5 = 0,
-		do_once_6 = 0,
-		do_once_7 = 0,
-		do_once_8 = 0,
-		do_once_9 = 0,
-		do_once_10 = 0,
-		do_once_11 = 0,
-		do_once_12 = 0,
-		do_once_13 = 0,
-		do_once_14 = 0,
-		do_once_15 = 0,
-		do_once_16 = 0,
-		do_once_17 = 0,
-		do_once_18 = 0,
-		do_once_19 = 0,
-		do_once_20 = 0
-		");
+		do_once = 0 WHERE id=" + id);
 		
 		cnx.close();
 	}
@@ -975,7 +770,7 @@ class DB_Update extends DB_Parent
 				var _var = cnx.request("UPDATE room_data SET 
 			spectator_playing = 1 WHERE user = " + cnx.quote(_user));
 			}
-					
+			
 		}
 		catch (e:Dynamic)
 		{

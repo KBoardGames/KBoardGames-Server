@@ -41,6 +41,8 @@ class Reg
 	public static var _smtpPort:Int = 0;
 	public static var _smtpUsername:String = "";
 	public static var _smtpPassword:String = "";
+	public static var _dummyData:Bool = false;
+	
 	/*********************************************************************************
 	 * is the server connected to the mysql database?
 	 */
@@ -55,7 +57,7 @@ class Reg
 	 * only change the version number here. this value must be changed everytime this complete program with dlls are copied to the localhost/files/windows folder.
 	 * no need to copy this var then paste to the bottom of this class because this value does not change while client is running.
 	 */
-	public static var _version:String = "1.21.3";
+	public static var _version:String = "2.0.5";
 
 	/********************************************************************************
 	 * when doing a request to see if a file exists at the website, this is the result of tht search.

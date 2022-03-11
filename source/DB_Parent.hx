@@ -29,7 +29,6 @@ typedef MysqlData = {
 	_player_current: Array<Int>,		// current players in tournament.
 	_ip: Array<String>,					// used to return the ip of user.
 	_message: Array<String>,
-	_timestamp: Array<String>, 			// always use string for timestamp.
 	_minutesTotal: Array<Int>,			// user hosting room, kick or ban other user.
 	_gamesAllTotalWins: Array<Int>,
 	_gamesAllTotalLosses: Array<Int>,
@@ -54,92 +53,13 @@ typedef MysqlData = {
 	_spectatorWatching: Array<Bool>,
 	_serversOnline: Array<Int>,			// total count.
 	
-	_connected1: Array<Bool>,			// used when the server first connects online. this var can be used to tell what server is online.
-	_connected2: Array<Bool>,
-	_connected3: Array<Bool>,
-	_connected4: Array<Bool>,
-	_connected5: Array<Bool>,
-	_connected6: Array<Bool>,
-	_connected7: Array<Bool>,
-	_connected8: Array<Bool>,
-	_connected9: Array<Bool>,
-	_connected10: Array<Bool>,
-	_connected11: Array<Bool>,
-	_connected12: Array<Bool>,
-	_connected13: Array<Bool>,
-	_connected14: Array<Bool>,
-	_connected15: Array<Bool>,
-	_connected16: Array<Bool>,
-	_connected17: Array<Bool>,
-	_connected18: Array<Bool>,
-	_connected19: Array<Bool>,
-	_connected20: Array<Bool>,
+	_connected: Array<Bool>,			// used when the server first connects online. this var can be used to tell what server is online.
+	_disconnect: Array<Bool>,			// used to send a disconnect message to all client on that server.	
+	_timestamp: Array<Int>, 		// used to disconnect server when its time.
+	_doOnce: Array<Bool>,				// at main, update() is in a tight loop. this stop the sending of another disconnect message to clients.
 	
-	_disconnect1: Array<Bool>,			// used to send a disconnect message to all client on that server.	
-	_disconnect2: Array<Bool>,
-	_disconnect3: Array<Bool>,
-	_disconnect4: Array<Bool>,
-	_disconnect5: Array<Bool>,
-	_disconnect6: Array<Bool>,
-	_disconnect7: Array<Bool>,
-	_disconnect8: Array<Bool>,
-	_disconnect9: Array<Bool>,
-	_disconnect10: Array<Bool>,
-	_disconnect11: Array<Bool>,
-	_disconnect12: Array<Bool>,
-	_disconnect13: Array<Bool>,
-	_disconnect14: Array<Bool>,
-	_disconnect15: Array<Bool>,
-	_disconnect16: Array<Bool>,
-	_disconnect17: Array<Bool>,
-	_disconnect18: Array<Bool>,
-	_disconnect19: Array<Bool>,
-	_disconnect20: Array<Bool>,
-	
-	_timestamp1: Array<String>, 		// used to disconnect server when its time.
-	_timestamp2: Array<String>, 
-	_timestamp3: Array<String>,
-	_timestamp4: Array<String>,
-	_timestamp5: Array<String>,
-	_timestamp6: Array<String>,
-	_timestamp7: Array<String>,
-	_timestamp8: Array<String>,
-	_timestamp9: Array<String>,
-	_timestamp10: Array<String>,
-	_timestamp11: Array<String>,
-	_timestamp12: Array<String>,
-	_timestamp13: Array<String>,
-	_timestamp14: Array<String>,
-	_timestamp15: Array<String>,
-	_timestamp16: Array<String>,
-	_timestamp17: Array<String>,
-	_timestamp18: Array<String>,
-	_timestamp19: Array<String>,
-	_timestamp20: Array<String>,
-	
-	_doOnce1: Array<Bool>,				// at main, update() is in a tight loop. this stop the sending of another disconnect message to clients.
-	_doOnce2: Array<Bool>,
-	_doOnce3: Array<Bool>,
-	_doOnce4: Array<Bool>,
-	_doOnce5: Array<Bool>,
-	_doOnce6: Array<Bool>,
-	_doOnce7: Array<Bool>,
-	_doOnce8: Array<Bool>,
-	_doOnce9: Array<Bool>,
-	_doOnce10: Array<Bool>,
-	_doOnce11: Array<Bool>,
-	_doOnce12: Array<Bool>,
-	_doOnce13: Array<Bool>,
-	_doOnce14: Array<Bool>,
-	_doOnce15: Array<Bool>,
-	_doOnce16: Array<Bool>,
-	_doOnce17: Array<Bool>,
-	_doOnce18: Array<Bool>,
-	_doOnce19: Array<Bool>,
-	_doOnce20: Array<Bool>,
-		
-	_messageOnline: Array<Bool>,		//The admin cancelled the server from going offline or another message.
-	_messageOffline: Array<Bool>,		// going offline at given minutes.
+	_messageOnline: Array<String>,		//The admin cancelled the server from going offline or another message.
+	_messageOffline: Array<String>,		// going offline at given minutes.
 	
 	// all players move history for the game.
 	_moveHistoryPieceLocationOld1: Array<String>,		// move history, the selected first piece
@@ -329,7 +249,6 @@ class DB_Parent
 			_player_current: [],
 			_ip: [],
 			_message: [], 
-			_timestamp: [],
 			_minutesTotal: [],
 			_gamesAllTotalWins: [],
 			_gamesAllTotalLosses: [],
@@ -349,89 +268,10 @@ class DB_Parent
 			_spectatorWatching: [],
 			_serversOnline: [],
 			
-			_connected1: [],
-			_connected2: [],
-			_connected3: [],
-			_connected4: [],
-			_connected5: [],
-			_connected6: [],
-			_connected7: [],
-			_connected8: [],
-			_connected9: [],
-			_connected10: [],
-			_connected11: [],
-			_connected12: [],
-			_connected13: [],
-			_connected14: [],
-			_connected15: [],
-			_connected16: [],
-			_connected17: [],
-			_connected18: [],
-			_connected19: [],
-			_connected20: [],
-			
-			_disconnect1: [],
-			_disconnect2: [],
-			_disconnect3: [],
-			_disconnect4: [],
-			_disconnect5: [],
-			_disconnect6: [],
-			_disconnect7: [],
-			_disconnect8: [],
-			_disconnect9: [],
-			_disconnect10: [],
-			_disconnect11: [],
-			_disconnect12: [],
-			_disconnect13: [],
-			_disconnect14: [],
-			_disconnect15: [],
-			_disconnect16: [],
-			_disconnect17: [],
-			_disconnect18: [],
-			_disconnect19: [],
-			_disconnect20: [],
-			
-			_timestamp1: [],
-			_timestamp2: [],
-			_timestamp3: [],
-			_timestamp4: [],
-			_timestamp5: [],
-			_timestamp6: [],
-			_timestamp7: [],
-			_timestamp8: [],
-			_timestamp9: [],
-			_timestamp10: [],
-			_timestamp11: [],
-			_timestamp12: [],
-			_timestamp13: [],
-			_timestamp14: [],
-			_timestamp15: [],
-			_timestamp16: [],
-			_timestamp17: [],
-			_timestamp18: [],
-			_timestamp19: [],
-			_timestamp20: [],
-			
-			_doOnce1: [],
-			_doOnce2: [],
-			_doOnce3: [],
-			_doOnce4: [],
-			_doOnce5: [],
-			_doOnce6: [],
-			_doOnce7: [],
-			_doOnce8: [],
-			_doOnce9: [],
-			_doOnce10: [],
-			_doOnce11: [],
-			_doOnce12: [],
-			_doOnce13: [],
-			_doOnce14: [],
-			_doOnce15: [],
-			_doOnce16: [],
-			_doOnce17: [],
-			_doOnce18: [],
-			_doOnce19: [],
-			_doOnce20: [],
+			_connected: [],
+			_disconnect: [],
+			_timestamp: [],
+			_doOnce: [],
 						
 			_messageOnline: [],
 			_messageOffline: [],
@@ -571,7 +411,6 @@ class DB_Parent
 		_mysqlData._ip.splice(0, _mysqlData._ip.length);
 		_mysqlData._message.splice(0, _mysqlData._message.length);
 		
-		_mysqlData._timestamp.splice(0, _mysqlData._timestamp.length);
 		_mysqlData._minutesTotal.splice(0, _mysqlData._minutesTotal.length);
 
 		_mysqlData._gamesAllTotalWins.splice(0, _mysqlData._gamesAllTotalWins.length);
@@ -594,89 +433,10 @@ class DB_Parent
 		
 		_mysqlData._serversOnline.splice(0, _mysqlData._serversOnline.length);
 		
-		_mysqlData._connected1.splice(0, _mysqlData._connected1.length);
-		_mysqlData._connected2.splice(0, _mysqlData._connected2.length);
-		_mysqlData._connected3.splice(0, _mysqlData._connected3.length);
-		_mysqlData._connected4.splice(0, _mysqlData._connected4.length);
-		_mysqlData._connected5.splice(0, _mysqlData._connected5.length);
-		_mysqlData._connected6.splice(0, _mysqlData._connected6.length);
-		_mysqlData._connected7.splice(0, _mysqlData._connected7.length);
-		_mysqlData._connected8.splice(0, _mysqlData._connected8.length);
-		_mysqlData._connected9.splice(0, _mysqlData._connected9.length);
-		_mysqlData._connected10.splice(0, _mysqlData._connected10.length);
-		_mysqlData._connected11.splice(0, _mysqlData._connected11.length);
-		_mysqlData._connected12.splice(0, _mysqlData._connected12.length);
-		_mysqlData._connected13.splice(0, _mysqlData._connected13.length);
-		_mysqlData._connected14.splice(0, _mysqlData._connected14.length);
-		_mysqlData._connected15.splice(0, _mysqlData._connected15.length);
-		_mysqlData._connected16.splice(0, _mysqlData._connected16.length);
-		_mysqlData._connected17.splice(0, _mysqlData._connected17.length);
-		_mysqlData._connected18.splice(0, _mysqlData._connected18.length);
-		_mysqlData._connected19.splice(0, _mysqlData._connected19.length);
-		_mysqlData._connected20.splice(0, _mysqlData._connected20.length);
-		
-		_mysqlData._disconnect1.splice(0, _mysqlData._disconnect1.length);
-		_mysqlData._disconnect2.splice(0, _mysqlData._disconnect2.length);
-		_mysqlData._disconnect3.splice(0, _mysqlData._disconnect3.length);
-		_mysqlData._disconnect4.splice(0, _mysqlData._disconnect4.length);
-		_mysqlData._disconnect5.splice(0, _mysqlData._disconnect5.length);
-		_mysqlData._disconnect6.splice(0, _mysqlData._disconnect6.length);
-		_mysqlData._disconnect7.splice(0, _mysqlData._disconnect7.length);
-		_mysqlData._disconnect8.splice(0, _mysqlData._disconnect8.length);
-		_mysqlData._disconnect9.splice(0, _mysqlData._disconnect9.length);
-		_mysqlData._disconnect10.splice(0, _mysqlData._disconnect10.length);
-		_mysqlData._disconnect11.splice(0, _mysqlData._disconnect11.length);
-		_mysqlData._disconnect12.splice(0, _mysqlData._disconnect12.length);
-		_mysqlData._disconnect13.splice(0, _mysqlData._disconnect13.length);
-		_mysqlData._disconnect14.splice(0, _mysqlData._disconnect14.length);
-		_mysqlData._disconnect15.splice(0, _mysqlData._disconnect15.length);
-		_mysqlData._disconnect16.splice(0, _mysqlData._disconnect16.length);
-		_mysqlData._disconnect17.splice(0, _mysqlData._disconnect17.length);
-		_mysqlData._disconnect18.splice(0, _mysqlData._disconnect18.length);
-		_mysqlData._disconnect19.splice(0, _mysqlData._disconnect19.length);
-		_mysqlData._disconnect20.splice(0, _mysqlData._disconnect20.length);
-				
-		_mysqlData._timestamp1.splice(0, _mysqlData._timestamp1.length);		
-		_mysqlData._timestamp2.splice(0, _mysqlData._timestamp2.length);
-		_mysqlData._timestamp3.splice(0, _mysqlData._timestamp3.length);		
-		_mysqlData._timestamp4.splice(0, _mysqlData._timestamp4.length);
-		_mysqlData._timestamp5.splice(0, _mysqlData._timestamp5.length);		
-		_mysqlData._timestamp6.splice(0, _mysqlData._timestamp6.length);
-		_mysqlData._timestamp7.splice(0, _mysqlData._timestamp7.length);		
-		_mysqlData._timestamp8.splice(0, _mysqlData._timestamp8.length);
-		_mysqlData._timestamp9.splice(0, _mysqlData._timestamp9.length);		
-		_mysqlData._timestamp10.splice(0, _mysqlData._timestamp10.length);
-		_mysqlData._timestamp11.splice(0, _mysqlData._timestamp11.length);		
-		_mysqlData._timestamp12.splice(0, _mysqlData._timestamp12.length);
-		_mysqlData._timestamp13.splice(0, _mysqlData._timestamp13.length);		
-		_mysqlData._timestamp14.splice(0, _mysqlData._timestamp14.length);
-		_mysqlData._timestamp15.splice(0, _mysqlData._timestamp15.length);		
-		_mysqlData._timestamp16.splice(0, _mysqlData._timestamp16.length);
-		_mysqlData._timestamp17.splice(0, _mysqlData._timestamp17.length);		
-		_mysqlData._timestamp18.splice(0, _mysqlData._timestamp18.length);
-		_mysqlData._timestamp19.splice(0, _mysqlData._timestamp19.length);		
-		_mysqlData._timestamp20.splice(0, _mysqlData._timestamp20.length);
-		
-		_mysqlData._doOnce1.splice(0, _mysqlData._doOnce1.length);
-		_mysqlData._doOnce2.splice(0, _mysqlData._doOnce2.length);
-		_mysqlData._doOnce3.splice(0, _mysqlData._doOnce3.length);
-		_mysqlData._doOnce4.splice(0, _mysqlData._doOnce4.length);
-		_mysqlData._doOnce5.splice(0, _mysqlData._doOnce5.length);
-		_mysqlData._doOnce6.splice(0, _mysqlData._doOnce6.length);
-		_mysqlData._doOnce7.splice(0, _mysqlData._doOnce7.length);
-		_mysqlData._doOnce8.splice(0, _mysqlData._doOnce8.length);
-		_mysqlData._doOnce9.splice(0, _mysqlData._doOnce9.length);
-		_mysqlData._doOnce10.splice(0, _mysqlData._doOnce10.length);
-		_mysqlData._doOnce11.splice(0, _mysqlData._doOnce11.length);
-		_mysqlData._doOnce12.splice(0, _mysqlData._doOnce12.length);
-		_mysqlData._doOnce13.splice(0, _mysqlData._doOnce13.length);
-		_mysqlData._doOnce14.splice(0, _mysqlData._doOnce14.length);
-		_mysqlData._doOnce15.splice(0, _mysqlData._doOnce15.length);
-		_mysqlData._doOnce16.splice(0, _mysqlData._doOnce16.length);
-		_mysqlData._doOnce17.splice(0, _mysqlData._doOnce17.length);
-		_mysqlData._doOnce18.splice(0, _mysqlData._doOnce18.length);
-		_mysqlData._doOnce19.splice(0, _mysqlData._doOnce19.length);
-		_mysqlData._doOnce20.splice(0, _mysqlData._doOnce20.length);
+		_mysqlData._connected.splice(0, _mysqlData._connected.length);
+		_mysqlData._disconnect.splice(0, _mysqlData._disconnect.length);
+		_mysqlData._timestamp.splice(0, _mysqlData._timestamp.length);
+		_mysqlData._doOnce.splice(0, _mysqlData._doOnce.length);
 		
 		_mysqlData._messageOnline.splice(0, _mysqlData._messageOnline.length);
 		_mysqlData._messageOffline.splice(0, _mysqlData._messageOffline.length);

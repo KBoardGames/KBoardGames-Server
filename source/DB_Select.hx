@@ -169,7 +169,7 @@ class DB_Select extends DB_Parent
 		{
 			trace("MySql error.");		
 		}
-				
+		
 		cnx.close();
 		
 		return _mysqlData;
@@ -495,10 +495,10 @@ class DB_Select extends DB_Parent
 	*/
 	public function user_daily_quests(_user:String):DB_Parent.MysqlData
 	{
-	   tryMysqlConnectDatabase();
-	   
-	   try 
-	   {
+		tryMysqlConnectDatabase();
+
+		try 
+		{
 		   var rset = cnx.request("SELECT * FROM daily_quests WHERE user = " + cnx.quote(_user));
 		   for ( row in rset )
 		   {	
@@ -515,15 +515,15 @@ class DB_Select extends DB_Parent
 				_mysqlData._rewards.push(row.rewards);
 				_mysqlData._timestamp.push(row.timestamp);
 		   }
-	   }
-	   catch (e:Dynamic)
-	   {
+		}
+		catch (e:Dynamic)
+		{
 			trace("MySql error.");		
-	   }
-	   
-	   cnx.close();
-	   
-	   return _mysqlData;
+		}
+
+		cnx.close();
+
+		return _mysqlData;
 	   
 	}
 	
@@ -595,21 +595,6 @@ class DB_Select extends DB_Parent
 		cnx.close();
 		
 		return _mysqlData;
-	}
-	
-	/******************************
-	 * count total users. if count is greater then zero the return as true.
-	 */
-	public function count_from_logged_in_users(_user:String):Bool
-	{
-		tryMysqlConnectDatabase();
-		
-		var rset = cnx.request("SELECT COUNT(*) FROM logged_in_users WHERE user = " + cnx.quote(_user));
-				
-		cnx.close();
-		
-		if (rset.getIntResult(0) == 0) return false;
-		else return true;
 	}
 	
 	public function user_avatar_from_statistics(_user:String):DB_Parent.MysqlData
@@ -919,8 +904,32 @@ class DB_Select extends DB_Parent
 		return _mysqlData;
 	}
 	
+	public function all_server_messages():DB_Parent.MysqlData
+	{
+		tryMysqlConnectDatabase();		
+	
+		try {
+			var rset = cnx.request("SELECT * FROM client_messages");
+		
+			for ( row in rset )
+			{
+				_mysqlData._messageOnline.push(row.online);
+				_mysqlData._messageOffline.push(row.offline);
+			}
+		}
+		
+		catch (e:Dynamic)
+		{
+			trace("MySql error.");		
+		}
+		
+		cnx.close();
+		
+		return _mysqlData;
+	}	
+	
 	/******************************
-	 * used to get the id of the server. every server has a different id. a query is read every so many ticks and when that query has a field such as disconnect_1 that matches lets say server id of 1 then that server will be disconnected or a disconnect cancelled.
+	 * used to get the id of the server. every server has a different id. a query is read every so many ticks and when that query has a field such as disconnect[1] if that matches lets say server id of 2 then that server will be disconnected or a disconnect cancelled.
 	 */
 	public function server_data_at_servers_status():DB_Parent.MysqlData
 	{
@@ -931,94 +940,10 @@ class DB_Select extends DB_Parent
 		
 			for ( row in rset )
 			{
-				_mysqlData._serversOnline.push(row.servers_online);
-				
-				_mysqlData._connected1.push(row.connected_1);
-				_mysqlData._connected2.push(row.connected_2);
-				_mysqlData._connected3.push(row.connected_3);
-				_mysqlData._connected4.push(row.connected_4);
-				_mysqlData._connected5.push(row.connected_5);
-				_mysqlData._connected6.push(row.connected_6);
-				_mysqlData._connected7.push(row.connected_7);
-				_mysqlData._connected8.push(row.connected_8);
-				_mysqlData._connected9.push(row.connected_9);
-				_mysqlData._connected10.push(row.connected_10);
-				_mysqlData._connected11.push(row.connected_11);
-				_mysqlData._connected12.push(row.connected_12);
-				_mysqlData._connected13.push(row.connected_13);
-				_mysqlData._connected14.push(row.connected_14);
-				_mysqlData._connected15.push(row.connected_15);
-				_mysqlData._connected16.push(row.connected_16);
-				_mysqlData._connected17.push(row.connected_17);
-				_mysqlData._connected18.push(row.connected_18);
-				_mysqlData._connected19.push(row.connected_19);
-				_mysqlData._connected20.push(row.connected_20);
-				
-				_mysqlData._disconnect1.push(row.disconnect_1);
-				_mysqlData._disconnect2.push(row.disconnect_2);
-				_mysqlData._disconnect3.push(row.disconnect_3);
-				_mysqlData._disconnect4.push(row.disconnect_4);
-				_mysqlData._disconnect5.push(row.disconnect_5);
-				_mysqlData._disconnect6.push(row.disconnect_6);
-				_mysqlData._disconnect7.push(row.disconnect_7);
-				_mysqlData._disconnect8.push(row.disconnect_8);
-				_mysqlData._disconnect9.push(row.disconnect_9);
-				_mysqlData._disconnect10.push(row.disconnect_10);
-				_mysqlData._disconnect11.push(row.disconnect_11);
-				_mysqlData._disconnect12.push(row.disconnect_12);
-				_mysqlData._disconnect13.push(row.disconnect_13);
-				_mysqlData._disconnect14.push(row.disconnect_14);
-				_mysqlData._disconnect15.push(row.disconnect_15);
-				_mysqlData._disconnect16.push(row.disconnect_16);
-				_mysqlData._disconnect17.push(row.disconnect_17);
-				_mysqlData._disconnect18.push(row.disconnect_18);
-				_mysqlData._disconnect19.push(row.disconnect_19);
-				_mysqlData._disconnect20.push(row.disconnect_20);
-				
-				_mysqlData._doOnce1.push(row.do_once_1);
-				_mysqlData._doOnce2.push(row.do_once_2);
-				_mysqlData._doOnce3.push(row.do_once_3);
-				_mysqlData._doOnce4.push(row.do_once_4);
-				_mysqlData._doOnce5.push(row.do_once_5);
-				_mysqlData._doOnce6.push(row.do_once_6);
-				_mysqlData._doOnce7.push(row.do_once_7);
-				_mysqlData._doOnce8.push(row.do_once_8);
-				_mysqlData._doOnce9.push(row.do_once_9);
-				_mysqlData._doOnce10.push(row.do_once_10);
-				_mysqlData._doOnce11.push(row.do_once_11);
-				_mysqlData._doOnce12.push(row.do_once_12);
-				_mysqlData._doOnce13.push(row.do_once_13);
-				_mysqlData._doOnce14.push(row.do_once_14);
-				_mysqlData._doOnce15.push(row.do_once_15);
-				_mysqlData._doOnce16.push(row.do_once_16);
-				_mysqlData._doOnce17.push(row.do_once_17);
-				_mysqlData._doOnce18.push(row.do_once_18);
-				_mysqlData._doOnce19.push(row.do_once_19);
-				_mysqlData._doOnce20.push(row.do_once_20);
-				
-				_mysqlData._timestamp1.push(row.timestamp_1);
-				_mysqlData._timestamp2.push(row.timestamp_2);
-				_mysqlData._timestamp3.push(row.timestamp_3);
-				_mysqlData._timestamp4.push(row.timestamp_4);
-				_mysqlData._timestamp5.push(row.timestamp_5);
-				_mysqlData._timestamp6.push(row.timestamp_6);
-				_mysqlData._timestamp7.push(row.timestamp_7);
-				_mysqlData._timestamp8.push(row.timestamp_8);
-				_mysqlData._timestamp9.push(row.timestamp_9);
-				_mysqlData._timestamp10.push(row.timestamp_10);
-				_mysqlData._timestamp11.push(row.timestamp_11);
-				_mysqlData._timestamp12.push(row.timestamp_12);
-				_mysqlData._timestamp13.push(row.timestamp_13);
-				_mysqlData._timestamp14.push(row.timestamp_14);
-				_mysqlData._timestamp15.push(row.timestamp_15);
-				_mysqlData._timestamp16.push(row.timestamp_16);
-				_mysqlData._timestamp17.push(row.timestamp_17);
-				_mysqlData._timestamp18.push(row.timestamp_18);
-				_mysqlData._timestamp19.push(row.timestamp_19);
-				_mysqlData._timestamp20.push(row.timestamp_20);
-				
-				_mysqlData._messageOnline.push(row.message_online);
-				_mysqlData._messageOffline.push(row.message_offline);
+				_mysqlData._connected.push(row.connected);
+				_mysqlData._disconnect.push(row.disconnect);
+				_mysqlData._timestamp.push(row.timestamp);
+				_mysqlData._doOnce.push(row.do_once);
 			}
 		}
 		

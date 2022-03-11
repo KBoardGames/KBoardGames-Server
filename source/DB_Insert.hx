@@ -43,8 +43,7 @@ class DB_Insert extends DB_Parent
 			trace("MySql error.");		
 		}
 		
-		cnx.close();
-	
+		cnx.close();	
 	}
 	
 	public function save_is_locked_for_user_at_room_lock(_user:String, _room:Int):Void
@@ -74,10 +73,9 @@ class DB_Insert extends DB_Parent
 			trace("MySql error.");		
 		}
 		
-		cnx.close();
-	
+		cnx.close();	
 	}
-		
+	
 	/******************************
 	 * at hostname to logged_in_hostname table. stores the hostname not the ip address.
 	 */
@@ -95,7 +93,7 @@ class DB_Insert extends DB_Parent
 		if (rset.getIntResult(0) == 0) return false;
 		else return true;
 	}
-		
+	
 	/******************************
 	 * when user logs in, temp data is written to mysql database. this table has data such as the ip, host, and roomState of the user.
 	 */

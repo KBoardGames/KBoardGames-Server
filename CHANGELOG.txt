@@ -1,4 +1,30 @@
-Version 1.21.3 2021-2-13
+Version 2.0.5. 2022-3-11
+
+New Features.
+	
+	Added a list of reserved words. User will not be able to login if username matches one of the words in the list.
+
+	Optional dummy data for server and website.
+
+	Optional 1 login session per device.
+
+Feature changed.
+
+	Rewrote server maintenance feature.
+
+Bugs fixed.
+
+	Accessing server from port services would hang the next client trying to connect to server.
+
+	Corrupt room data when third user or forth user re-entered waiting room. 
+
+	Fixed the random server crash at waiting room when the third player or the forth player returned to lobby.
+	
+	Fixed this error at two different locations... An exception occurred in a neko Thread. This error occurred randomly in an online game. The second player could never move piece.
+
+	Returning to lobby from game room would randomly trigger a MySQL error.
+
+Version 1.21.3 2022-2-13
 
 New Features.
 
@@ -20,7 +46,7 @@ Bugs fixed.
 
 	Only the first player that created a room then entered the waiting room had correct room values. At lobby all other rooms showed incorrect values for hosted rooms.
 
-Version 1.20.2 2021-1-9
+Version 1.20.2 2022-1-9
 
 New Features.
 	
