@@ -219,12 +219,18 @@ typedef MysqlData = {
 	_rounds_total: Array<Int>,					// when the round_current equals this value then the tournament is at its last round.
 	
 	_reminder_by_mail: Array<Int>,	// 0: player wants no tournament mail. 1: true.
+	
 	/******************************
 	 * 0:lost a tournament game. 1:won a tournament game.
 	 */
 	_won_game: Array<Int>,
 	
 	_email_address: Array<String>,
+	
+	/******************************
+	 * 0: everyone can login. 1: only the admin can login.
+	 */
+	_maintenance: Array<Int>, 
 }
 
 /**
@@ -366,6 +372,7 @@ class DB_Parent
 			_reminder_by_mail: [],
 			_won_game: [],
 			_email_address: [],
+			_maintenance: [],
 		};
 		
 		tryMysqlConnectDatabase();
@@ -538,5 +545,7 @@ class DB_Parent
 		_mysqlData._reminder_by_mail.splice(0, _mysqlData._reminder_by_mail.length);		
 		_mysqlData._won_game.splice(0, _mysqlData._won_game.length);
 		_mysqlData._email_address.splice(0, _mysqlData._email_address.length);
+		_mysqlData._maintenance.splice(0, _mysqlData._maintenance.length);
+		
 	}
 }//

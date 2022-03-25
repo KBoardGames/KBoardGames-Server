@@ -346,6 +346,33 @@ class DB_Select extends DB_Parent
 		return _mysqlData;
 	}
 	
+	/******************************
+	 * get all data for room_data_dummy table.
+	 */
+	public function all_at_room_data_dummy():DB_Parent.MysqlData
+	{
+		tryMysqlConnectDatabase();		
+	
+		var rset = cnx.request("SELECT * FROM room_data_dummy");
+		
+		for ( row in rset )
+		{			
+			_mysqlData._user.push(row.user);
+			_mysqlData._userId.push(row.user_id);
+			_mysqlData._moveNumberDynamic.push(row.move_number_dynamic);
+			_mysqlData._roomState.push(row.room_state);
+			_mysqlData._userLocation.push(row.user_location);
+			_mysqlData._room.push(row.room);
+			_mysqlData._playerLimit.push(row.player_limit);
+			_mysqlData._allowSpectators.push(row.allow_spectators);
+			_mysqlData._gameId.push(row.game_id);
+			_mysqlData._timestamp.push(row.timestamp);
+		}
+
+		cnx.close();
+
+		return _mysqlData;
+	}
 	
 	/******************************
 	 * get all data for user at this room_data table.
@@ -885,12 +912,35 @@ class DB_Select extends DB_Parent
 			
 			for ( row in rset )
 			{			
-				_mysqlData._ip.push(row.ip);
-				
 				_mysqlData._eventMonth.push(row.event_month);
 				_mysqlData._eventDay.push(row.event_day);
 				_mysqlData._creditsToday.push(row.credits_today);
 				_mysqlData._creditsTotal.push(row.credits_total);
+			}
+		}
+		
+		catch (e:Dynamic)
+		{
+			trace("MySql error.");		
+		}
+		
+		cnx.close();
+		
+		return _mysqlData;
+	}
+	
+	// in server/client in maintenance.
+	public function is_maintenance():DB_Parent.MysqlData
+	{			
+		tryMysqlConnectDatabase();
+		
+		try
+		{
+			var rset = cnx.request("SELECT * FROM client");
+			
+			for ( row in rset )
+			{			
+				_mysqlData._maintenance.push(row.maintenance);
 			}
 		}
 		
@@ -913,8 +963,8 @@ class DB_Select extends DB_Parent
 		
 			for ( row in rset )
 			{
-				_mysqlData._messageOnline.push(row.online);
-				_mysqlData._messageOffline.push(row.offline);
+				_mysqlData._messageOnline.push(row.message_online);
+				_mysqlData._messageOffline.push(row.message_offline);
 			}
 		}
 		

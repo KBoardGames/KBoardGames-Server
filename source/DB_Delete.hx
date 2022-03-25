@@ -115,6 +115,15 @@ class DB_Delete extends DB_Parent
 		cnx.close();
 	}
 	
+	public function remove_dummy_data():Void
+	{
+		tryMysqlConnectDatabase();
+		
+		var rset = cnx.request("DELETE FROM room_data WHERE is_dummy_data = '1'");
+		
+		cnx.close();
+	}
+	
 	/******************************
 	 * user logged off. delete this table row.
 	 */

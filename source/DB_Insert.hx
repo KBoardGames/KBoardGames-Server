@@ -230,4 +230,23 @@ class DB_Insert extends DB_Parent
 		
 		cnx.close();
 	}
+	
+	
+	public function dummy_data_at_room_data(_user:String, _room_state:Int, _user_location:Int, _room:Int, _player_limit:Int, _game_id:Int, _allow_spectators:Int):Void
+	{
+		tryMysqlConnectDatabase();		
+		
+		var _var = cnx.request("INSERT IGNORE INTO room_data SET 
+		is_dummy_data = '1',
+		room_state = " + _room_state + ",
+		user_location = " + _user_location + ",
+		room = " + _room + ",		
+		player_limit = " + _player_limit + ",
+		game_id = " + _game_id + ",
+		allow_spectators = " + _allow_spectators + ",
+		user = " + cnx.quote(_user));	
+					
+		cnx.close();
+	
+	}
 }

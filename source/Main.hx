@@ -38,6 +38,15 @@ class Main
 		private var _dummyData:Bool = false;
 		
 		/******************************
+		 * this is the total dummy count of all player 1 data. These players could be located at any scene. They are possible hosts or are hosts of a room. They are player 1 dummy data count.
+		 * the remainder of the dummy data, this value to the end mysql row, will be used to populate data for players 2 to 4.
+		 * 1 to 20 are host of a room or a user at creating room.
+		 * 21 to 27 are player 2+ either in waiting room or at game room.
+		 * 28+ are players at lobby
+		 */
+		public static var _dummy_first_player_count:Int = 33; // always use a value that is + 1 more than total in list.
+		
+		/******************************
 		 * room total displayed at client lobby.
 		 * NOTE: remember to change player_game_state_value_username and player_game_state_value_data to this value.
 		 */
@@ -197,7 +206,7 @@ class Main
 		else
 		{
 			Reg._doOnce = false;
-			//Sys.println (Reg._messageFileExists);
+			//Sys.println(Reg._messageFileExists);
 		}
 		
 		var _ver = Reg._messageFileExists;
@@ -247,10 +256,24 @@ class Main
 		if (_dummyData == true) Reg._dummyData = true;
 		
 		Sys.println("Version " + _ver);
-		Sys.println ("Your domain is " + Reg._domain);
+		Sys.println("Your domain is " + Reg._domain);
 		
 		_events = new Events(_data, this, _handler);
-				
+		
+		_db_delete = new DB_Delete(); // no add() needed.
+		_db_insert = new DB_Insert();
+		_db_select = new DB_Select();
+		_db_update = new DB_Update();
+		
+		var _row = _db_select.is_maintenance();
+		if (Std.string(_row._maintenance[0]) == "true") 
+			Sys.println("Maintenance = true");
+		else
+			Sys.println("Maintenance = false");
+			
+		if (Reg._dummyData == true) Sys.println("Dummy data = true");
+		else Sys.println("Dummy data = false");
+		
 		_server.onClientAdded = function(_handler:WebSocketHandler) 
 		{
 			_handler.onopen = function() 
@@ -312,11 +335,6 @@ class Main
 				trace(_handler.id + ". ERROR: " + error);
 			}
 		}
-		
-		_db_delete = new DB_Delete(); // no add() needed.
-		_db_insert = new DB_Insert();
-		_db_select = new DB_Select();
-		_db_update = new DB_Update();
 		
 		var _countServersConnected:Int = 0;
 		var rset = _db_select.server_data_at_servers_status();		
@@ -413,9 +431,9 @@ class Main
 		
 		_db_delete.logged_in_tables(); // delete all logged in users because server is starting. we do this at starting not stopping because server may have crashed.
 		
-		Sys.println ("Server started.");
-		Sys.println ("Hold CTLR key then press C key to exit.");
-		Sys.println ("");
+		Sys.println("Server started.");
+		Sys.println("Hold CTLR key then press C key to exit.");
+		Sys.println("");
 
 		_server.start();
 		
@@ -430,13 +448,16 @@ class Main
 				for (i in 0... _serverId)
 				{
 					var _msg = _db_select.all_server_messages();
+					var _messageOnline = _msg._messageOnline[0];
+					var _messageOffline = _msg._messageOffline[0];
+					
 					var _server_status = _db_select.server_data_at_servers_status();
 					
 					_ticksServerStatus = 0;				
 					
 					if (_currentTimestamp > _server_status._timestamp[i] && _server_status._timestamp[i] > 0) 
 					{
-						Sys.println ('Server disconnected normally.');
+						Sys.println('Server disconnected normally.');
 						Sys.exit(0);
 					}	
 					
@@ -446,7 +467,7 @@ class Main
 						{
 							if (Reg._dataServerMessage._message_offline == "")
 							{
-								Reg._dataServerMessage._message_offline = _msg._messageOffline[0];
+								Reg._dataServerMessage._message_offline = _messageOffline;
 								Reg._dataServerMessage._message_online = "";
 								broadcast_everyone(Reg._dataServerMessage);
 							}
@@ -456,7 +477,7 @@ class Main
 						{
 							if (Reg._dataServerMessage._message_online == "")
 							{
-								Reg._dataServerMessage._message_online = _msg._messageOnline[0];
+								Reg._dataServerMessage._message_online = _messageOnline;
 								Reg._dataServerMessage._message_offline = "";
 								broadcast_everyone(Reg._dataServerMessage);
 							}
@@ -481,7 +502,7 @@ class Main
 						{
 							// disconnect the client.
 							h.close();
-							trace(h.id + ". had lack of activity. Disconnection was forced.");
+							trace(h.id + ". had lack of activity. Disconnected was forced.");
 						}
 					}
 				}

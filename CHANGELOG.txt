@@ -1,3 +1,19 @@
+Version 2.1.0. 2022-3-25
+
+New Features.
+
+	Now only the admin can login when server is in Maintenance mode.
+
+	Dummy data now works at lobby, waiting room and at game room.
+
+	At server console, bool text about if dummy data is being used.
+
+	At server console, bool text about if in maintenance mode.
+
+Feature changed.
+
+	Continue the login process regardless of possible empty IP address or empty real hostname.
+
 Version 2.0.5. 2022-3-11
 
 New Features.

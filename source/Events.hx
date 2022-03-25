@@ -701,11 +701,12 @@ class Events
 	{
 		/*trace(_data.id);
 		trace(_data._username);
-		trace(_data._hostname);
-		trace(_data._password_hash);
 		trace(_data._ip);
 		*/
 		
+		trace(_data._hostname);
+		trace(_data._password_hash);
+				
 		try 
 		{
 			Functions.userLogs("Join", "", "", ""); // logs.
@@ -717,7 +718,7 @@ class Events
 			
 			if (_data.id == ""
 			||	_data._username == ""
-			||	_data._hostname == ""
+			//||	_data._hostname == ""
 			||	_data._password_hash == "") return;
 			
 			if (_data.id.length > 80
@@ -895,6 +896,16 @@ class Events
 		}
 	
 		_db_delete.user_at_front_door_queue(_data._username);
+		
+		// disconnect the client if the server is in maintenance mode. only the admin can login.
+		var _row = _db_select.is_maintenance();
+		
+		if (Std.string(_row._maintenance[0]) == "true" && _data._username != "admin")
+		{
+			// at client isLoggingIn event, this will disconnect the user and display a message that the server is in maintenance.
+			_data._popupMessage = "";
+		}
+		
 		_server.send_to_handler(_data);
 		
 	}
@@ -1823,11 +1834,11 @@ class Events
 		_data._roomPlayerCurrentTotal[2] = 1;
 		*/
 		
-		
 		if (Reg._dummyData == true
 		&&	_roomState[0] == 0)
 		{
 			DummyData.server_data();
+			_data._dummy_data_in_use = true;
 		}
 		
 		_server.send_to_handler(_data);

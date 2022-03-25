@@ -186,6 +186,7 @@ class Functions
 		_db_delete.tables_user_logged_off(_data._username);
 		_db_delete.user_no_kicked_or_banned(_data._username);
 		_db_delete.user_at_who_is_host(_data._username);
+		_db_delete.remove_dummy_data();
 	}
 	
 	public static function hostCpuUserNames():Void
