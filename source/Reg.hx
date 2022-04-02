@@ -2150,7 +2150,7 @@ class Reg
 	 * only change the version number here. this value must be changed every time this complete program with dll's are copied to the localhost/files/windows folder.
 	 * no need to copy this var then paste to the bottom of this class because this value does not change while client is running.
 	 */
-	public static var _version:String = "2.0.5";
+	public static var _version:String = "2.1.0.";
 	
 	/******************************
 	 * these are the computer player names for room a and b. those rooms are reserved for playing a game against the computer. these names are displayed at the hub.
@@ -2177,7 +2177,7 @@ class Reg
 	/******************************
 	 * website house url that ends in "/".
 	 */
-	public static var _websiteHomeUrl:String = "http://kboardgames.com/";	
+	public static var _websiteHomeUrl:String = "https://kboardgames.com/";	
 	public static var _websiteName:String = "K Board Games";
 
 	/******************************
@@ -2214,7 +2214,7 @@ class Reg
 		//############################# START CONFIG
 		// change these values below this line.
 		
-		_websiteHomeUrl = "http://kboardgames.com/"; // end in trail "/"
+		_websiteHomeUrl = "https://kboardgames.com/"; // end in trail "/"
 		_messageFileExists = "";
 		_cpu_host_name1 = "";
 		_cpu_host_name2 = "";
